@@ -1,0 +1,58 @@
+!$BEGINDESCRIPTION
+
+
+#--------------------------------------------------------------------------------------------------
+# GENERAL HYDRAULIC SYSTEM SETTINGS
+#--------------------------------------------------------------------------------------------------
+!$BEGINGLOBAL
+!TIME = <SET>
+  # simulation start time [s]
+  $TSTART = 0.0
+  # output time step [s]
+  $TSTEP = 3600
+  # number of timesteps [-]
+  $TNOF = 12
+  # number of calculation timesteps [-] per output time step
+  $NOFITS = 60
+</SET>
+
+# number of floodplain models (2d)
+!NOFFP = {}
+# number of river models (1d)
+!NOFRV = 0
+# number of diversion channel couplings (1d-1d-1d)
+!NOFDC = 0
+# number of hydraulic structure couplings (1d-2d)
+!NOFSC = 0
+# number of dike-/wallbreak couplings (1d-2d)
+!NOFBREAKRV2FP = 0
+# number of dike-/wallbreak couplings (co-2d)
+!NOFBREAKFP2CO = 0
+# use coast model (true or false)
+!COASTMODEL = false
+
+!INTEGRATION = <SET>
+  # maximum number of solver steps to reaching the output timestep [-]
+  $MAXNUMSTEPS = 40000
+  # maximum solver stepsize [s]
+  $MAXSTEPSIZE = 3000.0
+  # initial stepsize for the solver [s] [optional, standard value = 0.0]
+  $INISTEPSIZE = 0.00
+</SET>
+
+!PRECON = <SET>
+  # preconditioner types: PREC_LEFT or PREC_RIGHT  [optional, standard value = PREC_LEFT]
+  $PRETYPE = PREC_LEFT
+  # Graham Schmidt scheme: CLASSICAL_GS or MODIFIED_GS [optional, standard value = CLASSICAL_GS]
+  $GRAMSCHMIDT = MODIFIED_GS
+</SET>
+
+# relative file path to materials file
+!MATERIALFILE = "./rauhigkeiten.man"
+
+!$ENDGLOBAL
+
+
+#--------------------------------------------------------------------------------------------------
+# FLOODPLAIN MODEL SETTINGS
+#--------------------------------------------------------------------------------------------------
