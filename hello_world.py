@@ -4,7 +4,7 @@ from __future__ import absolute_import
 # system modules
 import math
 
-# QGIS modules
+# QGIS modules 
 from qgis.core import *
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import *
