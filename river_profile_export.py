@@ -652,7 +652,12 @@ class RiverProfileExport(object):
             block += 'ZONE T="{}" I={:d}\n'.format(name, len(line))
             block += 'AUXDATA ProfLDist="{:.2f}"\n'.format(station)
             block += 'AUXDATA DeltaXtable="{}"\n'.format(delta_x)
-            block += 'AUXDATA ConnectionType="{}"\n'.format(conn_type)
+            if stations[i]==max(stations):
+                block += 'AUXDATA ConnectionType="inflow"\n'
+            elif stations[i]==min(stations):
+                block += 'AUXDATA ConnectionType="outflow"\n'
+            else:
+                block += 'AUXDATA ConnectionType="{}"\n'.format(conn_type)
             block += 'AUXDATA ProfType="{}"\n'.format(profile_type)
             block += 'AUXDATA InitCondition="{:.2f}"\n'.format(init_value)
             block += 'AUXDATA BoundaryPointCondition="{}"\n'.format(str(point_bc).lower())
