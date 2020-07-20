@@ -227,6 +227,7 @@ class PluginDialog(QDialog):
             return
 
         flip_directions = self.flip_directions_box.isChecked()
+        addinflowoutflow = self.inflowoutflow_box.isChecked()
         abs_init = self.abs_init_box.isChecked()
         adjust_elevation = self.adjust_elevation_box.isChecked()
 
@@ -498,6 +499,7 @@ class RiverProfileExport(object):
 
         abs_init = self.dialog.abs_init_box.isChecked()
         flip_directions = self.dialog.flip_directions_box.isChecked()
+        addinflowoutflow = self.dialog.inflowoutflow_box.isChecked()
         adjust_elevation = self.dialog.adjust_elevation_box.isChecked()
 
         dem_layer = self.dialog.raster_layer
@@ -537,7 +539,6 @@ class RiverProfileExport(object):
 
 
            # print(line)
-
             if flip_directions:
                 line = list(reversed(line))
 
@@ -646,16 +647,18 @@ class RiverProfileExport(object):
             # init values are absolute values
             if abs_init:
                 init_value -= z_min
-
             # write profile attributes
             block = ""
             block += 'ZONE T="{}" I={:d}\n'.format(name, len(line))
             block += 'AUXDATA ProfLDist="{:.2f}"\n'.format(station)
             block += 'AUXDATA DeltaXtable="{}"\n'.format(delta_x)
-            if stations[i]==max(stations):
-                block += 'AUXDATA ConnectionType="inflow"\n'
-            elif stations[i]==min(stations):
-                block += 'AUXDATA ConnectionType="outflow"\n'
+            if addinflowoutflow:
+                if stations[i]==max(stations):
+                    block += 'AUXDATA ConnectionType="inflow"\n'
+                elif stations[i]==min(stations):
+                    block += 'AUXDATA ConnectionType="outflow"\n'
+                else:
+                    block += 'AUXDATA ConnectionType="{}"\n'.format(conn_type)
             else:
                 block += 'AUXDATA ConnectionType="{}"\n'.format(conn_type)
             block += 'AUXDATA ProfType="{}"\n'.format(profile_type)

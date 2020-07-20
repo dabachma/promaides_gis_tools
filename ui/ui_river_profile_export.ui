@@ -152,6 +152,13 @@
         </property>
        </widget>
       </item>
+      <item row="8" column="0">
+       <widget class="QCheckBox" name="inflowoutflow_box">
+        <property name="text">
+         <string>Add inflow/outflow</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -567,9 +574,7 @@
    <header>qgsmaplayercombobox.h</header>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="resources.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>button_box</sender>
