@@ -227,7 +227,7 @@ class PluginDialog(QDialog):
             return
 
         flip_directions = self.flip_directions_box.isChecked()
-        addinflowoutflow = self.inflowoutflow_box.isChecked()
+        addfullriver = self.fullriver_box.isChecked()
         abs_init = self.abs_init_box.isChecked()
         adjust_elevation = self.adjust_elevation_box.isChecked()
 
@@ -499,7 +499,7 @@ class RiverProfileExport(object):
 
         abs_init = self.dialog.abs_init_box.isChecked()
         flip_directions = self.dialog.flip_directions_box.isChecked()
-        addinflowoutflow = self.dialog.inflowoutflow_box.isChecked()
+        addfullriver = self.dialog.fullriver_box.isChecked()
         adjust_elevation = self.dialog.adjust_elevation_box.isChecked()
 
         dem_layer = self.dialog.raster_layer
@@ -652,7 +652,7 @@ class RiverProfileExport(object):
             block += 'ZONE T="{}" I={:d}\n'.format(name, len(line))
             block += 'AUXDATA ProfLDist="{:.2f}"\n'.format(station)
             block += 'AUXDATA DeltaXtable="{}"\n'.format(delta_x)
-            if addinflowoutflow:
+            if addfullriver:
                 if stations[i]==max(stations):
                     block += 'AUXDATA ConnectionType="inflow"\n'
                 elif stations[i]==min(stations):
@@ -669,9 +669,23 @@ class RiverProfileExport(object):
             block += 'AUXDATA BoundaryLateralCondition="{}"\n'.format(str(lat_bc).lower())
             block += 'AUXDATA BoundaryLateralStationary="{}"\n'.format(str(lat_bc_stat).lower())
             block += 'AUXDATA BoundaryLateralValue="{}"\n'.format(lat_bc_v)
-            block += 'AUXDATA OverflowCouplingLeft="{}"\n'.format(str(overflow_left).lower())
+            if addfullriver:
+                sortstations=np.sort(stations)
+                if stations[i]==min(stations) or stations[i]==sortstations[1]:
+                    block += 'AUXDATA OverflowCouplingLeft="false"\n'
+                else:
+                    block += 'AUXDATA OverflowCouplingLeft="{}"\n'.format(str(overflow_left).lower())
+            else:
+                block += 'AUXDATA OverflowCouplingLeft="{}"\n'.format(str(overflow_left).lower())
             block += 'AUXDATA PoleniFacLeft="{}"\n'.format(poleni_left)
-            block += 'AUXDATA OverflowCouplingRight="{}"\n'.format(str(overflow_right).lower())
+            if addfullriver:
+                sortstations = np.sort(stations)
+                if stations[i]==min(stations) or stations[i]==sortstations[1]:
+                    block += 'AUXDATA OverflowCouplingRight="false"\n'
+                else:
+                    block += 'AUXDATA OverflowCouplingRight="{}"\n'.format(str(overflow_right).lower())
+            else:
+                block += 'AUXDATA OverflowCouplingRight="{}"\n'.format(str(overflow_right).lower())
             block += 'AUXDATA PoleniFacRight="{}"\n\n'.format(poleni_right)
 
             # write profile points
