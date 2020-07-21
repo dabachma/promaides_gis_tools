@@ -44,7 +44,7 @@ class PluginDialog(QDialog):
         self.delta_box.setExpression('0.1')
         self.connection_box.setExpression("'standard'")
         self.type_box.setExpression("'river'")
-        self.initial_box.setExpression('0.0')
+        self.initial_box.setExpression('0.5')
         self.point_bc_enabled_box.setExpression('False')
         self.point_bc_stationary_box.setExpression('True')
         self.point_bc_value_box.setExpression('0')
