@@ -663,9 +663,21 @@ class RiverProfileExport(object):
                 block += 'AUXDATA ConnectionType="{}"\n'.format(conn_type)
             block += 'AUXDATA ProfType="{}"\n'.format(profile_type)
             block += 'AUXDATA InitCondition="{:.2f}"\n'.format(init_value)
-            block += 'AUXDATA BoundaryPointCondition="{}"\n'.format(str(point_bc).lower())
+            if addfullriver:
+                if stations[i]==max(stations):
+                    block += 'AUXDATA BoundaryPointCondition="true"\n'
+                else:
+                    block += 'AUXDATA BoundaryPointCondition="{}"\n'.format(str(point_bc).lower())
+            else:
+                block += 'AUXDATA BoundaryPointCondition="{}"\n'.format(str(point_bc).lower())
             block += 'AUXDATA BoundaryPointStationary="{}"\n'.format(str(point_bc_stat).lower())
-            block += 'AUXDATA BoundaryPointValue="{}"\n'.format(point_bc_v)
+            if addfullriver:
+                if stations[i]==max(stations):
+                    block += 'AUXDATA BoundaryPointValue="0.5"\n'
+                else:
+                    block += 'AUXDATA BoundaryPointValue="{}"\n'.format(point_bc_v)
+            else:
+                block += 'AUXDATA BoundaryPointValue="{}"\n'.format(point_bc_v)
             block += 'AUXDATA BoundaryLateralCondition="{}"\n'.format(str(lat_bc).lower())
             block += 'AUXDATA BoundaryLateralStationary="{}"\n'.format(str(lat_bc_stat).lower())
             block += 'AUXDATA BoundaryLateralValue="{}"\n'.format(lat_bc_v)
