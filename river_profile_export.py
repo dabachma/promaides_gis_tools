@@ -599,22 +599,18 @@ class RiverProfileExport(object):
                     z[0] = z[1] + 0.01
                 if z[-1] <= z[-2]:
                     z[-1] = z[-2] + 0.01
-
-            i_min = np.argmin(z)
-            # minimum profile elevation
-            z_min = z[int(i_min)]
-            # point with minimum profile elevation, the profile base point
-            p_min = line[int(i_min)]
-
+            
             dist, ident = [], []
             # set channel type
             flag = False
+            sumd=0
             for j, point in enumerate(line):
-
-                d = p_min.distance(point)
-                # points on the left of the minimum elevation point have a negative distance
-                dist.append(d if j >= i_min else -d)
-
+                if j==0:
+                    d = 0
+                else:
+                    d = line[j-1].distance(point)
+                sumd=d+sumd
+                dist.append(sumd)
 
 
                 if point == first:
@@ -643,7 +639,10 @@ class RiverProfileExport(object):
                 #     ident.append(3)
                 # else:
                 #     ident.append(2)
-
+                
+            i_min = np.argmin(z)
+            # minimum profile elevation
+            z_min = z[int(i_min)]
             # init values are absolute values
             if abs_init:
                 init_value -= z_min
