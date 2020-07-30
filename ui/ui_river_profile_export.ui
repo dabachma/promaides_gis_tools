@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>700</width>
-    <height>1025</height>
+    <height>1035</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -132,12 +132,15 @@
       <item row="5" column="1">
        <widget class="QgsFieldExpressionWidget" name="initial_box" native="true"/>
       </item>
-      <item row="6" column="1">
-       <widget class="QCheckBox" name="abs_init_box">
+      <item row="6" column="0">
+       <widget class="QLabel" name="label_25">
         <property name="text">
-         <string>Values are absolute water levels</string>
+         <string>Profile id</string>
         </property>
        </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QgsFieldExpressionWidget" name="profileid_box" native="true"/>
       </item>
       <item row="7" column="0">
        <widget class="QCheckBox" name="flip_directions_box">
@@ -149,10 +152,24 @@
         </property>
        </widget>
       </item>
+      <item row="7" column="1">
+       <widget class="QCheckBox" name="abs_init_box">
+        <property name="text">
+         <string>Values are absolute water levels</string>
+        </property>
+       </widget>
+      </item>
       <item row="8" column="0">
        <widget class="QCheckBox" name="fullriver_box">
         <property name="text">
          <string>Write full river</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="0" colspan="2">
+       <widget class="QCheckBox" name="autostation_box">
+        <property name="text">
+         <string>Auto stationing (profile id required)</string>
         </property>
        </widget>
       </item>
@@ -552,6 +569,14 @@
     </layout>
    </item>
   </layout>
+  <zorder>input_label</zorder>
+  <zorder>groupBox_main</zorder>
+  <zorder>mGroupBox_4</zorder>
+  <zorder>mGroupBox_3</zorder>
+  <zorder>mGroupBox_2</zorder>
+  <zorder>mGroupBox</zorder>
+  <zorder>mGroupBox_6</zorder>
+  <zorder>mGroupBox_5</zorder>
  </widget>
  <customwidgets>
   <customwidget>

@@ -150,6 +150,7 @@ class PluginDialog(QDialog):
         self.connection_box.setLayer(self.input_layer)
         self.type_box.setLayer(self.input_layer)
         self.initial_box.setLayer(self.input_layer)
+        self.profileid_box.setLayer(self.input_layer)
         self.point_bc_enabled_box.setLayer(self.input_layer)
         self.point_bc_stationary_box.setLayer(self.input_layer)
         self.point_bc_value_box.setLayer(self.input_layer)
@@ -198,7 +199,13 @@ class PluginDialog(QDialog):
                 'Preview is disabled since Python module "matplotlib" is not installed!'
             )
             return
-
+        
+        flip_directions = self.flip_directions_box.isChecked()
+        addfullriver = self.fullriver_box.isChecked()
+        autostation = self.autostation_box.isChecked()
+        abs_init = self.abs_init_box.isChecked()
+        adjust_elevation = self.adjust_elevation_box.isChecked()
+        
         input_layer = self.input_layer
         if not input_layer:
             return
@@ -211,12 +218,13 @@ class PluginDialog(QDialog):
             features = input_layer.getFeatures()
 
         stations, ok = QgsVectorLayerUtils.getValues(input_layer, self.station_box.expression(), selected)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'River Profile Export',
-                'Invalid expression for stations!'
-            )
-            return
+        if not autostation:
+            if not ok:
+                self.iface.messageBar().pushCritical(
+                    'River Profile Export',
+                    'Invalid expression for stations!'
+                )
+                return
 
         init_values, ok = QgsVectorLayerUtils.getValues(input_layer, self.initial_box.expression(), selected)
         if not ok:
@@ -226,10 +234,6 @@ class PluginDialog(QDialog):
             )
             return
 
-        flip_directions = self.flip_directions_box.isChecked()
-        addfullriver = self.fullriver_box.isChecked()
-        abs_init = self.abs_init_box.isChecked()
-        adjust_elevation = self.adjust_elevation_box.isChecked()
 
         dem_layer = self.raster_layer
         dem_band = self.raster_band_box.value()
@@ -334,6 +338,12 @@ class RiverProfileExport(object):
 
     def execTool(self):
 
+        abs_init = self.dialog.abs_init_box.isChecked()
+        flip_directions = self.dialog.flip_directions_box.isChecked()
+        addfullriver = self.dialog.fullriver_box.isChecked()
+        autostation = self.dialog.autostation_box.isChecked()
+        adjust_elevation = self.dialog.adjust_elevation_box.isChecked()
+
         filename = self.dialog.filename_edit.text()
         if not filename:
             self.iface.messageBar().pushCritical(
@@ -363,13 +373,14 @@ class RiverProfileExport(object):
             return
 
         stations, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.station_box.expression(), os)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'River Profile Export',
-                'Invalid expression for stations!'
-            )
-            self.quitDialog()
-            return
+        if not autostation:
+            if not ok:
+                self.iface.messageBar().pushCritical(
+                    'River Profile Export',
+                    'Invalid expression for stations!'
+                )
+                self.quitDialog()
+                return
 
         deltas, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.delta_box.expression(), os)
         if not ok:
@@ -406,6 +417,16 @@ class RiverProfileExport(object):
             )
             self.quitDialog()
             return
+        
+        if autostation:
+            profileids, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.profileid_box.expression(), os)
+            if not ok:
+                self.iface.messageBar().pushCritical(
+                    'River Profile Export',
+                    'Invalid expression for profile id!'
+                )
+                self.quitDialog()
+                return
 
         point_bc_flags, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.point_bc_enabled_box.expression(), os)
         if not ok:
@@ -497,10 +518,7 @@ class RiverProfileExport(object):
             self.quitDialog()
             return
 
-        abs_init = self.dialog.abs_init_box.isChecked()
-        flip_directions = self.dialog.flip_directions_box.isChecked()
-        addfullriver = self.dialog.fullriver_box.isChecked()
-        adjust_elevation = self.dialog.adjust_elevation_box.isChecked()
+        
 
         dem_layer = self.dialog.raster_layer
         dem_band = self.dialog.raster_band_box.value()
@@ -526,21 +544,52 @@ class RiverProfileExport(object):
         progress.show()
 
         text_blocks = {}
+################################################################################  
+        #autostation
+        if autostation:
+            # linepre is the previous line
+            linepre = []
+            stationsum = 0
+            autostations = list(range(0, len(profileids)))
+            sortedindex=np.argsort(profileids)
+            
+            for i, j in enumerate(sortedindex):
+                feature=input_layer.getFeature(j)
+                line = []
+                buff = feature.geometry()
+                for p in buff.vertices():
+                    line.append(p)
+                #stationing starts with 0   
+                if i == 0:
+                 autocalculatedstation = 0
+                else:
+                    #calculating the lowest hieght in the previous line
+                    zpre = [dem_interpol(QgsPointXY(p)) for p in linepre]
+                    #the location of the point with the lowest height
+                    point_minpre = np.argmin(zpre)
+                    znew = [dem_interpol(QgsPointXY(p)) for p in line]
+                    point_minnew = np.argmin(znew)
+                    difference = linepre[point_minpre].distance(line[point_minnew])
+                    stationsum = difference + stationsum
+                    autocalculatedstation = -stationsum
+                linepre = line
+                autostations[j]=autocalculatedstation
 
-
-
+##################################################################################
 
         # iterate over profiles and extract attributes and points
         for i, f in enumerate(features):
             line = []
             buff = f.geometry()
+
             for p in buff.vertices():
-                line.append(p)
-
-
-           # print(line)
+                line.append(p) 
+                
             if flip_directions:
                 line = list(reversed(line))
+                
+            if autostation:
+                stations=autostations
 
             name = str(names[i])
             station = float(stations[i])
