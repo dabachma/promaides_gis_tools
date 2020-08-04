@@ -78,6 +78,20 @@ class PluginDialog(QDialog):
         self.browse_button.clicked.connect(self.onBrowseButtonClicked)
         self.iface.currentLayerChanged.connect(self.setInputLayer)
 
+        #############################################
+        #autostationing button function
+        def autoclicked(state):
+            if state > 0:
+                self.profileid_box.setEnabled(True)
+                self.station_box.setEnabled(False)
+            else:
+                self.profileid_box.setEnabled(False)
+                self.station_box.setEnabled(True)
+
+        self.profileid_box.setEnabled(False)
+        self.autostation_box.stateChanged.connect(autoclicked)
+        #############################################  
+        
         if PREVIEW_ENABLED:
             self.figure = Figure(figsize=(10, 4), dpi=100)
             self.axes = self.figure.add_subplot(111)
@@ -374,6 +388,23 @@ class RiverProfileExport(object):
 
         stations, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.station_box.expression(), os)
         if not autostation:
+            ##################################
+            #test station values to be numeric
+            def isnumeric(obj):
+                try:
+                    obj + 0
+                    return True
+                except TypeError:
+                    return False
+            for i in stations:
+                if isnumeric(i)==False:
+                    self.iface.messageBar().pushCritical(
+                        'River Profile Export',
+                        'Invalid values for stations!'
+                    )
+                    self.quitDialog()
+                    return
+            ####################################
             if not ok:
                 self.iface.messageBar().pushCritical(
                     'River Profile Export',
@@ -420,6 +451,24 @@ class RiverProfileExport(object):
         
         if autostation:
             profileids, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.profileid_box.expression(), os)
+            
+            #####################################
+            #test profile id values to be numeric
+            def isnumeric(obj):
+                try:
+                    obj + 0
+                    return True
+                except TypeError:
+                    return False
+            for i in profileids:
+                if isnumeric(i)==False:
+                    self.iface.messageBar().pushCritical(
+                        'River Profile Export',
+                        'Invalid values for profile ids!'
+                    )
+                    self.quitDialog()
+                    return
+            ####################################
             if not ok:
                 self.iface.messageBar().pushCritical(
                     'River Profile Export',
