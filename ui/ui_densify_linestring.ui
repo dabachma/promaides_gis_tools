@@ -82,7 +82,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QgsFieldExpressionWidget" name="value_box"/>
+      <widget class="QgsFieldExpressionWidget" name="value_box" native="true"/>
      </item>
     </layout>
    </item>
@@ -98,6 +98,13 @@
       </size>
      </property>
     </spacer>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="keeporiginal_box">
+     <property name="text">
+      <string>Keep original layer</string>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="button_box">
@@ -118,9 +125,7 @@
    <header>qgis.gui</header>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="resources.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>button_box</sender>

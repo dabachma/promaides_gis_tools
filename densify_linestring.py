@@ -3,6 +3,8 @@ from __future__ import absolute_import
 
 # system modules
 import math
+import os
+import tempfile
 
 # QGIS modules
 from qgis.core import *
@@ -126,8 +128,34 @@ class DensifyLinestring(object):
         self.cancel = False
 
     def execTool(self):
+        ###############################################################
+        # keeporiginal
+        keeporiginal = self.dialog.keeporiginal_box.isChecked()
+        if keeporiginal:
+            try:
+                original = self.dialog.input_layer
+                originalpath = os.path.dirname(original.source())
+                if not originalpath:
+                    originalpath=tempfile.gettempdir()
+                originalname = original.name()
+                writingpath = originalpath + "/" + originalname + "_resampled.shp"
+                _writer = QgsVectorFileWriter.writeAsVectorFormat(original, writingpath, 'utf-8',
+                                                              driverName='ESRI Shapefile')
+                loadedlayer = QgsVectorLayer(writingpath, originalname + "_resampled", "ogr")
+                QgsProject.instance().addMapLayer(loadedlayer)
+                line_layer = loadedlayer
+                line_layer.startEditing()
+            except:
+                self.iface.messageBar().pushCritical(
+                    'Resample Polyline Vertices',
+                    'New layer cannot be created!'
+                )
+                self.quitDialog()
+                return
+        else:
+            line_layer = self.dialog.input_layer
+        #################################################################
 
-        line_layer = self.dialog.input_layer
         if not line_layer.isEditable():
             self.iface.messageBar().pushCritical(
                 'Resample Polyline Vertices',
