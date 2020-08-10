@@ -601,16 +601,25 @@ class RiverProfileExport(object):
             stationsum = 0
             autostations = list(range(0, len(profileids)))
             sortedindex=np.argsort(profileids)
-            
+            #bug fix
+            feature = input_layer.getFeature(0)
+            buff = feature.geometry()
+            if not buff:
+                layerinmemory=True
+            else:
+                layerinmemory = False
             for i, j in enumerate(sortedindex):
-                feature=input_layer.getFeature(j)
+                if layerinmemory==True:
+                    feature = input_layer.getFeature(j+1)
+                else:
+                    feature=input_layer.getFeature(j)
                 line = []
                 buff = feature.geometry()
                 for p in buff.vertices():
                     line.append(p)
                 #stationing starts with 0   
                 if i == 0:
-                 autocalculatedstation = 0
+                    autocalculatedstation = 0
                 else:
                     #calculating the lowest hieght in the previous line
                     zpre = [dem_interpol(QgsPointXY(p)) for p in linepre]
