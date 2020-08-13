@@ -121,7 +121,6 @@ class DikelineExport(object):
         self.cancel = False
         self.act = QAction('Dikeline Export', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
-		
 
     def initGui(self, menu=None):
 
@@ -144,6 +143,7 @@ class DikelineExport(object):
         self.dialog.rejected.connect(self.quitDialog)
         self.dialog.setModal(False)
         self.act.setEnabled(False)
+        # add a filter to the combo box of the filed selection; for "Name" just a string filed make sense
         self.dialog.label_field_box.setFilters(QgsFieldProxyModel.String)
         self.dialog.show()
 
