@@ -39,6 +39,7 @@ class PluginDialog(QDialog):
 
         self.setInputLayer(self.iface.activeLayer())
         self.setRasterLayer(self.raster_layer_box.currentLayer())
+		
 
     def __del__(self):
         self.iface.currentLayerChanged.disconnect(self.setInputLayer)
@@ -120,8 +121,10 @@ class DikelineExport(object):
         self.cancel = False
         self.act = QAction('Dikeline Export', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
+		
 
     def initGui(self, menu=None):
+
         if menu is not None:
             menu.addAction(self.act)
         else:
@@ -141,6 +144,7 @@ class DikelineExport(object):
         self.dialog.rejected.connect(self.quitDialog)
         self.dialog.setModal(False)
         self.act.setEnabled(False)
+        self.dialog.label_field_box.setFilters(QgsFieldProxyModel.String)
         self.dialog.show()
 
     def scheduleAbort(self):
