@@ -84,9 +84,11 @@ class PluginDialog(QDialog):
             if state > 0:
                 self.profileid_box.setEnabled(True)
                 self.station_box.setEnabled(False)
+                self.preview_button.setDisabled(True)
             else:
                 self.profileid_box.setEnabled(False)
                 self.station_box.setEnabled(True)
+                self.preview_button.setDisabled(False)
 
         self.profileid_box.setEnabled(False)
         self.autostation_box.stateChanged.connect(autoclicked)
