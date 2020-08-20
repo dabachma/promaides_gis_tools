@@ -14,7 +14,8 @@ from .environment import get_ui_path
 
 UI_PATH = get_ui_path('ui_coastline_export.ui')
 
-
+# This plugin exports the coastline file for the HYD-module of ProMaIdes from a line shape file;
+# A name field (string) is required within the line layer
 class PluginDialog(QDialog):
 
     def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
@@ -158,6 +159,8 @@ class CoastlineExport(object):
         self.dialog.rejected.connect(self.quitDialog)
         self.dialog.setModal(False)
         self.act.setEnabled(False)
+        # add a filter to the combo box of the filed selection; for "Name" just a string filed make sense
+        self.dialog.label_field_box.setFilters(QgsFieldProxyModel.String)
         self.dialog.show()
 
     def scheduleAbort(self):
@@ -331,6 +334,8 @@ class CoastlineExport(object):
                 # implicitly convert label to string
                 label = str(label)
 
+                # erase whitespace before
+                label = label.replace(' ', '_')
                 # label contains whitespaces
                 if len(label.split(' ')) > 1:
                     self.iface.messageBar().pushCritical(

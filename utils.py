@@ -4,6 +4,10 @@ import warnings
 
 string_types = (type(b''), type(u''))
 
+# use this function to eliminate whitespace in string, e.g. names
+def erase_whitespace(str):
+    str = str.replace(" ", "_")
+
 
 def deprecated(reason):
     """

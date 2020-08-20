@@ -11,43 +11,30 @@ from qgis.PyQt import uic
 from .interpolate import RasterInterpolator
 from .environment import get_ui_path
 
-UI_PATH = get_ui_path('ui_dikeline_export.ui')
+#general
+from datetime import datetime
 
-# This plugin exports the dikelinie file for the HYD-module of ProMaIdes from a line shape file;
-# A name field (string) is required within the line layer
+UI_PATH = get_ui_path('ui_observationpoint_export.ui')
+
+# This plugin exports the observations point file for the HYD-module of ProMaIdes from a point shape file;
+# A name field (string) is required within the point layer
 class PluginDialog(QDialog):
 
     def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
         QDialog.__init__(self, parent, flags)
         uic.loadUi(UI_PATH, self)
-
         self.iface = iface
         self.input_layer = None
-        self.raster_layer = None
-
-        self.raster_layer_box.setFilters(QgsMapLayerProxyModel.RasterLayer)
-        self.raster_layer_box.layerChanged.connect(self.setRasterLayer)
-
-        self.raster_band_box.setEnabled(False)
-
-        self.method_box.addItem('nearest neighbor')
-        self.method_box.addItem('bi-linear')
-        self.method_box.addItem('bi-cubic')
-
         self.browse_button.clicked.connect(self.onBrowseButtonClicked)
-
         self.iface.currentLayerChanged.connect(self.setInputLayer)
-
         self.setInputLayer(self.iface.activeLayer())
-        self.setRasterLayer(self.raster_layer_box.currentLayer())
-		
 
     def __del__(self):
         self.iface.currentLayerChanged.disconnect(self.setInputLayer)
 
     def onBrowseButtonClicked(self):
         current_filename = self.filename_edit.text()
-        new_filename, __ = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'Dikeline Export', current_filename)
+        new_filename, __ = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'Observation Point Export', current_filename)
         if new_filename != '':
             self.filename_edit.setText(new_filename)
             self.filename_edit.editingFinished.emit()
@@ -58,21 +45,14 @@ class PluginDialog(QDialog):
         if not layer:
             self.input_layer = None
             self.input_label.setText('<i>No layer selected.<br>'
-                                     'Please select a polyline layer.</i>')
+                                     'Please select a polypoint layer.</i>')
         else:
             layer_name = layer.name()
 
             if layer.type() == QgsMapLayer.VectorLayer:
 
-                if layer.geometryType() == QgsWkbTypes.LineGeometry:
+                if layer.geometryType() == QgsWkbTypes.PointGeometry:
 
-                    # if QgsWkbTypes.isMultiType(layer.wkbType()):
-                    #     self.input_layer = None
-                    #     self.input_label.setText('<i>Selected layer "{}" is a multi linestring layer.<br>'
-                    #                              'Please select a regular linestring layer.</i>'
-                    #                              .format(layer_name))
-                    #
-                    # else:
                     self.input_layer = layer
 
                     if layer.selectedFeatureCount():
@@ -85,46 +65,35 @@ class PluginDialog(QDialog):
                 else:
                     self.input_layer = None
                     self.input_label.setText('<i>Selected layer "{}" is not a linestring layer.<br>'
-                                             'Please select a polyline layer.</i>'
+                                             'Please select a polypoint layer.</i>'
                                              .format(layer_name))
             else:
                 self.input_layer = None
                 self.input_label.setText('<i>Selected layer "{}" is not a vector layer.<br>'
-                                         'Please select a polyline layer.</i>'
+                                         'Please select a polypoint layer.</i>'
                                          .format(layer_name))
 
         self.label_field_box.setLayer(self.input_layer)
 
         self.updateButtonBox()
 
-    def setRasterLayer(self, layer):
-        self.raster_layer = layer
-        if layer:
-            self.raster_band_box.setEnabled(True)
-            self.raster_band_box.setRange(1, layer.bandCount())
-        else:
-            self.raster_band_box.setEnabled(False)
-
-        self.updateButtonBox()
-
     def updateButtonBox(self):
-        if self.input_layer and self.raster_layer:
+        if self.input_layer: #and self.raster_layer:
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
         else:
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
 
-class DikelineExport(object):
+class ObservationPointExport(object):
 
     def __init__(self, iface):
         self.iface = iface
         self.dialog = None
         self.cancel = False
-        self.act = QAction('Dikeline Export', iface.mainWindow())
+        self.act = QAction('Observation Point Export', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
 
     def initGui(self, menu=None):
-
         if menu is not None:
             menu.addAction(self.act)
         else:
@@ -160,114 +129,96 @@ class DikelineExport(object):
         filename = self.dialog.filename_edit.text()
         if not filename:
             self.iface.messageBar().pushCritical(
-                'Dikeline Export',
+                'Observation Point Export',
                 'No output filename given!'
             )
             self.quitDialog()
             return
 
-        line_layer = self.dialog.input_layer
-        if line_layer.selectedFeatureCount():
+        point_layer = self.dialog.input_layer
+        if point_layer.selectedFeatureCount():
             only_selected = True
-            features = line_layer.selectedFeatures()
-            feature_count = line_layer.selectedFeatureCount()
+            features = point_layer.selectedFeatures()
+            feature_count = point_layer.selectedFeatureCount()
         else:
             only_selected = False
-            features = line_layer.getFeatures()
-            feature_count = line_layer.featureCount()
+            features = point_layer.getFeatures()
+            feature_count = point_layer.featureCount()
 
-        interpolate_z = self.dialog.interpolation_group.isChecked()
 
-        labels, ok = QgsVectorLayerUtils.getValues(line_layer, self.dialog.label_field_box.expression(), only_selected)
+        labels, ok = QgsVectorLayerUtils.getValues(point_layer, self.dialog.label_field_box.expression(), only_selected)
         if not ok:
             self.iface.messageBar().pushCritical(
-                'Dikeline Export',
-                'Invalid expression for dikeline labels!'
+                'Observation Point Export',
+                'Invalid expression for pointshape labels!'
             )
             self.quitDialog()
             return
 
-        if interpolate_z:
-            raster_layer = self.dialog.raster_layer
-            raster_band = self.dialog.raster_band_box.value()
-            method = self.dialog.method_box.currentText()
-            nan = self.dialog.nan_box.value()
-            interpolator = RasterInterpolator(raster_layer, raster_band, method, nan)
-            z_values = None
-        else:
-            interpolator = None
-            z_values, ok = QgsVectorLayerUtils.getValues(line_layer, self.dialog.z_box.expression(), only_selected)
-            if not ok:
-                self.iface.messageBar().pushCritical(
-                    'Dikeline Export',
-                    'Invalid expression for dikeline crest levels!'
-                )
-                self.quitDialog()
-                return
-
-        progress = QProgressDialog('Exporting dikeline ...', 'Abort', 0, feature_count, self.iface.mainWindow())
-        progress.setWindowTitle('Dikeline Export')
+        progress = QProgressDialog('Exporting Observation point ...', 'Abort', 0, feature_count, self.iface.mainWindow())
+        progress.setWindowTitle('Observation Point Export')
         progress.canceled.connect(self.scheduleAbort)
         progress.show()
 
         # iterate over polyline features
-        with open(filename, 'w') as dikeline_file:
+        with open(filename, 'w') as observationpoint_file:
 
+            observationpoint_file.write('# This file was automatically generated by ProMaiDes Observation Point '
+                                        'Export-QGIS-Plugin\n')
+            #date and time output
+            now = datetime.now()
+            dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+            observationpoint_file.write('# Generated at {dt_string_1} '.format(dt_string_1=dt_string))
+            observationpoint_file.write('from layer {filename_1} \n'.format(filename_1=point_layer.sourceName()))
+            observationpoint_file.write('# Comments are marked with #\n')
+            observationpoint_file.write('# Start the observation points with !BEGIN and end it with !END\n')
+            observationpoint_file.write('# Number of Points \n# x-coordinate y-coordinate name(without_whitepace)\n\n')
+
+            observationpoint_file.write('!BEGIN\n')
+            observationpoint_file.write('{number} #Number of points \n'.format(number=feature_count))
             index = 0
             for feature, label in zip(features, labels):
 
-                line = []
+
+
+                points = []
                 buff = feature.geometry()
-                for p in buff.vertices():
-                    line.append(p)
+
+                points.append(buff.asPoint())
+
 
 
                 if not label:
                     self.iface.messageBar().pushCritical(
-                        'Dikeline Export',
+                        'Observation Point Export',
                         'Empty label found! Aborting ...'
                     )
                     self.scheduleAbort()
-
                 # erase whitespace before
                 label = label.replace(' ', '_')
                 # label contains whitespaces
                 if len(label.split(' ')) > 1:
                     self.iface.messageBar().pushCritical(
-                        'Dikeline Export',
-                        'Labels must not contain whitespaces! Aborting ...'
+                        'Observation Point Export',
+                        'Labels must not contain whitespaces fgfdshsh! Aborting ...'
                     )
                     self.scheduleAbort()
 
-                if self.cancel:
-                    break
+                # iterate over points
+                for dot in points:
+                    observationpoint_file.write('{x} {y} {z}\n'.format(x=dot.x(), y=dot.y(), z=str(label)))
 
-                dikeline_file.write('!BEGIN\n')
-                dikeline_file.write('{0:d} {1} {2:d}\n'.format(index, str(label), len(line)))
-
-                # iterate over points in polyline
-                for point in line:
-
-                    if interpolate_z:
-                        z = interpolator.interpolate(QgsPointXY(point))
-                    else:
-                        z = z_values[index]
-
-                    dikeline_file.write('{x} {y} {z}\n'.format(x=point.x(), y=point.y(), z=z))
-
-                dikeline_file.write('!END\n\n')
 
                 index += 1
                 progress.setValue(index)
 
                 if self.cancel:
                     break
-
+            observationpoint_file.write('!END\n\n')
         progress.close()
-
         #if not self.cancel:
         self.iface.messageBar().pushInfo(
-            'Dikeline Export',
+            'Observation Point Export',
             'Export finished successfully!'
            )
 

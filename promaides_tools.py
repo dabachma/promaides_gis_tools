@@ -9,6 +9,8 @@ from .environment import BASE_DIR
 from .version import VERSION
 #include here the new function for a connection with the menu
 from .dikeline_export import DikelineExport
+from .observationpoint_export import ObservationPointExport
+from .polygon_export import PolygonExport
 from .coastline_export import CoastlineExport
 from .densify_linestring import DensifyLinestring
 from .river_profile_export import RiverProfileExport
@@ -30,6 +32,8 @@ class PromaidesToolbox(object):
 
         #HYD
         self.dikeline_exprt = DikelineExport(self.iface)
+        self.observationpoint_exprt = ObservationPointExport(self.iface)
+        self.polygon_exprt = PolygonExport(self.iface)
         self.coastline_exprt = CoastlineExport(self.iface)
         self.densify = DensifyLinestring(self.iface)
         self.river_profile_exprt = RiverProfileExport(self.iface)
@@ -51,6 +55,8 @@ class PromaidesToolbox(object):
         self.densify.initGui(self.submenu_hyd)
         self.river_profile_exprt.initGui(self.submenu_hyd)
         self.dikeline_exprt.initGui(self.submenu_hyd)
+        self.observationpoint_exprt.initGui(self.submenu_hyd)
+        self.polygon_exprt.initGui(self.submenu_hyd)
         self.coastline_exprt.initGui(self.submenu_hyd)
         self.dem_export.initGui(self.submenu_hyd)
         #General
@@ -66,6 +72,8 @@ class PromaidesToolbox(object):
         """
         #HYD
         self.dikeline_exprt.unload(self.submenu_hyd)
+        self.observationpoint_exprt.unload(self.submenu_hyd)
+        self.polygon_exprt.unload(self.submenu_hyd)
         self.coastline_exprt.unload(self.submenu_hyd)
         self.densify.unload(self.submenu_hyd)
         self.river_profile_exprt.unload(self.submenu_hyd)

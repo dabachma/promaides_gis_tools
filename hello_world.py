@@ -18,7 +18,7 @@ from .environment import get_ui_path
 #Connection to the UI-file (GUI); Edit the ui-file  via QTCreator
 UI_PATH = get_ui_path('ui_hello_world.ui')
 
-
+# This plugin serves as learning and test plugin
 class PluginDialog(QDialog):
 
     #set-up of the dialog
@@ -33,7 +33,7 @@ class PluginDialog(QDialog):
 
 
 
-#this can serve as a standard start class for new functions in the menu
+
 class HelloWorld(object):
 
     def __init__(self, iface):
