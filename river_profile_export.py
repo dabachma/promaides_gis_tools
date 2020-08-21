@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 # 3rd party modules
 import numpy as np
+from datetime import datetime
 
 # QGIS modules
 from qgis.core import *
@@ -189,7 +190,7 @@ class PluginDialog(QDialog):
         else:
             self.raster_band_box.setEnabled(False)
 
-        self.updateButtonBox()
+        self.updateButtonBox()      
 
     def setRoughnessLayer(self, layer):
         self.roughness_layer = layer
@@ -359,6 +360,9 @@ class RiverProfileExport(object):
         addfullriver = self.dialog.fullriver_box.isChecked()
         autostation = self.dialog.autostation_box.isChecked()
         adjust_elevation = self.dialog.adjust_elevation_box.isChecked()
+
+        now = datetime.now()
+        generationtime = now.strftime("%d/%m/%Y %H:%M:%S")
 
         filename = self.dialog.filename_edit.text()
         if not filename:
@@ -573,6 +577,7 @@ class RiverProfileExport(object):
 
         dem_layer = self.dialog.raster_layer
         dem_band = self.dialog.raster_band_box.value()
+        dem_name = self.dialog.raster_layer.name()
         dem_method = self.dialog.method_box.currentText()
         dem_nan = self.dialog.nan_box.value()
         dem_interpol = RasterInterpolator(dem_layer, dem_band, dem_method, dem_nan)
@@ -836,6 +841,8 @@ class RiverProfileExport(object):
         with open(filename, 'w') as profile_file:
 
             profile_file.write('TITLE = "{}"\n'.format(input_layer.name()))
+            profile_file.write('GENERATION TIME = "{}"\n'.format(generationtime))
+            profile_file.write('PROFILE ELEVATION SOURCE = "{}"\n'.format(dem_name))
             profile_file.write('VARIABLES = "X", "Y", "Z", "MathType", "Distance", "Ident"\n')
             profile_file.write('DATASETAUXDATA NumOfProf = "{:d}"\n\n'.format(len(text_blocks)))
 
