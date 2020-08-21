@@ -47,18 +47,24 @@ class PromaidesToolbox(object):
         """
         self.plugin_menu = QMenu('ProMaIDes Toolbox', self.iface.mainWindow())
         #Add a submenu
-        self.submenu_hyd = self.plugin_menu.addMenu('HYD')
         self.submenu_general = self.plugin_menu.addMenu('General')
+        self.submenu_hyd = self.plugin_menu.addMenu('HYD')
+
 
         #Add and coonnect to funtions in other .py-files
         #HYD
-        self.densify.initGui(self.submenu_hyd)
-        self.river_profile_exprt.initGui(self.submenu_hyd)
-        self.dikeline_exprt.initGui(self.submenu_hyd)
+
         self.observationpoint_exprt.initGui(self.submenu_hyd)
-        self.polygon_exprt.initGui(self.submenu_hyd)
-        self.coastline_exprt.initGui(self.submenu_hyd)
+        self.submenu_hyd.addSeparator()
+        self.river_profile_exprt.initGui(self.submenu_hyd)
+        self.densify.initGui(self.submenu_hyd)
+        self.submenu_hyd.addSeparator()
         self.dem_export.initGui(self.submenu_hyd)
+        self.dikeline_exprt.initGui(self.submenu_hyd)
+        self.polygon_exprt.initGui(self.submenu_hyd)
+        self.submenu_hyd.addSeparator()
+        self.coastline_exprt.initGui(self.submenu_hyd)
+
         #General
         self.db_exprt.initGui(self.submenu_general)
         self.hello_world.initGui(self.submenu_general)

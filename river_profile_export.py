@@ -26,7 +26,8 @@ except ImportError:
 
 UI_PATH = get_ui_path('ui_river_profile_export.ui')
 
-
+# This plugin exports the 1D-river file for the HYD-module of ProMaIdes from a line shape file;
+# A name field (string) is required within the line layer
 class PluginDialog(QDialog):
 
     def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
@@ -126,7 +127,7 @@ class PluginDialog(QDialog):
 
     def onBrowseButtonClicked(self):
         current_filename = self.filename_edit.text()
-        new_filename, __ = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'River Profile Export', current_filename)
+        new_filename, __ = QFileDialog.getSaveFileName(self.iface.mainWindow(), '1D-River Profile Export', current_filename)
         if new_filename != '':
             self.filename_edit.setText(new_filename)
             self.filename_edit.editingFinished.emit()
@@ -320,7 +321,7 @@ class RiverProfileExport(object):
         self.act = None
         self.dialog = None
         self.cancel = False
-        self.act = QAction('River Export', iface.mainWindow())
+        self.act = QAction('1D-River Profile Export', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
 
     def initGui(self, menu=None):
@@ -343,6 +344,8 @@ class RiverProfileExport(object):
         self.dialog.rejected.connect(self.quitDialog)
         self.dialog.setModal(False)
         self.act.setEnabled(False)
+        # add a filter to the combo box of the filed selection; for "Name" just a string filed make sense
+        self.dialog.name_box.setFilters(QgsFieldProxyModel.String)
         self.dialog.show()
 
     def scheduleAbort(self):
@@ -684,7 +687,8 @@ class RiverProfileExport(object):
 
             # implicitly convert label to string
             name = str(name)
-
+            # erase whitespace before
+            name = name.replace(' ', '_')
             # label contains whitespaces
             if len(name.split(' ')) > 1:
                 self.iface.messageBar().pushCritical(
@@ -854,6 +858,6 @@ class RiverProfileExport(object):
         progress.close()
 
         #if not self.cancel:
-        self.iface.messageBar().pushInfo('River Profile Export', 'Export finished successfully!')
+        self.iface.messageBar().pushInfo('1D-River Profile Export', 'Export finished successfully!')
 
         self.quitDialog()

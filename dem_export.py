@@ -21,7 +21,9 @@ from .environment import get_ui_path
 
 UI_PATH = get_ui_path('ui_dem_export.ui')
 
-
+# This plugin exports the 2D-floodplain raster file(s) for the HYD-module of ProMaIdes;
+# The polygons are created as temporary layer
+# TODO Change to existing polygon shp
 class PluginDialog(QDialog):
 
     rasterAdded = pyqtSignal(int, QgsGeometry)
@@ -180,7 +182,7 @@ class PluginDialog(QDialog):
 
     def onBrowseButtonClicked(self):
         currentFolder = self.folderEdit.text()
-        folder = QFileDialog.getExistingDirectory(self.iface.mainWindow(), 'DEM Export', currentFolder)
+        folder = QFileDialog.getExistingDirectory(self.iface.mainWindow(), '2D-Floodplain Export', currentFolder)
         if folder != '':
             self.folderEdit.setText(folder)
             self.folderEdit.editingFinished.emit()
@@ -312,7 +314,7 @@ class DEMExport(object):
         self.dialog = None
         self.cancel = False
         self.previewLayer = None
-        self.act = QAction('DEM Export', iface.mainWindow())
+        self.act = QAction('2D-Floodplain Export', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
 
     def initGui(self, menu=None):
@@ -397,7 +399,7 @@ class DEMExport(object):
             text = 'Interpolating and exporting raster ...'
 
         progress = QProgressDialog(text, 'Abort', 0, num_cells, self.iface.mainWindow())
-        progress.setWindowTitle('DEM Export')
+        progress.setWindowTitle('2D-Floodplain Export')
         progress.canceled.connect(self.scheduleAbort)
         progress.show()
 

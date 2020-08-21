@@ -19,7 +19,7 @@ from .version import *
 UI_PATH = get_ui_path('ui_coastline_export.ui')
 
 # This plugin exports the coastline file for the HYD-module of ProMaIdes from a line shape file;
-# A name field (string) is required within the line layer
+# A name field (string) is required within the polygon layer
 class PluginDialog(QDialog):
 
     def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
@@ -283,6 +283,8 @@ class CoastlineExport(object):
             dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
             coastline_file.write('# Generated at {dt_string_1} '.format(dt_string_1=dt_string))
             coastline_file.write('from layer {filename_1} \n'.format(filename_1=input_layer.sourceName()))
+            if interpolate_z:
+                coastline_file.write('# based on raster {}  \n'.format(raster_layer.name()))
             coastline_file.write('# Comments are marked with #\n')
             coastline_file.write('# Explanation of data:\n')
             coastline_file.write('#  Start the coastline with !BEGIN and end it with !END; '
