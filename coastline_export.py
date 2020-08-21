@@ -11,6 +11,10 @@ from qgis.PyQt import uic
 from .interpolate import RasterInterpolator
 from .environment import get_ui_path
 
+#general
+from datetime import datetime
+from .version import *
+
 
 UI_PATH = get_ui_path('ui_coastline_export.ui')
 
@@ -27,14 +31,6 @@ class PluginDialog(QDialog):
         self.raster_layer = None
 
         # set default values
-        self.base_z_box.setExpression("0.0")
-        self.break_box.setExpression("False")
-        self.abrupt_break_box.setExpression("False")
-        self.abrupt_opening_box.setExpression("25")
-        self.resistance_box.setExpression("1.5")
-        self.overflow_box.setExpression("True")
-        self.poleni_box.setExpression("0.577")
-
         self.raster_layer_box.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.raster_layer_box.layerChanged.connect(self.setRasterLayer)
 
@@ -44,8 +40,12 @@ class PluginDialog(QDialog):
         self.method_box.addItem('bi-linear')
         self.method_box.addItem('bi-cubic')
 
+        #connect signal and slots
         self.browse_button.clicked.connect(self.onBrowseButtonClicked)
-
+        self.breakbox.stateChanged.connect(self.change_break)
+        self.overflow.stateChanged.connect(self.change_overflow)
+        self.abrupt_break.stateChanged.connect(self.change_abrupt)
+        self.interpolation_group.clicked.connect(self.change_interpolation)
         self.iface.currentLayerChanged.connect(self.setInputLayer)
 
         self.setInputLayer(self.iface.activeLayer())
@@ -75,14 +75,6 @@ class PluginDialog(QDialog):
 
             if layer.type() == QgsMapLayer.VectorLayer:
                 if layer.geometryType() == QgsWkbTypes.PolygonGeometry:
-
-                    # if QgsWkbTypes.isMultiType(layer.wkbType()):
-                    #     self.input_layer = None
-                    #     self.input_label.setText('<i>Selected layer "{}" is a multi polygon layer.<br>'
-                    #                              'Please select a regular polygon layer.</i>'
-                    #                              .format(layer_name))
-                    #
-                    # else:
                     self.input_layer = layer
                     if layer.selectedFeatureCount():
                         self.input_label.setText('<i>Input layer is "{}" with {} selected feature(s).</i>'
@@ -103,13 +95,7 @@ class PluginDialog(QDialog):
                                          .format(layer_name))
 
         self.label_field_box.setLayer(self.input_layer)
-        self.base_z_box.setLayer(self.input_layer)
-        self.break_box.setLayer(self.input_layer)
-        self.abrupt_break_box.setLayer(self.input_layer)
-        self.abrupt_opening_box.setLayer(self.input_layer)
-        self.resistance_box.setLayer(self.input_layer)
-        self.overflow_box.setLayer(self.input_layer)
-        self.poleni_box.setLayer(self.input_layer)
+
 
         self.updateButtonBox()
 
@@ -128,6 +114,43 @@ class PluginDialog(QDialog):
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
         else:
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+
+    # change if the check box of break is changed
+    def change_break(self):
+        if self.breakbox.checkState() == 0:
+            self.abrupt_break.setEnabled(False)
+            self.abrupt_opening_width.setEnabled(False)
+            self.resistance.setEnabled(False)
+
+        else:
+            self.abrupt_break.setEnabled(True)
+            self.abrupt_opening_width.setEnabled(True)
+            self.resistance.setEnabled(True)
+
+    # change if the check box of overflow is changed
+    def change_overflow(self):
+        if self.overflow.checkState() == 0:
+            self.poleni.setEnabled(False)
+        else:
+            self.poleni.setEnabled(True)
+
+    # change if the interpolation box is changed
+    def change_interpolation(self):
+        if self.interpolation_group.isChecked() == 0:
+            self.z_box.setEnabled(True)
+        else:
+            self.z_box.setEnabled(False)
+
+    # change if the abrupt box is changed
+    def change_abrupt(self):
+        if self.abrupt_break.isChecked() == 0:
+
+            self.abrupt_opening_width.setEnabled(False)
+            self.resistance.setEnabled(True)
+        else:
+            self.abrupt_opening_width.setEnabled(True)
+            self.resistance.setEnabled(False)
+
 
 
 class CoastlineExport(object):
@@ -203,68 +226,13 @@ class CoastlineExport(object):
             self.quitDialog()
             return
 
-        base_elevations, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.base_z_box.expression(), only_selected)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'Coastline Export',
-                'Invalid expression for base elevation!'
-            )
-            self.quitDialog()
-            return
-
-        break_flags, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.break_box.expression(), only_selected)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'Coastline Export',
-                'Invalid expression for break flags!'
-            )
-            self.quitDialog()
-            return
-
-        abrupt_break_flags, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.abrupt_break_box.expression(), only_selected)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'Coastline Export',
-                'Invalid expression for abrupt break flags!'
-            )
-            self.quitDialog()
-            return
-
-        abrupt_openings, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.abrupt_opening_box.expression(), only_selected)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'Coastline Export',
-                'Invalid expression for abrupt opening!'
-            )
-            self.quitDialog()
-            return
-
-        resistances, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.resistance_box.expression(), only_selected)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'Coastline Export',
-                'Invalid expression for resistance!'
-            )
-            self.quitDialog()
-            return
-
-        overflow_flags, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.overflow_box.expression(), only_selected)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'Coastline Export',
-                'Invalid expression for overflow!'
-            )
-            self.quitDialog()
-            return
-
-        poleni_factors, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.poleni_box.expression(), only_selected)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'Coastline Export',
-                'Invalid expression for poleni factor!'
-            )
-            self.quitDialog()
-            return
+        base_elevations = self.dialog.base_elevation.value()
+        break_flags = self.dialog.breakbox.isChecked()
+        abrupt_break_flags = self.dialog.abrupt_break.isChecked()
+        abrupt_openings = self.dialog.abrupt_opening_width.value()
+        resistances = self.dialog.resistance.value()
+        overflow_flags = self.dialog.overflow.isChecked()
+        poleni_factors = self.dialog.poleni.value()
 
         if interpolate_z:
             raster_layer = self.dialog.raster_layer
@@ -308,25 +276,58 @@ class CoastlineExport(object):
         with open(filename, 'w') as coastline_file:
 
             index = 0
-            for f, label, be, bf, abf, ao, res, of, pf in zip(features, labels, base_elevations, break_flags,
-                                                              abrupt_break_flags, abrupt_openings, resistances,
-                                                              overflow_flags, poleni_factors):
+            coastline_file.write('# This file was automatically generated by ProMaiDes Coastline '
+                               'Export-QGIS-Plugin Version {version_1} \n'.format(version_1=VERSION))
+            # date and time output
+            now = datetime.now()
+            dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+            coastline_file.write('# Generated at {dt_string_1} '.format(dt_string_1=dt_string))
+            coastline_file.write('from layer {filename_1} \n'.format(filename_1=input_layer.sourceName()))
+            coastline_file.write('# Comments are marked with #\n')
+            coastline_file.write('# Explanation of data:\n')
+            coastline_file.write('#  Start the coastline with !BEGIN and end it with !END; '
+                                 'just one polygon is allowed; in between are: \n')
+            coastline_file.write('#  Index_(starts by 0) Name NumberOfPoints\n')
+            coastline_file.write('#  x-coordinate y-coordinate z-coordinate base_elevation break_flag abrupt_break_flag '
+                                 'Abrupt_opening_with/Resistance Overflow_flag Poleni_Factor \n\n')
 
-                polygon = f.geometry().asPolygon()
+            for f, label in zip(features, labels):
+
+                be = base_elevations
+                bf = break_flags
+                abf = abrupt_break_flags
+                ao = abrupt_openings
+                res = resistances
+                of = overflow_flags
+                pf = poleni_factors
+
+
+
+                if input_layer.selectedFeatureCount():
+                    only_selected = True
+                    features = input_layer.selectedFeatures()
+                    feature_count = input_layer.selectedFeatureCount()
+                else:
+                    only_selected = False
+                    features = input_layer.getFeatures()
+                    feature_count = input_layer.featureCount()
+
 
                 # polygon has more than one ring
-                if len(polygon) != 1:
+                if feature_count != 1:
                     self.iface.messageBar().pushCritical(
                         'Error during coastline export',
-                        'Polygon contains more than one ring! Aborting ...'
-                    )
+                        'Polygon contains more than one ring! Aborting...')
+                    coastline_file.write('Error during coastline export\n '
+                                         'Polygon contains more than one ring! Aborting...\n')
+
                     self.scheduleAbort()
 
                 # label is None or empty
                 if not label:
                     self.iface.messageBar().pushCritical(
                         'Error during coastline export',
-                        'Invalid coastline label found in field "{}"! Aborting ...'
+                        'Invalid coastline label found in field "{}"! Aborting...'
                         .format(self.dialog.label_field_box.expression())
                     )
                     self.scheduleAbort()
@@ -349,29 +350,48 @@ class CoastlineExport(object):
                     break
 
                 coastline_file.write('!BEGIN\n')
-                coastline_file.write('{0:d} {1} {2:d}\n'.format(index, label, len(polygon[0]) - 1))
+                points = []
+                for feature, label1 in zip(features, labels):
+                    buff = feature.geometry()
+
+                for p in buff.vertices():
+                    points.append(p)
+
+                coastline_file.write('{0:d} {1} {2:d}\n'.format(index, label, len(points)))
 
                 # iterate over points in polygon in CCW direction
                 # if signed_distance < 0, polygon is CW
-                points = polygon[0][1:] if signed_area(polygon[0]) > 0 else reversed(polygon[0][1:])
+                # points = polygon[0][1:] if signed_area(polygon[0]) > 0 else reversed(polygon[0][1:])
                 # don't include the first point which is identical to the last
+
                 for point in points:
 
                     if interpolate_z:
-                        z = interpolator(point)
+                        z = interpolator(QgsPointXY(point))
                     else:
                         z = z_values[index]
+                    print(z)
+                    print(nan)
+                    if z is nan:
+                        bf_buff = 'False'
+                        abf_buff = 'False'
+                        of_buff = 'False'
+                    else:
+                        bf_buff = bf
+                        abf_buff = abf
+                        of_buff = of
+
 
                     if abf:
-                        coastline_file.write('{x} {y} {z} {zb} {bf} {ab} {res} {op} {ov} {po}\n'
+                        coastline_file.write('{x} {y} {z} {zb} {bf} {ab} {op} {ov} {po}\n'
                                              .format(x=point.x(), y=point.y(), z=z, zb=be,
-                                                     bf=str(bf).lower(), ab=str(abf).lower(),
-                                                     res=res, op=ao, ov=str(of).lower(), po=pf))
+                                                     bf=str(bf_buff).lower(), ab=str(abf_buff).lower(),
+                                                     op=ao, ov=str(of_buff).lower(), po=pf))
                     else:
                         coastline_file.write('{x} {y} {z} {zb} {bf} {ab} {res} {ov} {po}\n'
                                              .format(x=point.x(), y=point.y(), z=z, zb=be,
-                                                     bf=str(bf).lower(), ab=str(abf).lower(),
-                                                     res=res, ov=str(of).lower(), po=pf))
+                                                     bf=str(bf_buff).lower(), ab=str(abf_buff).lower(),
+                                                     res=res, ov=str(of_buff).lower(), po=pf))
 
                 coastline_file.write('!END\n\n')
 

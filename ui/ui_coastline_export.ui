@@ -37,6 +37,9 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QLabel" name="input_label">
+     <property name="toolTip">
+      <string>Just 1 polygon is allowed!</string>
+     </property>
      <property name="text">
       <string/>
      </property>
@@ -71,7 +74,11 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QgsFieldExpressionWidget" name="label_field_box"/>
+       <widget class="QgsFieldExpressionWidget" name="label_field_box" native="true">
+        <property name="toolTip">
+         <string>Set the name of the observation points; just string attribute is allowed!</string>
+        </property>
+       </widget>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_13">
@@ -81,7 +88,26 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QgsFieldExpressionWidget" name="z_box"/>
+       <widget class="QgsFieldExpressionWidget" name="z_box" native="true">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="toolTip">
+         <string>Set a unique crest level if interpolation is not used</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLabel" name="label_14">
+        <property name="font">
+         <font>
+          <italic>true</italic>
+         </font>
+        </property>
+        <property name="text">
+         <string>Not considered if crest level interpolation is used (see below)</string>
+        </property>
+       </widget>
       </item>
       <item row="3" column="0">
        <widget class="QLabel" name="label_11">
@@ -89,9 +115,6 @@
          <string>Base elevation [m]</string>
         </property>
        </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QgsFieldExpressionWidget" name="base_z_box"/>
       </item>
       <item row="4" column="0">
        <widget class="QLabel" name="label">
@@ -101,37 +124,38 @@
        </widget>
       </item>
       <item row="4" column="1">
-       <widget class="QgsFieldExpressionWidget" name="break_box"/>
+       <widget class="QCheckBox" name="breakbox">
+        <property name="toolTip">
+         <string>Breach development allowed</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
       <item row="5" column="0">
        <widget class="QLabel" name="label_3">
         <property name="text">
-         <string>Abrupt break flag</string>
+         <string>Abrupt (wall)  break flag</string>
         </property>
        </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QgsFieldExpressionWidget" name="abrupt_break_box"/>
       </item>
       <item row="6" column="0">
        <widget class="QLabel" name="label_8">
         <property name="text">
-         <string>Abrupt opening width [m]</string>
+         <string>Abrupt opening width (wall) [m]</string>
         </property>
        </widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="QgsFieldExpressionWidget" name="abrupt_opening_box"/>
       </item>
       <item row="7" column="0">
        <widget class="QLabel" name="label_7">
         <property name="text">
-         <string>Resistance</string>
+         <string>Critical flow velocity (dike) [m/s]</string>
         </property>
        </widget>
-      </item>
-      <item row="7" column="1">
-       <widget class="QgsFieldExpressionWidget" name="resistance_box"/>
       </item>
       <item row="8" column="0">
        <widget class="QLabel" name="label_9">
@@ -139,9 +163,6 @@
          <string>Overflow flag</string>
         </property>
        </widget>
-      </item>
-      <item row="8" column="1">
-       <widget class="QgsFieldExpressionWidget" name="overflow_box"/>
       </item>
       <item row="9" column="0">
        <widget class="QLabel" name="label_10">
@@ -153,18 +174,87 @@
         </property>
        </widget>
       </item>
-      <item row="9" column="1">
-       <widget class="QgsFieldExpressionWidget" name="poleni_box"/>
-      </item>
-      <item row="2" column="1">
-       <widget class="QLabel" name="label_14">
-        <property name="font">
-         <font>
-          <italic>true</italic>
-         </font>
+      <item row="5" column="1">
+       <widget class="QCheckBox" name="abrupt_break">
+        <property name="toolTip">
+         <string>Wall (abrupt) or Dike breach (continuous)</string>
         </property>
         <property name="text">
-         <string>Not considered if crest level interpolation is used (see below)</string>
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QDoubleSpinBox" name="abrupt_opening_width">
+        <property name="toolTip">
+         <string>Width per abrupt opening step</string>
+        </property>
+        <property name="minimum">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>25.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QDoubleSpinBox" name="base_elevation">
+        <property name="toolTip">
+         <string>Elavation of the breach bottom</string>
+        </property>
+        <property name="maximum">
+         <double>1000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QDoubleSpinBox" name="resistance">
+        <property name="toolTip">
+         <string>Critical flow velocity [m/s] for dike breaches</string>
+        </property>
+        <property name="minimum">
+         <double>0.010000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>5.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.500000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="1">
+       <widget class="QCheckBox" name="overflow">
+        <property name="toolTip">
+         <string>Overflow allowed</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="1">
+       <widget class="QDoubleSpinBox" name="poleni">
+        <property name="minimum">
+         <double>0.500000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>0.800000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.550000000000000</double>
         </property>
        </widget>
       </item>
@@ -180,7 +270,7 @@
       <bool>true</bool>
      </property>
      <property name="checked">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <layout class="QFormLayout" name="formLayout_2">
       <property name="labelAlignment">
@@ -194,7 +284,11 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QgsMapLayerComboBox" name="raster_layer_box"/>
+       <widget class="QgsMapLayerComboBox" name="raster_layer_box">
+        <property name="toolTip">
+         <string>Choose the raster layer (DEM) for interpolation with z information</string>
+        </property>
+       </widget>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_5">
@@ -220,7 +314,11 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QComboBox" name="method_box"/>
+       <widget class="QComboBox" name="method_box">
+        <property name="toolTip">
+         <string>Choose the interpolation method</string>
+        </property>
+       </widget>
       </item>
       <item row="3" column="0">
        <widget class="QLabel" name="label_12">
@@ -252,6 +350,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLineEdit" name="filename_edit">
+       <property name="toolTip">
+        <string>Set the output file</string>
+       </property>
        <property name="placeholderText">
         <string>&lt;output file path&gt;</string>
        </property>
@@ -342,102 +443,6 @@
     <hint type="destinationlabel">
      <x>541</x>
      <y>0</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>coastline_group</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>break_box</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>41</x>
-     <y>282</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>333</x>
-     <y>182</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>coastline_group</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>abrupt_break_box</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>68</x>
-     <y>284</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>352</x>
-     <y>215</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>coastline_group</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>abrupt_opening_box</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>48</x>
-     <y>286</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>189</x>
-     <y>222</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>coastline_group</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>resistance_box</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>66</x>
-     <y>287</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>392</x>
-     <y>281</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>coastline_group</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>overflow_box</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>54</x>
-     <y>288</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>232</x>
-     <y>289</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>coastline_group</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>poleni_box</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>58</x>
-     <y>286</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>432</x>
-     <y>347</y>
     </hint>
    </hints>
   </connection>

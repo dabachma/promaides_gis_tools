@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>468</width>
-    <height>226</height>
+    <height>110</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,6 +25,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLineEdit" name="filename_edit">
+       <property name="toolTip">
+        <string>Set the output file</string>
+       </property>
        <property name="placeholderText">
         <string>output file path</string>
        </property>

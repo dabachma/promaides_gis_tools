@@ -23,8 +23,11 @@
    </item>
    <item>
     <widget class="QGroupBox" name="groupBox">
+     <property name="toolTip">
+      <string>Set the name of the observation points; just string attribute is allowed!</string>
+     </property>
      <property name="title">
-      <string>PointShape Layer Properties</string>
+      <string>Observation Point Properties</string>
      </property>
      <layout class="QFormLayout" name="formLayout">
       <item row="0" column="0">
@@ -44,6 +47,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLineEdit" name="filename_edit">
+       <property name="toolTip">
+        <string>Set the output file</string>
+       </property>
        <property name="placeholderText">
         <string>output file path</string>
        </property>

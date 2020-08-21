@@ -58,7 +58,11 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
       <item row="0" column="1">
-       <widget class="QgsFieldExpressionWidget" name="label_field_box"/>
+       <widget class="QgsFieldExpressionWidget" name="label_field_box" native="true">
+        <property name="toolTip">
+         <string>Set the name of the observation points; just string attribute is allowed!</string>
+        </property>
+       </widget>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_3">
@@ -68,7 +72,14 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QgsFieldExpressionWidget" name="z_box"/>
+       <widget class="QgsFieldExpressionWidget" name="z_box" native="true">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="toolTip">
+         <string>Set a unique crest level if interpolation is not used</string>
+        </property>
+       </widget>
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_2">
@@ -101,7 +112,7 @@
       <bool>true</bool>
      </property>
      <property name="checked">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <layout class="QFormLayout" name="formLayout_2">
       <property name="labelAlignment">
@@ -115,7 +126,11 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QgsMapLayerComboBox" name="raster_layer_box"/>
+       <widget class="QgsMapLayerComboBox" name="raster_layer_box">
+        <property name="toolTip">
+         <string>Choose the raster layer (DEM) for interpolation with z information</string>
+        </property>
+       </widget>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_5">
@@ -141,7 +156,11 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QComboBox" name="method_box"/>
+       <widget class="QComboBox" name="method_box">
+        <property name="toolTip">
+         <string>Choose the interpolation method</string>
+        </property>
+       </widget>
       </item>
       <item row="3" column="0">
        <widget class="QLabel" name="label">
@@ -173,6 +192,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLineEdit" name="filename_edit">
+       <property name="toolTip">
+        <string>Set the output file</string>
+       </property>
        <property name="placeholderText">
         <string>&lt;output file path&gt;</string>
        </property>
