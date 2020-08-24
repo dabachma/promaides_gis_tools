@@ -284,7 +284,7 @@ class CoastlineExport(object):
             coastline_file.write('# Generated at {dt_string_1} '.format(dt_string_1=dt_string))
             coastline_file.write('from layer {filename_1} \n'.format(filename_1=input_layer.sourceName()))
             if interpolate_z:
-                coastline_file.write('# based on raster {}  \n'.format(raster_layer.name()))
+                coastline_file.write('#  based on height raster (DEM) {}  \n'.format(raster_layer.name()))
             coastline_file.write('# Comments are marked with #\n')
             coastline_file.write('# Explanation of data:\n')
             coastline_file.write('#  Start the coastline with !BEGIN and end it with !END; '

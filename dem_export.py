@@ -4,6 +4,7 @@ from __future__ import absolute_import
 # system modules
 import os
 import math
+from datetime import datetime
 
 # QGIS modules
 from qgis.core import *
@@ -17,6 +18,7 @@ from qgis.PyQt import uic
 from .interpolate import RasterInterpolator
 from .raster import RasterWriter
 from .environment import get_ui_path
+from .version import *
 
 
 UI_PATH = get_ui_path('ui_dem_export.ui')

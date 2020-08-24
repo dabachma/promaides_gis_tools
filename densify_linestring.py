@@ -14,7 +14,7 @@ from qgis.PyQt import uic
 
 from shapely.geometry import MultiLineString, mapping, shape
 
-# promaides modules
+# This plugin resamples the vertices of a polyline; use it for a higher point density of a line;
 from .environment import get_ui_path
 
 
@@ -94,7 +94,7 @@ class DensifyLinestring(object):
         self.iface = iface
         self.dialog = None
         self.cancel = False
-        self.act = QAction('Resample polyline vertices', iface.mainWindow())
+        self.act = QAction('Resample Polyline Vertices', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
 
     def initGui(self, menu=None):
@@ -232,45 +232,6 @@ class DensifyLinestring(object):
             densified = geom.densifyByDistance(delta)
 
 
-
-
-            # #Make the interpolation
-            # points = [geom.interpolate(i * delta).asPoint() for i in range(num)]
-            # #print(points)
-            # #count vertices
-            # number = 0
-            # for p in geom.vertices():
-            #     number = number+1
-            #
-            # #Add points of line
-            # counter = 0
-            #
-            # for p in geom.vertices():
-            #     buff = QgsPointXY(p)
-            #     if counter == 0:
-            #         points.insert(0, buff)
-            #     elif counter == number-1:
-            #         points.append(buff)
-            #     else:
-            #         distance = geom.lineLocatePoint(p)
-            #         i = 0
-            #         for point in points:
-            #             if distance < geom.lineLocatePoint(point):
-            #                 points.insert(i, buff)
-            #             i = i+1
-            #
-            #     counter = counter+1
-            #
-            #
-            # #print(points)
-            #
-            #
-            #
-            #
-            # densified = QgsGeometry.fromPolylineXY(points)
-            # #print(densified)
-
-            # line_layer.dataProvider().changeGeometryValues({feature.id(): densified})
             densified.removeDuplicateNodes()
             line_layer.changeGeometry(feature.id(), densified)
 

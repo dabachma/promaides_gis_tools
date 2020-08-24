@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>700</width>
-    <height>1035</height>
+    <height>1313</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -19,7 +19,7 @@
   <property name="minimumSize">
    <size>
     <width>700</width>
-    <height>0</height>
+    <height>700</height>
    </size>
   </property>
   <property name="maximumSize">
@@ -74,6 +74,9 @@
      <layout class="QFormLayout" name="formLayout">
       <item row="0" column="0">
        <widget class="QLabel" name="label_2">
+        <property name="toolTip">
+         <string>Name of the profile</string>
+        </property>
         <property name="text">
          <string>Name</string>
         </property>
@@ -84,6 +87,9 @@
       </item>
       <item row="2" column="0">
        <widget class="QLabel" name="label_10">
+        <property name="toolTip">
+         <string>3 possibilities: river, bridge, weir</string>
+        </property>
         <property name="text">
          <string>Profile type</string>
         </property>
@@ -94,6 +100,9 @@
       </item>
       <item row="4" column="0">
        <widget class="QLabel" name="label_9">
+        <property name="toolTip">
+         <string>3 possibilities: inflow, standard, outflow</string>
+        </property>
         <property name="text">
          <string>Connection type</string>
         </property>
@@ -104,6 +113,9 @@
       </item>
       <item row="6" column="0">
        <widget class="QLabel" name="label_7">
+        <property name="toolTip">
+         <string>Set here the Station of the river profile; it is decreasing from upstream to downstream</string>
+        </property>
         <property name="text">
          <string>Stationing [m]</string>
         </property>
@@ -114,6 +126,9 @@
       </item>
       <item row="8" column="0">
        <widget class="QLabel" name="label_8">
+        <property name="toolTip">
+         <string>Spacing for the geometric tables for each profiles</string>
+        </property>
         <property name="text">
          <string>Delta table spacing [m]</string>
         </property>
@@ -126,27 +141,47 @@
         </property>
        </widget>
       </item>
-      <item row="10" column="0">
+      <item row="12" column="0">
        <widget class="QLabel" name="label_11">
         <property name="text">
          <string>Initial water depth [m]</string>
         </property>
        </widget>
       </item>
-      <item row="10" column="1">
+      <item row="12" column="1">
        <widget class="QgsFieldExpressionWidget" name="initial_box" native="true"/>
       </item>
-      <item row="12" column="0">
+      <item row="13" column="0">
+       <widget class="QCheckBox" name="abs_init_box">
+        <property name="toolTip">
+         <string>True := Initial values are absolut water levels; False :=  Initial values are water depth values</string>
+        </property>
+        <property name="text">
+         <string>Initial conditions are absolute water levels</string>
+        </property>
+       </widget>
+      </item>
+      <item row="15" column="0">
+       <widget class="QCheckBox" name="autostation_box">
+        <property name="toolTip">
+         <string>True := Profile-Station is calculated according the geometrical dictance of the lowest points; the order of the profiles is defined by an decreasing id (double) from upstream to downstream; False := the Station field is used</string>
+        </property>
+        <property name="text">
+         <string>Auto stationing</string>
+        </property>
+       </widget>
+      </item>
+      <item row="17" column="0">
        <widget class="QLabel" name="label_25">
         <property name="text">
          <string>Profile id</string>
         </property>
        </widget>
       </item>
-      <item row="12" column="1">
+      <item row="17" column="1">
        <widget class="QgsFieldExpressionWidget" name="profileid_box" native="true"/>
       </item>
-      <item row="16" column="0">
+      <item row="21" column="0">
        <widget class="QCheckBox" name="fullriver_box">
         <property name="toolTip">
          <string>If activated an inflow/outflow profile is set to the first/last cross-section, the overflow couplings of the last two profiles are set to false </string>
@@ -156,27 +191,71 @@
         </property>
        </widget>
       </item>
-      <item row="17" column="0">
-       <widget class="QCheckBox" name="autostation_box">
-        <property name="text">
-         <string>Auto stationing</string>
-        </property>
-       </widget>
-      </item>
-      <item row="16" column="1">
-       <widget class="QCheckBox" name="abs_init_box">
-        <property name="text">
-         <string>Initial conditions are absolute water levels</string>
-        </property>
-       </widget>
-      </item>
-      <item row="17" column="1">
+      <item row="22" column="0">
        <widget class="QCheckBox" name="flip_directions_box">
         <property name="toolTip">
-         <string>Profile lines must start with the left boundary</string>
+         <string>Change the direction of profile points; they have to be from left to right in flow direction</string>
         </property>
         <property name="text">
          <string>Flip line direction of cross-sections</string>
+        </property>
+       </widget>
+      </item>
+      <item row="20" column="0">
+       <widget class="QLabel" name="label_26">
+        <property name="text">
+         <string>Options:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="19" column="0">
+       <widget class="Line" name="line_2">
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="baseSize">
+         <size>
+          <width>200</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="14" column="0">
+       <widget class="Line" name="line">
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="baseSize">
+         <size>
+          <width>200</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="0">
+       <widget class="Line" name="line_3">
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </item>
@@ -190,6 +269,9 @@
        <width>0</width>
        <height>0</height>
       </size>
+     </property>
+     <property name="toolTip">
+      <string>Use this polygon shape for defining the area of the main channel; all points in the polygon get a (Main_channel) 2; just 1 polygon is allowed in the layer</string>
      </property>
      <property name="title">
       <string>Main channel</string>
@@ -210,6 +292,9 @@
    </item>
    <item>
     <widget class="QgsCollapsibleGroupBox" name="mGroupBox_4">
+     <property name="toolTip">
+      <string>Use the height raster for a interpolation of the z-coordinate</string>
+     </property>
      <property name="title">
       <string>Profile Elevation</string>
      </property>
@@ -282,7 +367,7 @@
       <item row="5" column="0" colspan="2">
        <widget class="QCheckBox" name="adjust_elevation_box">
         <property name="toolTip">
-         <string>Boundary points must be higher than previous points</string>
+         <string>Auto adjustment of the boundary points; they must be higher than next / previous points</string>
         </property>
         <property name="text">
          <string>Auto adjust profile boundary elevation</string>
@@ -300,6 +385,9 @@
        <height>0</height>
       </size>
      </property>
+     <property name="toolTip">
+      <string>Point boundary condition in qm/s</string>
+     </property>
      <property name="title">
       <string>Point Boundary</string>
      </property>
@@ -311,7 +399,11 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
       <item row="0" column="1">
-       <widget class="QgsFieldExpressionWidget" name="point_bc_enabled_box" native="true"/>
+       <widget class="QgsFieldExpressionWidget" name="point_bc_enabled_box" native="true">
+        <property name="toolTip">
+         <string>True:= it is used; False: = no use of it</string>
+        </property>
+       </widget>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_13">
@@ -321,7 +413,11 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QgsFieldExpressionWidget" name="point_bc_stationary_box" native="true"/>
+       <widget class="QgsFieldExpressionWidget" name="point_bc_stationary_box" native="true">
+        <property name="toolTip">
+         <string>True := Stationary boundary condition; following Value is one discharge in qm/s; False := the following Value is a curve id</string>
+        </property>
+       </widget>
       </item>
       <item row="2" column="0">
        <widget class="QLabel" name="label_14">
@@ -331,7 +427,11 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QgsFieldExpressionWidget" name="point_bc_value_box" native="true"/>
+       <widget class="QgsFieldExpressionWidget" name="point_bc_value_box" native="true">
+        <property name="toolTip">
+         <string>Discharge or Curve-id (see field above)</string>
+        </property>
+       </widget>
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_12">
@@ -345,6 +445,9 @@
    </item>
    <item>
     <widget class="QgsCollapsibleGroupBox" name="mGroupBox_2">
+     <property name="toolTip">
+      <string>Lateral boundary condition in qm/s per m river length</string>
+     </property>
      <property name="title">
       <string>Lateral Boundary</string>
      </property>
@@ -356,7 +459,11 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
       <item row="0" column="1">
-       <widget class="QgsFieldExpressionWidget" name="lateral_bc_enabled_box" native="true"/>
+       <widget class="QgsFieldExpressionWidget" name="lateral_bc_enabled_box" native="true">
+        <property name="toolTip">
+         <string>True:= it is used; False: = no use of it</string>
+        </property>
+       </widget>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_15">
@@ -366,7 +473,11 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QgsFieldExpressionWidget" name="lateral_bc_stationary_box" native="true"/>
+       <widget class="QgsFieldExpressionWidget" name="lateral_bc_stationary_box" native="true">
+        <property name="toolTip">
+         <string>True := Stationary boundary condition; following Value is a discharge in qm/s per m river length; False := the following Value is a curve id</string>
+        </property>
+       </widget>
       </item>
       <item row="2" column="0">
        <widget class="QLabel" name="label_16">
@@ -376,10 +487,17 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QgsFieldExpressionWidget" name="lateral_bc_value_box" native="true"/>
+       <widget class="QgsFieldExpressionWidget" name="lateral_bc_value_box" native="true">
+        <property name="toolTip">
+         <string>Discharge or Curve-id (see field above)</string>
+        </property>
+       </widget>
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_17">
+        <property name="toolTip">
+         <string/>
+        </property>
         <property name="text">
          <string>Enabled</string>
         </property>
@@ -390,6 +508,9 @@
    </item>
    <item>
     <widget class="QgsCollapsibleGroupBox" name="mGroupBox">
+     <property name="toolTip">
+      <string>The values for an overflow (coupling 1D-2D) are set here </string>
+     </property>
      <property name="title">
       <string>Overflow Coupling</string>
      </property>
@@ -407,7 +528,11 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
       <item row="0" column="1">
-       <widget class="QgsFieldExpressionWidget" name="overflow_left_enabled_box" native="true"/>
+       <widget class="QgsFieldExpressionWidget" name="overflow_left_enabled_box" native="true">
+        <property name="toolTip">
+         <string>True := overflow over left bank is possible; False := no overflow over left bank is possible</string>
+        </property>
+       </widget>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_3">
@@ -417,7 +542,11 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QgsFieldExpressionWidget" name="overflow_left_poleni_box" native="true"/>
+       <widget class="QgsFieldExpressionWidget" name="overflow_left_poleni_box" native="true">
+        <property name="toolTip">
+         <string>Between 0.5 to 0.8</string>
+        </property>
+       </widget>
       </item>
       <item row="2" column="0">
        <widget class="QLabel" name="label_19">
@@ -427,7 +556,11 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QgsFieldExpressionWidget" name="overflow_right_enabled_box" native="true"/>
+       <widget class="QgsFieldExpressionWidget" name="overflow_right_enabled_box" native="true">
+        <property name="toolTip">
+         <string>True := overflow over right bank is possible; False := no overflow over right bank is possible</string>
+        </property>
+       </widget>
       </item>
       <item row="3" column="0">
        <widget class="QLabel" name="label_18">
@@ -437,7 +570,11 @@
        </widget>
       </item>
       <item row="3" column="1">
-       <widget class="QgsFieldExpressionWidget" name="overflow_right_poleni_box" native="true"/>
+       <widget class="QgsFieldExpressionWidget" name="overflow_right_poleni_box" native="true">
+        <property name="toolTip">
+         <string>Between 0.5 to 0.8</string>
+        </property>
+       </widget>
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_20">
@@ -454,11 +591,14 @@
      <property name="enabled">
       <bool>true</bool>
      </property>
+     <property name="toolTip">
+      <string>The roughness can be set to the profile points via a raster of material-ids </string>
+     </property>
      <property name="title">
       <string>Roughness</string>
      </property>
      <property name="collapsed" stdset="0">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QFormLayout" name="formLayout_4">
       <property name="labelAlignment">
@@ -508,6 +648,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLineEdit" name="filename_edit">
+       <property name="toolTip">
+        <string>Set the output file</string>
+       </property>
        <property name="placeholderText">
         <string>&lt;output file path&gt;</string>
        </property>
@@ -532,6 +675,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <widget class="QPushButton" name="preview_button">
+       <property name="toolTip">
+        <string>Preview is just available for fixed Station values</string>
+       </property>
        <property name="text">
         <string>Preview</string>
        </property>

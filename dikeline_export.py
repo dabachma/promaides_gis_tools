@@ -235,7 +235,7 @@ class DikelineExport(object):
             dikeline_file.write('# Generated at {dt_string_1} '.format(dt_string_1=dt_string))
             dikeline_file.write('from layer {filename_1} \n'.format(filename_1=line_layer.sourceName()))
             if interpolate_z:
-                dikeline_file.write('# based on raster {}  \n'.format(raster_layer.name()))
+                dikeline_file.write('#  based on height raster (DEM) {}  \n'.format(raster_layer.name()))
             dikeline_file.write('# Comments are marked with #\n')
             dikeline_file.write('# Explanation of data:\n')
             dikeline_file.write('#  Start the dikeline with !BEGIN and end it with !END per line; in between are: \n')
