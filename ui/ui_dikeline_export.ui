@@ -105,6 +105,9 @@
    </item>
    <item>
     <widget class="QGroupBox" name="interpolation_group">
+     <property name="toolTip">
+      <string>Height interpolation from raster layer (DEM)</string>
+     </property>
      <property name="title">
       <string>Interpolate crest levels from elevation model</string>
      </property>
@@ -128,7 +131,7 @@
       <item row="0" column="1">
        <widget class="QgsMapLayerComboBox" name="raster_layer_box">
         <property name="toolTip">
-         <string>Choose the raster layer (DEM) for interpolation with z information</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Choose the raster height layer (DEM) for interpolation of z information&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
