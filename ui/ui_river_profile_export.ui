@@ -164,7 +164,7 @@
       <item row="15" column="0">
        <widget class="QCheckBox" name="autostation_box">
         <property name="toolTip">
-         <string>True := Profile-Station is calculated according the geometrical dictance of the lowest points; the order of the profiles is defined by an decreasing id (double) from upstream to downstream; False := the Station field is used</string>
+         <string>True := Profile-Station is calculated according the geometrical dictance of the lowest points; the order of the profiles is defined by an increasing id (double) from upstream to downstream; False := the Station field is used</string>
         </property>
         <property name="text">
          <string>Auto stationing</string>
