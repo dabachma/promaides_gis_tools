@@ -32,8 +32,8 @@
    <string>Coastline Export for ProMaIDes HYD-module</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="resources.qrc">
-    <normaloff>:/hyd_icon</normaloff>:/hyd_icon</iconset>
+   <iconset>
+    <normaloff>../icons/hyd.png</normaloff>../icons/hyd.png</iconset>
   </property>
   <property name="modal">
    <bool>false</bool>

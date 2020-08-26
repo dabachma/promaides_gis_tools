@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>621</width>
-    <height>769</height>
+    <height>833</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -32,8 +32,8 @@
    <string>2D-Floodplain Export for ProMaIDes HYD-module</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="resources.qrc">
-    <normaloff>:/hyd_icon</normaloff>:/hyd_icon</iconset>
+   <iconset>
+    <normaloff>../icons/hyd.png</normaloff>../icons/hyd.png</iconset>
   </property>
   <property name="modal">
    <bool>false</bool>
