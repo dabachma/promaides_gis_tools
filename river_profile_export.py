@@ -15,6 +15,7 @@ from qgis.PyQt import uic
 from .interpolate import RasterInterpolator
 from .environment import get_ui_path
 from .version import *
+from .utils import *
 
 try:
     from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as Canvas
@@ -58,6 +59,17 @@ class PluginDialog(QDialog):
         self.overflow_left_poleni_box.setExpression('0.577')
         self.overflow_right_enabled_box.setExpression('True')
         self.overflow_right_poleni_box.setExpression('0.577')
+        self.widget_bridge_body_h.setExpression('1.5')
+        self.widget_local_bridge_h.setExpression('4.0')
+
+        self.groupBox_bridge.setCollapsed(True)
+        self.mGroupBox_6.setCollapsed(True)
+        self.mGroupBox.setCollapsed(True)
+        self.mGroupBox_4.setCollapsed(True)
+        self.mGroupBox_3.setCollapsed(True)
+        self.mGroupBox_2.setCollapsed(True)
+        self.groupBox_main.setCollapsed(True)
+        self.mGroupBox_4.setCollapsed(False)
 
         #set DGM layer
         self.raster_layer_box.setFilters(QgsMapLayerProxyModel.RasterLayer)
@@ -124,7 +136,8 @@ class PluginDialog(QDialog):
 
 
     def __del__(self):
-        self.iface.currentLayerChanged.disconnect(self.setInputLayer)
+        #self.iface.currentLayerChanged.disconnect(self.setInputLayer)
+        print('Done')
 
     def onBrowseButtonClicked(self):
         current_filename = self.filename_edit.text()
@@ -180,6 +193,8 @@ class PluginDialog(QDialog):
         self.overflow_left_poleni_box.setLayer(self.input_layer)
         self.overflow_right_enabled_box.setLayer(self.input_layer)
         self.overflow_right_poleni_box.setLayer(self.input_layer)
+        self.widget_local_bridge_h.setLayer(self.input_layer)
+        self.widget_bridge_body_h.setLayer(self.input_layer)
 
         self.updateButtonBox()
 
@@ -365,8 +380,17 @@ class RiverProfileExport(object):
         self.dialog.lateral_bc_value_box.setFilters(QgsFieldProxyModel.Double)
         self.dialog.overflow_left_poleni_box.setFilters(QgsFieldProxyModel.Double)
         self.dialog.overflow_right_poleni_box.setFilters(QgsFieldProxyModel.Double)
+        self.dialog.widget_local_bridge_h.setFilters(QgsFieldProxyModel.Double)
+        self.dialog.widget_bridge_body_h.setFilters(QgsFieldProxyModel.Double)
 
-
+        self.dialog.groupBox_bridge.setCollapsed(True)
+        self.dialog.mGroupBox_6.setCollapsed(True)
+        self.dialog.mGroupBox.setCollapsed(True)
+        self.dialog.mGroupBox_4.setCollapsed(True)
+        self.dialog.mGroupBox_3.setCollapsed(True)
+        self.dialog.mGroupBox_2.setCollapsed(True)
+        self.dialog.groupBox_main.setCollapsed(True)
+        self.dialog.mGroupBox_4.setCollapsed(False)
 
 
         self.dialog.show()
@@ -596,6 +620,24 @@ class RiverProfileExport(object):
             )
             self.quitDialog()
             return
+        # read bridge value from layer
+        bridge_local_hs, ok = QgsVectorLayerUtils.getValues(input_layer, self.widget_local_bridge_h.expression(), os)
+        if not ok:
+            self.iface.messageBar().pushCritical(
+                'River Profile Export',
+                'Invalid expression for local bridge height!'
+            )
+            self.quitDialog()
+            return
+        bridge_body_body_hs, ok = QgsVectorLayerUtils.getValues(input_layer, self.widget_bridge_body_h.expression(), os)
+        if not ok:
+            self.iface.messageBar().pushCritical(
+                'River Profile Export',
+                'Invalid expression for local bridge body height!'
+            )
+            self.quitDialog()
+            return
+
 
         
 
@@ -680,32 +722,118 @@ class RiverProfileExport(object):
             if autostation:
                 stations=autostations
 
-            # TODO check if true or false write a own functions
+
+
             name = str(names[i])
             station = float(stations[i])
+            # no check required
             delta_x = float(deltas[i])
-            conn_type = str(conn_types[i])
-            profile_type = str(profile_types[i])
+            #check inflow, outflow, standard
+            conn_type = str(conn_types[i]).lower()
+            if check_river_prof_connection(conn_type) == 0:
+                self.iface.messageBar().pushCritical(
+                    'Error during river profile export',
+                    'Invalid expression for river profile connection (standard/inflow/outflow) ({})! Aborting ...'
+                    .format(conn_types[i])
+                )
+                self.quitDialog()
+                return
+
+            #check river, weir, bridge
+            profile_type = str(profile_types[i]).lower()
+            if check_river_prof_type(profile_type) == 0:
+                self.iface.messageBar().pushCritical(
+                    'Error during river profile export',
+                    'Invalid expression for river profile type (river/bridge/weir) ({})! Aborting ...'
+                    .format(profile_types[i])
+                )
+                self.quitDialog()
+                return
+
+            # no check required
             init_value = float(init_values[i])
-            point_bc = bool(point_bc_flags[i])
-            point_bc_stat = bool(point_bc_stationary_flags[i])
+            #check true, false
+            point_bc = str(point_bc_flags[i]).lower()
+            if check_true_false(point_bc) == 0:
+                self.iface.messageBar().pushCritical(
+                    'Error during river profile export',
+                    'Invalid expression for point boundary condition flag (true/false) ({})! Aborting ...'
+                    .format(point_bc_flags[i])
+                )
+                self.quitDialog()
+                return
+            # check true, false
+            point_bc_stat = str(point_bc_stationary_flags[i]).lower()
+            if check_true_false(point_bc_stat) ==0:
+                self.iface.messageBar().pushCritical(
+                    'Error during river profile export',
+                    'Invalid expression for point boundary stationary flag (true/false) ({})! Aborting ...'
+                    .format(point_bc_stationary_flags[i])
+                )
+                self.quitDialog()
+                return
+            # no check required
             point_bc_v = point_bc_values[i]
-            lat_bc = bool(lateral_bc_flags[i])
-            lat_bc_stat = bool(lateral_bc_stationary_flags[i])
+            # check true, false
+            lat_bc = str(lateral_bc_flags[i]).lower()
+            if check_true_false(lat_bc) == 0:
+                self.iface.messageBar().pushCritical(
+                    'Error during river profile export',
+                    'Invalid expression for lateral boundary condition flag (true/false) ({})! Aborting ...'
+                    .format(lateral_bc_flags[i])
+                )
+                self.quitDialog()
+                return
+            # check true, false
+            lat_bc_stat = str(lateral_bc_stationary_flags[i]).lower()
+            if check_true_false(lat_bc_stat) == 0:
+                self.iface.messageBar().pushCritical(
+                    'Error during river profile export',
+                    'Invalid expression for lateral boundary stationary flag (true/false) ({})! Aborting ...'
+                    .format(lateral_bc_stationary_flags[i])
+                )
+                self.quitDialog()
+                return
+            # no check required
             lat_bc_v = lateral_bc_values[i]
-            overflow_left = str(overflow_left_flags[i])
+            # check true, false
+            overflow_left = str(overflow_left_flags[i]).lower()
+            if check_true_false(overflow_left) == 0:
+                self.iface.messageBar().pushCritical(
+                    'Error during river profile export',
+                    'Invalid expression for left overflow flag (true/false) ({})! Aborting ...'
+                    .format(overflow_left_flags[i])
+                )
+                self.quitDialog()
+                return
+            # no check required
             poleni_left = float(poleni_left_values[i])
-            overflow_right = str(overflow_right_flags[i])
+            # check true, false
+            overflow_right = str(overflow_right_flags[i]).lower()
+            if check_true_false(overflow_right) == 0:
+                self.iface.messageBar().pushCritical(
+                    'Error during river profile export',
+                    'Invalid expression for right overflow flag (true/false) ({})! Aborting ...'
+                    .format(overflow_right_flags[i])
+                )
+                self.quitDialog()
+                return
+            # no check required
             poleni_right = float(poleni_right_values[i])
+
+            # bridge value no check required; this are the individual values (TODO SHAHIN could you connect it to the output?)
+            bridge_body_h = float(bridge_body_hs[i])
+            bridge_local_h = float(bridge_local_hs[i])
 
             # label is None or empty
             if not name:
                 self.iface.messageBar().pushCritical(
                     'Error during river profile export',
-                    'Invalid coastline label found in field "{}"! Aborting ...'
+                    'Invalid name label found in field "{}"! Aborting ...'
                     .format(self.dialog.label_field_box.expression())
                 )
-                self.scheduleAbort()
+                self.quitDialog()
+                return
 
             # implicitly convert label to string
             name = str(name)
@@ -718,7 +846,8 @@ class RiverProfileExport(object):
                     'Labels must not contain whitespaces! Aborting ...'
                     .format(self.dialog.label_field_box.expression())
                 )
-                self.scheduleAbort()
+                self.quitDialog()
+                return
 
             if self.cancel:
                 break
@@ -881,7 +1010,7 @@ class RiverProfileExport(object):
         # write (station-wise sorted) profiles and profile points to file
         with open(filename, 'w') as profile_file:
             profile_file.write('########################################################################\n')
-            profile_file.write('# This file was automatically generated by ProMaiDes 1D-River Profile Export '
+            profile_file.write('# This file was automatically generated by ProMaiDes 1D-River Profile Export'
                                  '-QGIS-Plugin Version {version_1} \n'.format(version_1=VERSION))
             # date and time output
             now = datetime.now()
@@ -897,20 +1026,50 @@ class RiverProfileExport(object):
                                    format(roughness_layer.name()))
 
             profile_file.write('# Comments are marked with #\n')
+            profile_file.write('#\n')
             profile_file.write('# Explanation of data:\n')
             profile_file.write('#  The river profile-file is optimized for Tecplot; '
                                  ' each profile is one Zone with Name (T=..) NumberOfPoints (I=..) \n')
             profile_file.write('#  Several additional information to the profile follows; these '
                                  'attributes are valid to the distance to the next downstream profile \n')
-            profile_file.write('#   The station value is from upstream to downstream decreasing\n')
+            profile_file.write('#  The station value is from upstream to downstream decreasing\n')
             profile_file.write(
-                '#  Finally the point data is given (always from left to right in flow direction): '
-                'x-coordinate y-coordinate z-coordinate material_id local_distance Lbank(1)_Main(2)_Rbank(3)\n'
-                '#  Further remarks: \n#    material_id and Lbank(1)_Main(2)_Rbank(3) are valid to '
+                '#  Finally the point data is given (always from left to right over profile in flow direction):\n '
+                '    x-coordinate y-coordinate z-coordinate material_id local_distance Lbank(1)_Main(2)_Rbank(3)\n'
+                '#  Further remarks: \n#    Mterial_id and Lbank(1)_Main(2)_Rbank(3) are valid to '
                 'the distance before the point\n#    First point has always Lbank(1) \n#    '
                 'First point must be higher than point after; last point must be higher than point before\n#    '
                 'If you want to have a higher point density, please use plugin Resample Polyline Vertices'
                 ' \n')
+            profile_file.write('#\n')
+            profile_file.write('# Use in .ilm-file (just copy, delete the leading "#", set file(s)):\n')
+            profile_file.write('#  In global section add 1 to !NOFRV = x+1 # Number of river models\n')
+            profile_file.write('#  Set a river model between !$BEGINDESCRIPTION and !$ENDDESCRIPTION\n')
+            profile_file.write('#   !$BEGINRVMODEL =  Index_(starts by 0) "NAME" \n')
+            profile_file.write('#    !NOFPROF = 369 #Number of profiles in file (see below)\n')
+            profile_file.write('#    !GEOMETRYFILE = "./PATH2FILE/FILE_NAME.txt"\n')
+            profile_file.write('#    !1DOUTPUT = "../../PATH/PREFIX_" #1d-output by calculation with file	\n')
+            profile_file.write('#    !2DOUTPUT = "../../PATH/PREFIX_" #2d-output by calculation with file	\n')
+            profile_file.write('#    !INSTATBOUNDFILE = <SET>	\n')
+            profile_file.write('#       $FILENAME="./PATH2FILE/FILE_NAME.txt" #Instationary boundary file of river\n')
+            profile_file.write('#       $NUMBER_CURVE = 1 #number of curves in instationary boundary file\n')
+            profile_file.write('#     </SET>	\n')
+            profile_file.write('#    !LIMITS = <SET>	\n')
+            profile_file.write('#       $RTOL = 1e-7 '
+                               '#$RTOL = Defines relative tolerances [optional, standard value = 1.0e-7]\n')
+            profile_file.write('#       $ATOL = 1e-6 # $ATOL = defines absolute tolerances '
+                               '[optional, standard value = 1.0e-6]\n')
+            profile_file.write('#       $PROF_INTERFACE = false # false:= no interface is taken between '
+                               'right/left bank and main channel; true:=interface is taken from the main channel '
+                               '[optional, standard value = false]\n')
+            profile_file.write('#       $V_EXPLICIT = false # false:= velocity head is not taken into account for '
+                               'calculation of the gradient; true:= it is taken into account'
+                               ' [optional, standard value = false]	\n')
+            profile_file.write('#     </SET>	\n')
+
+            profile_file.write('#  !$ENDRVMODEL  \n')
+
+
             profile_file.write('########################################################################\n\n')
 
 

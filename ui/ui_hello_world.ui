@@ -29,7 +29,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Hello World</string>
+   <string>Hello World Test dialog</string>
   </property>
   <property name="toolTip">
    <string/>

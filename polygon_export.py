@@ -178,6 +178,7 @@ class PolygonExport(object):
             polygon_file.write('# Generated at {dt_string_1} '.format(dt_string_1=dt_string))
             polygon_file.write('from layer {filename_1} \n'.format(filename_1=polygon_layer.sourceName()))
             polygon_file.write('# Comments are marked with #\n')
+            polygon_file.write('# Number of polygons in file: {}  \n'.format(feature_count))
             polygon_file.write('#\n')
             polygon_file.write('# Explanation of data:\n')
             polygon_file.write('#  Start the Noflow-polygon with !BEGIN and end it with !END per polygon; '
@@ -189,7 +190,7 @@ class PolygonExport(object):
             polygon_file.write('# Set per FloodPlain-model between !$BEGINFPMODEL and !$ENDFPMODEL\n')
             polygon_file.write('#  !NOFLOWFILE = <SET>\n')
             polygon_file.write('#    $FILENAME="./PATH2FILE/FILE_NAME.txt"\n')
-            polygon_file.write('#    $NO_POLYGONS = 2 #number of polygons in file\n')
+            polygon_file.write('#    $NO_POLYGONS = 2 #number of polygons in file (see above)\n')
             polygon_file.write('#  </SET>	\n')
             polygon_file.write('########################################################################\n\n')
 

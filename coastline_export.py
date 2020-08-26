@@ -124,8 +124,12 @@ class PluginDialog(QDialog):
 
         else:
             self.abrupt_break.setEnabled(True)
-            self.abrupt_opening_width.setEnabled(True)
-            self.resistance.setEnabled(True)
+            if self.abrupt_break.isChecked() == 0:
+                self.abrupt_opening_width.setEnabled(False)
+                self.resistance.setEnabled(True)
+            else:
+                self.abrupt_opening_width.setEnabled(True)
+                self.resistance.setEnabled(False)
 
     # change if the check box of overflow is changed
     def change_overflow(self):
@@ -133,6 +137,9 @@ class PluginDialog(QDialog):
             self.poleni.setEnabled(False)
         else:
             self.poleni.setEnabled(True)
+
+
+
 
     # change if the interpolation box is changed
     def change_interpolation(self):
@@ -195,6 +202,8 @@ class CoastlineExport(object):
         self.cancel = False
 
     def execTool(self):
+
+
 
         filename = self.dialog.filename_edit.text()
         if not filename:
@@ -338,7 +347,8 @@ class CoastlineExport(object):
                                          'More than one polygon available in '
                                          'layer! Please just select one! Aborting...\n')
 
-                    self.scheduleAbort()
+                    self.quitDialog()
+                    return
 
                 # label is None or empty
                 if not label:
@@ -347,7 +357,8 @@ class CoastlineExport(object):
                         'Invalid coastline label found in field "{}"! Aborting...'
                         .format(self.dialog.label_field_box.expression())
                     )
-                    self.scheduleAbort()
+                    self.quitDialog()
+                    return
 
                 # implicitly convert label to string
                 label = str(label)
@@ -361,7 +372,8 @@ class CoastlineExport(object):
                         'Labels must not contain whitespaces! Aborting ...'
                         .format(self.dialog.label_field_box.expression())
                     )
-                    self.scheduleAbort()
+                    self.quitDialog()
+                    return
 
                 if self.cancel:
                     break

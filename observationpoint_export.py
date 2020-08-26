@@ -205,16 +205,18 @@ class ObservationPointExport(object):
                     )
                     observationpoint_file.write('Error during point export\n '
                                          'Empty label found! Aborting...\n')
-                    self.scheduleAbort()
+                    self.quitDialog()
+                    return
                 # erase whitespace before
                 label = label.replace(' ', '_')
                 # label contains whitespaces
                 if len(label.split(' ')) > 1:
                     self.iface.messageBar().pushCritical(
                         'Observation Point Export',
-                        'Labels must not contain whitespaces fgfdshsh! Aborting ...'
+                        'Labels must not contain whitespaces! Aborting ...'
                     )
-                    self.scheduleAbort()
+                    self.quitDialog()
+                    return
 
                 # iterate over points
                 for dot in points:

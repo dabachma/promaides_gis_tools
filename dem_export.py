@@ -335,8 +335,6 @@ class DEMExport(object):
         """
         """
         self.dialog = PluginDialog(self.iface, self.iface.mainWindow())
-        #self.dialog.accepted.connect(self.execTool)
-        #self.dialog.rejected.connect(self.quitDialog)
         self.dialog.pushButton_ok.clicked.connect(self.execTool)
         self.dialog.pushButton_ok.setAutoDefault(False)
         self.dialog.pushButton_cancel.clicked.connect(self.quitDialog)
@@ -347,7 +345,14 @@ class DEMExport(object):
         self.dialog.setModal(False)
 
         self.previewLayer = QgsVectorLayer('Polygon', 'ProMaIDes DEM Raster', 'memory')
+        # set layer properties
+        my_symbol = QgsFillSymbol.createSimple({'color': 'black', 'outline_color': 'red', 'outline_width': '0.8',
+                                                'style':'no'})
+
+        self.previewLayer.renderer().setSymbol(my_symbol)
         QgsProject.instance().addMapLayer(self.previewLayer)
+
+
 
         self.act.setEnabled(False)
         self.dialog.show()
@@ -436,7 +441,7 @@ class DEMExport(object):
                 trans[data_name] = lambda p: p
             interpol[data_name] = RasterInterpolator(items['layer'], items['band'], items['interpol_mode'], items['nan']).interpolate
 
-        out_raster.open(filename)
+        out_raster.open(filename, input_layers)
         # write cell values
         for i in range(out_raster.num_cells()):
             point = out_raster.cell_center(i)
@@ -495,8 +500,8 @@ class DEMExport(object):
                 ilm.write('!FLOODPLAINFILE = "%s"\n' % filename)
 
                 ilm.write('!LIMITS = <SET>  # numerical limits for 2D simulation\n')
-                ilm.write('  $RTOL = 5e-7   # relative tolerances   [optional, standard value = 5e-7]\n')
-                ilm.write('  $ATOL = 5e-7   # absolute tolerances   [optional, standard value = 5e-7]\n')
+                ilm.write('  $RTOL = 1e-9  # relative tolerances   [optional, standard value = 1e-9]\n')
+                ilm.write('  $ATOL = 1e-5   # absolute tolerances   [optional, standard value = 1e-5]\n')
                 ilm.write('  $WET  = 0.01   # wet and dry parameter [optional, standard value = 1e-2]\n')
                 ilm.write('</SET>\n')
                 ilm.write('!$ENDFPMODEL\n\n')

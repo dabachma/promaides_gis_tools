@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Export ProMaIDes Observation Point</string>
+   <string>Observation Point Export for ProMaIDes HYD-module</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/hyd_icon</normaloff>:/hyd_icon</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -24,7 +28,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="toolTip">
-      <string>Set the name of the observation points; just string attribute is allowed!</string>
+      <string>Set the name of the observation points; just a string attribute is allowed!</string>
      </property>
      <property name="title">
       <string>Observation Point Properties</string>
@@ -83,7 +87,9 @@
    <header>qgsfieldexpressionwidget.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>button_box</sender>

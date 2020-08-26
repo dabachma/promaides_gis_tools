@@ -238,6 +238,7 @@ class DikelineExport(object):
             if interpolate_z:
                 dikeline_file.write('#  based on height raster (DEM) {}  \n'.format(raster_layer.name()))
             dikeline_file.write('# Comments are marked with #\n')
+            dikeline_file.write('# Number of lines in file: {}  \n'.format(feature_count))
             dikeline_file.write('#\n')
             dikeline_file.write('# Explanation of data:\n')
             dikeline_file.write('#  Start the dikeline with !BEGIN and end it with !END per line; in between are: \n')
@@ -248,7 +249,7 @@ class DikelineExport(object):
             dikeline_file.write('# Set per FloodPlain-model between !$BEGINFPMODEL and !$ENDFPMODEL\n')
             dikeline_file.write('#  !DIKELINEFILE = <SET>\n')
             dikeline_file.write('#    $FILENAME="./PATH2FILE/FILE_NAME.txt"\n')
-            dikeline_file.write('#    $NO_POLYLINES = 2 #number of lines in file\n')
+            dikeline_file.write('#    $NO_POLYLINES = 2 #number of lines in file (see above)\n')
             dikeline_file.write('#  </SET>	\n')
             dikeline_file.write('########################################################################\n\n')
             for feature, label in zip(features, labels):
@@ -266,7 +267,8 @@ class DikelineExport(object):
                     dikeline_file.write('Error during dikeline export\n '
                                          'Empty label found! Aborting...\n')
 
-                    self.scheduleAbort()
+                    self.quitDialog()
+                    return
 
                 # erase whitespace before
                 label = label.replace(' ', '_')
@@ -276,7 +278,8 @@ class DikelineExport(object):
                         'Dikeline Export',
                         'Labels must not contain whitespaces! Aborting ...'
                     )
-                    self.scheduleAbort()
+                    self.quitDialog()
+                    return
 
                 if self.cancel:
                     break

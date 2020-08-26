@@ -8,6 +8,26 @@ string_types = (type(b''), type(u''))
 def erase_whitespace(str):
     str = str.replace(" ", "_")
 
+# check for true/false
+def check_true_false(mystr):
+    if mystr.lower() == 'true' or mystr.lower() == 'false':
+        return 1
+    else:
+        return 0
+
+# check for river profile type
+def check_river_prof_type(mystr):
+    if mystr.lower() == 'weir' or mystr.lower() == 'river' or mystr.lower() == 'bridge':
+        return 1
+    else:
+        return 0
+
+# check for river profile connection
+def check_river_prof_connection(mystr):
+    if mystr.lower() == 'standard' or mystr.lower() == 'inflow' or mystr.lower() == 'outflow':
+        return 1
+    else:
+        return 0
 
 def deprecated(reason):
     """

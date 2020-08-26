@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>621</width>
-    <height>714</height>
+    <height>769</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -29,7 +29,11 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Export ProMaIDes DEM</string>
+   <string>2D-Floodplain Export for ProMaIDes HYD-module</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/hyd_icon</normaloff>:/hyd_icon</iconset>
   </property>
   <property name="modal">
    <bool>false</bool>
@@ -52,6 +56,9 @@
            <width>16777215</width>
            <height>16777215</height>
           </size>
+         </property>
+         <property name="toolTip">
+          <string>List with floodplain rasters</string>
          </property>
          <property name="alternatingRowColors">
           <bool>true</bool>
@@ -88,6 +95,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="addButton">
+           <property name="toolTip">
+            <string>Add additional floodplain rasters</string>
+           </property>
            <property name="text">
             <string>Add</string>
            </property>
@@ -108,6 +118,9 @@
       <widget class="QGroupBox" name="groupBox">
        <property name="enabled">
         <bool>true</bool>
+       </property>
+       <property name="toolTip">
+        <string>Important raster settings</string>
        </property>
        <property name="title">
         <string>Raster Settings</string>
@@ -255,6 +268,9 @@
    </item>
    <item>
     <widget class="QgsCollapsibleGroupBox" name="mGroupBox_3">
+     <property name="toolTip">
+      <string>Set here the height raster for interpolation the z-coordinates of the elements</string>
+     </property>
      <property name="title">
       <string>Elevation</string>
      </property>
@@ -329,6 +345,9 @@
    </item>
    <item>
     <widget class="QgsCollapsibleGroupBox" name="mGroupBox">
+     <property name="toolTip">
+      <string>Set here the raster with material-ids representing the roughness of the elements</string>
+     </property>
      <property name="title">
       <string>Roughness</string>
      </property>
@@ -394,6 +413,9 @@
    </item>
    <item>
     <widget class="QgsCollapsibleGroupBox" name="mGroupBox_2">
+     <property name="toolTip">
+      <string>Set here a raster with initial conditions of the elements</string>
+     </property>
      <property name="title">
       <string>Initial Condition</string>
      </property>
@@ -474,6 +496,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <widget class="QLineEdit" name="folderEdit">
+       <property name="toolTip">
+        <string>Set output folder</string>
+       </property>
        <property name="placeholderText">
         <string>&lt;output folder&gt;</string>
        </property>
@@ -498,6 +523,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout_4">
      <item>
       <widget class="QCheckBox" name="ilmBox">
+       <property name="toolTip">
+        <string>A part of the .ilm file is created</string>
+       </property>
        <property name="text">
         <string>Create .ilm file</string>
        </property>
@@ -560,6 +588,8 @@
   <tabstop>ncBox</tabstop>
   <tabstop>angleBox</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -1,0 +1,6 @@
+<RCC>
+  <qresource>
+    <file alias="hyd_icon">../icons/hyd.png</file>
+    <file alias="database_icon">../icons/database.png</file>
+  </qresource>
+</RCC>
