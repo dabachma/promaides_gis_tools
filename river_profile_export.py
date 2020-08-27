@@ -59,8 +59,8 @@ class PluginDialog(QDialog):
         self.overflow_left_poleni_box.setExpression('0.577')
         self.overflow_right_enabled_box.setExpression('True')
         self.overflow_right_poleni_box.setExpression('0.577')
-        self.widget_bridge_body_h.setExpression('1.5')
-        self.widget_local_bridge_h.setExpression('4.0')
+        self.localbridgeheight_box.setExpression('1.5')
+        self.bridgebodyheight_box.setExpression('4.0')
 
         self.groupBox_bridge.setCollapsed(True)
         self.mGroupBox_6.setCollapsed(True)
@@ -193,8 +193,9 @@ class PluginDialog(QDialog):
         self.overflow_left_poleni_box.setLayer(self.input_layer)
         self.overflow_right_enabled_box.setLayer(self.input_layer)
         self.overflow_right_poleni_box.setLayer(self.input_layer)
-        self.widget_local_bridge_h.setLayer(self.input_layer)
-        self.widget_bridge_body_h.setLayer(self.input_layer)
+        self.localbridgeheight_box.setLayer(self.input_layer)
+        self.bridgebodyheight_box.setLayer(self.input_layer)
+
 
         self.updateButtonBox()
 
@@ -375,13 +376,14 @@ class RiverProfileExport(object):
         self.dialog.station_box.setFilters(QgsFieldProxyModel.Double)
         self.dialog.delta_box.setFilters(QgsFieldProxyModel.Double)
         self.dialog.initial_box.setFilters(QgsFieldProxyModel.Double)
-        self.dialog.profileid_box.setFilters(QgsFieldProxyModel.Double)
+        #self.dialog.profileid_box.setFilters(QgsFieldProxyModel.Double)
         self.dialog.point_bc_value_box.setFilters(QgsFieldProxyModel.Double)
         self.dialog.lateral_bc_value_box.setFilters(QgsFieldProxyModel.Double)
         self.dialog.overflow_left_poleni_box.setFilters(QgsFieldProxyModel.Double)
         self.dialog.overflow_right_poleni_box.setFilters(QgsFieldProxyModel.Double)
-        self.dialog.widget_local_bridge_h.setFilters(QgsFieldProxyModel.Double)
-        self.dialog.widget_bridge_body_h.setFilters(QgsFieldProxyModel.Double)
+        self.dialog.localbridgeheight_box.setFilters(QgsFieldProxyModel.Double)
+        self.dialog.bridgebodyheight_box.setFilters(QgsFieldProxyModel.Double)
+
 
         self.dialog.groupBox_bridge.setCollapsed(True)
         self.dialog.mGroupBox_6.setCollapsed(True)
@@ -432,6 +434,24 @@ class RiverProfileExport(object):
             feature_count = input_layer.featureCount()
 
         names, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.name_box.expression(), os)
+        if not ok:
+            self.iface.messageBar().pushCritical(
+                'River Profile Export',
+                'Invalid expression for names!'
+            )
+            self.quitDialog()
+            return
+        
+        localbridgeheights, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.localbridgeheight_box.expression(), os)
+        if not ok:
+            self.iface.messageBar().pushCritical(
+                'River Profile Export',
+                'Invalid expression for names!'
+            )
+            self.quitDialog()
+            return
+        
+        bridgebodyheights, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.bridgebodyheight_box.expression(), os)
         if not ok:
             self.iface.messageBar().pushCritical(
                 'River Profile Export',
@@ -620,23 +640,6 @@ class RiverProfileExport(object):
             )
             self.quitDialog()
             return
-        # read bridge value from layer
-        bridge_local_hs, ok = QgsVectorLayerUtils.getValues(input_layer, self.widget_local_bridge_h.expression(), os)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'River Profile Export',
-                'Invalid expression for local bridge height!'
-            )
-            self.quitDialog()
-            return
-        bridge_body_body_hs, ok = QgsVectorLayerUtils.getValues(input_layer, self.widget_bridge_body_h.expression(), os)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'River Profile Export',
-                'Invalid expression for local bridge body height!'
-            )
-            self.quitDialog()
-            return
 
 
         
@@ -821,9 +824,9 @@ class RiverProfileExport(object):
             # no check required
             poleni_right = float(poleni_right_values[i])
 
-            # bridge value no check required; this are the individual values (TODO SHAHIN could you connect it to the output?)
-            bridge_body_h = float(bridge_body_hs[i])
-            bridge_local_h = float(bridge_local_hs[i])
+            # bridge value no check required; this are the individual values
+            bridgebodyheight = float(bridgebodyheights[i])
+            localbridgeheight = float(localbridgeheights[i])
 
             # label is None or empty
             if not name:
@@ -853,7 +856,6 @@ class RiverProfileExport(object):
                 break
 
             # collect point data
-            #print(line)
             first = line[0]
             last = line[-1]
 
@@ -964,24 +966,29 @@ class RiverProfileExport(object):
             block += 'AUXDATA BoundaryLateralCondition="{}"\n'.format(str(lat_bc).lower())
             block += 'AUXDATA BoundaryLateralStationary="{}"\n'.format(str(lat_bc_stat).lower())
             block += 'AUXDATA BoundaryLateralValue="{}"\n'.format(lat_bc_v)
-            if addfullriver:
+            if addfullriver or profile_types[i].lower()=="bridge":
                 sortstations=np.sort(stations)
-                if stations[i]==min(stations) or stations[i]==sortstations[1]:
+                if stations[i]==min(stations) or stations[i]==sortstations[1] or profile_types[i].lower()=="bridge":
                     block += 'AUXDATA OverflowCouplingLeft="false"\n'
                 else:
                     block += 'AUXDATA OverflowCouplingLeft="{}"\n'.format(str(overflow_left).lower())
             else:
                 block += 'AUXDATA OverflowCouplingLeft="{}"\n'.format(str(overflow_left).lower())
             block += 'AUXDATA PoleniFacLeft="{}"\n'.format(poleni_left)
-            if addfullriver:
+            if addfullriver or profile_types[i].lower()=="bridge":
                 sortstations = np.sort(stations)
-                if stations[i]==min(stations) or stations[i]==sortstations[1]:
+                if stations[i]==min(stations) or stations[i]==sortstations[1] or profile_types[i].lower()=="bridge":
                     block += 'AUXDATA OverflowCouplingRight="false"\n'
                 else:
                     block += 'AUXDATA OverflowCouplingRight="{}"\n'.format(str(overflow_right).lower())
             else:
-                block += 'AUXDATA OverflowCouplingRight="{}"\n'.format(str(overflow_right).lower())
-            block += 'AUXDATA PoleniFacRight="{}"\n\n'.format(poleni_right)
+                block += 'AUXDATA OverflowCouplingRight="{}"\n'.format(str(overflow_right).lower())  
+            if profile_types[i].lower()=="bridge":
+                block += 'AUXDATA PoleniFacRight="{}"\n'.format(poleni_right)
+                block += 'AUXDATA BridgeBodySize="{}"\n'.format(bridgebodyheight)
+                block += 'AUXDATA LocalBridgeHeight="{}"\n\n'.format(localbridgeheight)
+            else:
+                block += 'AUXDATA PoleniFacRight="{}"\n\n'.format(poleni_right)
 
             # write profile points
             for xj, yj, zj, matj, distj, identj in zip(x, y, z, mat, dist, ident):
