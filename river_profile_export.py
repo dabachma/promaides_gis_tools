@@ -373,16 +373,16 @@ class RiverProfileExport(object):
         self.dialog.overflow_left_enabled_box.setFilters(QgsFieldProxyModel.String)
 
 
-        self.dialog.station_box.setFilters(QgsFieldProxyModel.Double)
-        self.dialog.delta_box.setFilters(QgsFieldProxyModel.Double)
-        self.dialog.initial_box.setFilters(QgsFieldProxyModel.Double)
-        #self.dialog.profileid_box.setFilters(QgsFieldProxyModel.Double)
-        self.dialog.point_bc_value_box.setFilters(QgsFieldProxyModel.Double)
-        self.dialog.lateral_bc_value_box.setFilters(QgsFieldProxyModel.Double)
-        self.dialog.overflow_left_poleni_box.setFilters(QgsFieldProxyModel.Double)
-        self.dialog.overflow_right_poleni_box.setFilters(QgsFieldProxyModel.Double)
-        self.dialog.localbridgeheight_box.setFilters(QgsFieldProxyModel.Double)
-        self.dialog.bridgebodyheight_box.setFilters(QgsFieldProxyModel.Double)
+        self.dialog.station_box.setFilters(QgsFieldProxyModel.Numeric)
+        self.dialog.delta_box.setFilters(QgsFieldProxyModel.Numeric)
+        self.dialog.initial_box.setFilters(QgsFieldProxyModel.Numeric)
+        self.dialog.profileid_box.setFilters(QgsFieldProxyModel.Numeric)
+        self.dialog.point_bc_value_box.setFilters(QgsFieldProxyModel.Numeric)
+        self.dialog.lateral_bc_value_box.setFilters(QgsFieldProxyModel.Numeric)
+        self.dialog.overflow_left_poleni_box.setFilters(QgsFieldProxyModel.Numeric)
+        self.dialog.overflow_right_poleni_box.setFilters(QgsFieldProxyModel.Numeric)
+        self.dialog.localbridgeheight_box.setFilters(QgsFieldProxyModel.Numeric)
+        self.dialog.bridgebodyheight_box.setFilters(QgsFieldProxyModel.Numeric)
 
 
         self.dialog.groupBox_bridge.setCollapsed(True)
