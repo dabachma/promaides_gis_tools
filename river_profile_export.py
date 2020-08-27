@@ -441,24 +441,6 @@ class RiverProfileExport(object):
             )
             self.quitDialog()
             return
-        
-        localbridgeheights, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.localbridgeheight_box.expression(), os)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'River Profile Export',
-                'Invalid expression for names!'
-            )
-            self.quitDialog()
-            return
-        
-        bridgebodyheights, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.bridgebodyheight_box.expression(), os)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'River Profile Export',
-                'Invalid expression for names!'
-            )
-            self.quitDialog()
-            return
 
         stations, ok = QgsVectorLayerUtils.getValues(input_layer, self.dialog.station_box.expression(), os)
         if not autostation:
@@ -641,8 +623,26 @@ class RiverProfileExport(object):
             self.quitDialog()
             return
 
+        localbridgeheights, ok = QgsVectorLayerUtils.getValues(input_layer,
+                                                               self.dialog.localbridgeheight_box.expression(), os)
+        if not ok:
+            self.iface.messageBar().pushCritical(
+                'River Profile Export',
+                'Invalid expression for names!'
+            )
+            self.quitDialog()
+            return
 
-        
+        bridgebodyheights, ok = QgsVectorLayerUtils.getValues(input_layer,
+                                                              self.dialog.bridgebodyheight_box.expression(), os)
+        if not ok:
+            self.iface.messageBar().pushCritical(
+                'River Profile Export',
+                'Invalid expression for names!'
+            )
+            self.quitDialog()
+            return
+
 
         dem_layer = self.dialog.raster_layer
         dem_band = self.dialog.raster_band_box.value()
