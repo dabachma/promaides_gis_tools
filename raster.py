@@ -119,7 +119,6 @@ class RasterWriter(object):
         self.prm.write('#   \t$NOINFOVALUE = %f\n' % self.nodata['elev'])
         self.prm.write('#   \t$ANGLE       = %f\n' % -angle)  # positive rotation is defined opposite in ProMaIDEs
         self.prm.write('#    </SET>\n')
-        self.prm.write('#    !2DOUTPUT = "./PATH/PREFIX_"  #2d-output by calculation with file\n')
         self.prm.write('#    !FLOODPLAINFILE = "./PATH2FILE/FILE_NAME.txt"\n')
         self.prm.write('#    !LIMITS = <SET>	\n')
         self.prm.write('#       $RTOL = 1e-9 '

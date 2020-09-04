@@ -496,7 +496,7 @@ class DEMExport(object):
                 ilm.write('  $ANGLE       = %f\n' % angle)
                 ilm.write('</SET> \n')
 
-                ilm.write('!2DOUTPUT = "./results"\n')
+
                 ilm.write('!FLOODPLAINFILE = "%s"\n' % filename)
 
                 ilm.write('!LIMITS = <SET>  # numerical limits for 2D simulation\n')
