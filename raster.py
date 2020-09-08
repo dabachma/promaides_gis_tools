@@ -23,13 +23,14 @@ from datetime import datetime
 
 class RasterWriter(object):
 
-    def __init__(self, xll, yll, dc, dr, nc, nr, angle=0.0, nodata=None):
+    def __init__(self, xll, yll, dc, dr, nc, nr,boundarytype, angle=0.0, nodata=None):
         self.xll = xll
         self.yll = yll
         self.dc = dc
         self.dr = dr
         self.nc = nc
         self.nr = nr
+        self.boundarytype = boundarytype
         self.angle = angle
         self.cosa = math.cos(angle)
         self.sina = math.sin(angle)
@@ -89,6 +90,8 @@ class RasterWriter(object):
             self.prm.write('#  based on roughness raster {}  \n'.format(input_layers['roughn']['layer'].name()))
         if input_layers['init']['layer'] != None:
             self.prm.write('#  based on initial condition raster {}  \n'.format(input_layers['init']['layer'].name()))
+        if input_layers['BCdata']['layer'] != None:
+            self.prm.write('#  based on boundary condition raster {}  \n'.format(input_layers['BCdata']['layer'].name()))
 
         self.prm.write('# Comments are marked with #\n')
         self.prm.write('#\n')
@@ -142,11 +145,18 @@ class RasterWriter(object):
         data['bc'] = str(data['bc']).lower()
         bc_stat = data['bc_stat']
         data['bc_stat'] = str(bc_stat).lower()
-        data['bc_val'] = float(data['bc_val']) if bc_stat else int(data['bc_val'])
+        data['BCdata'] = float(data['BCdata'])
         data['roughn'] = int(data['roughn'])
 
-        self.prm.write('{i:d}\t{elev:f}\t{roughn:d}\t{init:f}\t{bc}\t{bc_stat}\t{bc_val}\n'
-                       .format(i=self.index, **data))
+        if data['BCdata']:
+            boundaryenabled = "true"
+            boundarystationary = "true"
+        else:
+            boundaryenabled= "false"
+            boundarystationary = "true"
+
+        self.prm.write('{i:d}\t{elev:f}\t{roughn:d}\t{init:f}\t{bcstatus}\t{bcstatus2}\t{BCdata}\t{j}\n'
+                       .format(i=self.index,j=self.boundarytype, bcstatus=boundaryenabled, bcstatus2=boundarystationary, **data))
 
         self.index += 1
 
@@ -163,8 +173,8 @@ class RasterWriter(object):
 @deprecated('Use RasterWriter instead!')
 class Raster(object):
 
-    DATA_NAMES = {'elev', 'roughn', 'init', 'bc', 'bc_stat', 'bc_val'}
-    NODATA_VALUES = dict(elev=-9999.0, roughn=1, init=0.0, bc=False, bc_stat=True, bc_val=0)
+    DATA_NAMES = {'elev', 'roughn', 'init', 'bc', 'bc_stat', 'BCdata'}
+    NODATA_VALUES = dict(elev=-9999.0, roughn=1, init=0.0, bc=False , bc_stat=True, bc_val=0)
 
     def __init__(self, xll, yll, dc, dr, nc, nr, angle=0.0, nodata=None):
 
@@ -180,7 +190,7 @@ class Raster(object):
 
         self.data = np.zeros(
             (nr, nc),
-            dtype=[('elev', 'f4'), ('roughn', 'i4'), ('init', 'f4'), ('bc', bool), ('bc_stat', bool), ('bc_val', 'f4')]
+            dtype=[('elev', 'f4'), ('roughn', 'i4'), ('init', 'f4'), ('bc', bool), ('bc_stat', bool), ('BCdata', 'f4')]
         )
 
         self.nodata = Raster.NODATA_VALUES.copy()
@@ -301,11 +311,21 @@ class Raster(object):
         prm.write('!BEGIN\n')
         for i in range(self.num_cells()):
             values = dict(list(zip(Raster.DATA_NAMES, self.cell_values(i, Raster.DATA_NAMES))))
+
+            if data['BCdata']:
+                boundaryenabled = "true"
+                boundarystationary = "true"
+            else:
+                boundaryenabled = "false"
+                boundarystationary = "true"
+
             values['bc'] = str(values['bc']).lower()
             bc_stat = values['bc_stat']
             values['bc_stat'] = str(bc_stat).lower()
-            values['bc_val'] = float(values['bc_val']) if bc_stat else int(values['bc_val'])
-            prm.write('{idx:d}\t{elev:f}\t{roughn:d}\t{init:f}\t{bc}\t{bc_stat}\t{bc_val}\n'.format(idx=i, **values))
+            data['BCdata'] = float(data['BCdata'])
+            prm.write('{i:d}\t{elev:f}\t{roughn:d}\t{init:f}\t{bcstatus}\t{bcstatus2}\t{BCdata}\t{j}\n'
+                           .format(i=self.index, j=self.boundarytype, bcstatus=boundaryenabled,
+                                   bcstatus2=boundarystationary, **data))
         prm.write('!END\n')
         prm.close()
 

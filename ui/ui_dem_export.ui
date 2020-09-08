@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>621</width>
-    <height>833</height>
+    <width>740</width>
+    <height>1024</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -38,11 +38,8 @@
   <property name="modal">
    <bool>false</bool>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
-   <property name="sizeConstraint">
-    <enum>QLayout::SetFixedSize</enum>
-   </property>
-   <item>
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -128,65 +125,18 @@
        <property name="flat">
         <bool>false</bool>
        </property>
-       <layout class="QGridLayout" name="gridLayout">
-        <item row="5" column="1">
-         <widget class="QLabel" name="label_5">
+       <layout class="QFormLayout" name="formLayout_5">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>Number of Columns</string>
+           <string>Lower Left X</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="1">
-         <widget class="QSpinBox" name="ncBox">
-          <property name="maximum">
-           <number>999999999</number>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QDoubleSpinBox" name="yllBox">
-          <property name="decimals">
-           <number>5</number>
-          </property>
-          <property name="minimum">
-           <double>-999999999.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>999999999.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_6">
+        <item row="0" column="1">
+         <widget class="QLabel" name="label_3">
           <property name="text">
-           <string>Row Size [m]</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="0">
-         <widget class="QSpinBox" name="nrBox">
-          <property name="maximum">
-           <number>999999999</number>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0" colspan="2">
-         <widget class="QPushButton" name="pickButton">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="text">
-           <string>Pick Coordinates from Map ...</string>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>Number of Rows</string>
+           <string>Lower Left Y</string>
           </property>
          </widget>
         </item>
@@ -203,30 +153,36 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="1">
-         <widget class="QDoubleSpinBox" name="dcBox">
+        <item row="1" column="1">
+         <widget class="QDoubleSpinBox" name="yllBox">
+          <property name="decimals">
+           <number>5</number>
+          </property>
+          <property name="minimum">
+           <double>-999999999.000000000000000</double>
+          </property>
           <property name="maximum">
            <double>999999999.000000000000000</double>
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_2">
+        <item row="2" column="0" colspan="2">
+         <widget class="QPushButton" name="pickButton">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="text">
-           <string>Lower Left X</string>
+           <string>Pick Coordinates from Map ...</string>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
-        <item row="7" column="1">
-         <widget class="QDoubleSpinBox" name="angleBox">
-          <property name="decimals">
-           <number>5</number>
-          </property>
-          <property name="minimum">
-           <double>-360.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>360.000000000000000</double>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Row Size [m]</string>
           </property>
          </widget>
         </item>
@@ -244,10 +200,38 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="label_3">
+        <item row="4" column="1">
+         <widget class="QDoubleSpinBox" name="dcBox">
+          <property name="maximum">
+           <double>999999999.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="label_4">
           <property name="text">
-           <string>Lower Left Y</string>
+           <string>Number of Rows</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Number of Columns</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QSpinBox" name="nrBox">
+          <property name="maximum">
+           <number>999999999</number>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QSpinBox" name="ncBox">
+          <property name="maximum">
+           <number>999999999</number>
           </property>
          </widget>
         </item>
@@ -261,12 +245,25 @@
           </property>
          </widget>
         </item>
+        <item row="7" column="1">
+         <widget class="QDoubleSpinBox" name="angleBox">
+          <property name="decimals">
+           <number>5</number>
+          </property>
+          <property name="minimum">
+           <double>-360.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>360.000000000000000</double>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </item>
     </layout>
    </item>
-   <item>
+   <item row="1" column="0">
     <widget class="QgsCollapsibleGroupBox" name="mGroupBox_3">
      <property name="toolTip">
       <string>Set here the height raster for interpolation the z-coordinates of the elements</string>
@@ -343,7 +340,7 @@
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="2" column="0">
     <widget class="QgsCollapsibleGroupBox" name="mGroupBox">
      <property name="toolTip">
       <string>Set here the raster with material-ids representing the roughness of the elements</string>
@@ -411,7 +408,7 @@
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="3" column="0">
     <widget class="QgsCollapsibleGroupBox" name="mGroupBox_2">
      <property name="toolTip">
       <string>Set here a raster with initial conditions of the elements</string>
@@ -492,7 +489,88 @@
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="4" column="0">
+    <widget class="QgsCollapsibleGroupBox" name="mGroupBox_4">
+     <property name="toolTip">
+      <string>Set here the raster with material-ids representing the roughness of the elements</string>
+     </property>
+     <property name="title">
+      <string>Boundary Condition</string>
+     </property>
+     <property name="collapsed" stdset="0">
+      <bool>true</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_11">
+        <property name="minimumSize">
+         <size>
+          <width>140</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>No Data Value</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QDoubleSpinBox" name="BCNaNBox">
+        <property name="suffix">
+         <string/>
+        </property>
+        <property name="decimals">
+         <number>2</number>
+        </property>
+        <property name="maximum">
+         <double>999.990000000000009</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="label_12">
+        <property name="minimumSize">
+         <size>
+          <width>140</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Boundary Type</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="QComboBox" name="bct_box"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_21">
+        <property name="text">
+         <string>Layer</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_22">
+        <property name="text">
+         <string>Band</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1" colspan="3">
+       <widget class="QgsMapLayerComboBox" name="BCLayerBox"/>
+      </item>
+      <item row="4" column="1" colspan="3">
+       <widget class="QSpinBox" name="BCBandBox">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="5" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <widget class="QLineEdit" name="folderEdit">
@@ -519,7 +597,7 @@
      </item>
     </layout>
    </item>
-   <item>
+   <item row="6" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_4">
      <item>
       <widget class="QCheckBox" name="ilmBox">

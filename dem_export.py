@@ -48,10 +48,13 @@ class PluginDialog(QDialog):
         self.demLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.roughnessLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.initLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
+        self.BCLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
 
         self.interpolationBox.addItem('nearest neighbor')
         self.interpolationBox.addItem('bi-linear')
         self.interpolationBox.addItem('bi-cubic')
+        self.bct_box.addItem('point')
+        self.bct_box.addItem('area')
 
         self.picker = QgsMapToolEmitPoint(self.iface.mapCanvas())
 
@@ -63,6 +66,7 @@ class PluginDialog(QDialog):
         self.demLayerBox.layerChanged.connect(self.updateDEMBandBox)
         self.roughnessLayerBox.layerChanged.connect(self.updateRoughnessBandBox)
         self.initLayerBox.layerChanged.connect(self.updateInitBandBox)
+        self.BCLayerBox.layerChanged.connect(self.updateBCBandBox)
         self.pickButton.clicked.connect(self.enableMapPicker)
         self.pickButton.setAutoDefault(False)
         self.zoomButton.clicked.connect(self.zoomToRaster)
@@ -88,6 +92,7 @@ class PluginDialog(QDialog):
         self.groupBox.setEnabled(False)
         self.roughnessLayerBox.setLayer(None)
         self.initLayerBox.setLayer(None)
+        self.BCLayerBox.setLayer(None)
         self.demLayerBox.setLayer(self.demLayerBox.currentLayer())
 
     def createIlmFile(self):
@@ -156,6 +161,15 @@ class PluginDialog(QDialog):
     def initNaN(self):
         return self.initNaNBox.value()
 
+    def BCLayer(self):
+        return self.BCLayerBox.currentLayer()
+
+    def BCBand(self):
+        return self.BCBandBox.value()
+
+    def BCNaN(self):
+        return self.BCNaNBox.value()
+
     def rasters(self):
 
         result = []
@@ -173,10 +187,13 @@ class PluginDialog(QDialog):
             nodata = {
                 'elev': self.demNaNBox.value(),
                 'roughn': self.roughnessNaNBox.value(),
-                'init': self.initNaNBox.value()
+                'init': self.initNaNBox.value(),
+                'BCdata': self.BCNaNBox.value()
             }
 
-            raster = RasterWriter(xll, yll, dc, dr, nc, nr, angle / 180.0 * math.pi, nodata)
+            boundarytype = self.bct_box.currentText()
+
+            raster = RasterWriter(xll, yll, dc, dr, nc, nr,boundarytype, angle / 180.0 * math.pi, nodata)
             filename = os.path.join(self.folderEdit.text(), item.text() + '.txt')
             result.append((raster, filename))
 
@@ -221,6 +238,16 @@ class PluginDialog(QDialog):
         self.initBandBox.setEnabled(True)
         self.initBandBox.setMaximum(layer.bandCount())
         self.initBandBox.setValue(1)
+
+    def updateBCBandBox(self, layer):
+        if not layer:
+            self.BCBandBox.setEnabled(False)
+            return
+
+        self.BCBandBox.setEnabled(True)
+        self.BCBandBox.setMaximum(layer.bandCount())
+        self.BCBandBox.setValue(1)
+
 
     def addNewRasterItem(self):
         num = self.listWidget.count() + 1
@@ -390,6 +417,12 @@ class DEMExport(object):
                 'band': self.dialog.initBand(),
                 'interpol_mode': 'nearest neighbor',
                 'nan': self.dialog.initNaN()
+            },
+            'BCdata': {
+                'layer': self.dialog.BCLayer(),
+                'band': self.dialog.BCBand(),
+                'interpol_mode': 'nearest neighbor',
+                'nan': self.dialog.BCNaN()
             }
         }
 
@@ -452,23 +485,26 @@ class DEMExport(object):
         out_raster.close()
 
     def addRasterBounds(self, id, polygon):
-        dp = self.previewLayer.dataProvider()
-        newPoly = QgsFeature(id)
-        newPoly.setGeometry(polygon)
-        dp.addFeatures([newPoly])
+        if type(self.previewLayer) != type(None):
+            dp = self.previewLayer.dataProvider()
+            newPoly = QgsFeature(id)
+            newPoly.setGeometry(polygon)
+            dp.addFeatures([newPoly])
 
         self.previewLayer.updateExtents()
         self.previewLayer.triggerRepaint()
 
     def updateRasterBounds(self, id, polygon):
-        self.previewLayer.dataProvider().changeGeometryValues({id: polygon})
-        self.previewLayer.updateExtents()
-        self.previewLayer.triggerRepaint()
+        if type(self.previewLayer) != type(None):
+            self.previewLayer.dataProvider().changeGeometryValues({id: polygon})
+            self.previewLayer.updateExtents()
+            self.previewLayer.triggerRepaint()
 
     def removeRasterBounds(self, id):
-        self.previewLayer.dataProvider().deleteFeatures([id])
-        self.previewLayer.updateExtents()
-        self.previewLayer.triggerRepaint()
+        if type(self.previewLayer) != type(None):
+            self.previewLayer.dataProvider().deleteFeatures([id])
+            self.previewLayer.updateExtents()
+            self.previewLayer.triggerRepaint()
 
     def writeIlmFile(self, filename, rasters, nan):
         ilm_tmpl_file = open(self.ILM_TMPL_FILE, 'r')
