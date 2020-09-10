@@ -23,14 +23,13 @@ from datetime import datetime
 
 class RasterWriter(object):
 
-    def __init__(self, xll, yll, dc, dr, nc, nr,boundarytype, angle=0.0, nodata=None):
+    def __init__(self, xll, yll, dc, dr, nc, nr, angle=0.0, nodata=None):
         self.xll = xll
         self.yll = yll
         self.dc = dc
         self.dr = dr
         self.nc = nc
         self.nr = nr
-        self.boundarytype = boundarytype
         self.angle = angle
         self.cosa = math.cos(angle)
         self.sina = math.sin(angle)
@@ -90,8 +89,7 @@ class RasterWriter(object):
             self.prm.write('#  based on roughness raster {}  \n'.format(input_layers['roughn']['layer'].name()))
         if input_layers['init']['layer'] != None:
             self.prm.write('#  based on initial condition raster {}  \n'.format(input_layers['init']['layer'].name()))
-        if input_layers['BCdata']['layer'] != None:
-            self.prm.write('#  based on boundary condition raster {}  \n'.format(input_layers['BCdata']['layer'].name()))
+
 
         self.prm.write('# Comments are marked with #\n')
         self.prm.write('#\n')
@@ -136,7 +134,7 @@ class RasterWriter(object):
         self.prm.write('\n')
         self.prm.write('!BEGIN\n')
 
-    def write_cell(self, data):
+    def write_cell(self, data, cellproperties):
         # fill empty slots with NaN values
         for key, value in list(self.nodata.items()):
             if key not in data:
@@ -145,18 +143,15 @@ class RasterWriter(object):
         data['bc'] = str(data['bc']).lower()
         bc_stat = data['bc_stat']
         data['bc_stat'] = str(bc_stat).lower()
-        data['BCdata'] = float(data['BCdata'])
         data['roughn'] = int(data['roughn'])
 
-        if data['BCdata']:
-            boundaryenabled = "true"
-            boundarystationary = "true"
-        else:
-            boundaryenabled= "false"
-            boundarystationary = "true"
+        boundaryenabled = cellproperties[0]
+        boundarystationary = cellproperties[1]
+        boundaryvalue = cellproperties[2]
+        boundarytype = cellproperties[3]
 
-        self.prm.write('{i:d}\t{elev:f}\t{roughn:d}\t{init:f}\t{bcstatus}\t{bcstatus2}\t{BCdata}\t{j}\n'
-                       .format(i=self.index,j=self.boundarytype, bcstatus=boundaryenabled, bcstatus2=boundarystationary, **data))
+        self.prm.write('{i:d}\t{elev:f}\t{roughn:d}\t{init:f}\t{bcstatus}\t{bcstatus2}\t{BCdata}\t{bcstatus3}\n'
+                       .format(i=self.index, bcstatus=boundaryenabled, bcstatus2=boundarystationary,BCdata=boundaryvalue,bcstatus3=boundarytype, **data))
 
         self.index += 1
 
@@ -312,20 +307,19 @@ class Raster(object):
         for i in range(self.num_cells()):
             values = dict(list(zip(Raster.DATA_NAMES, self.cell_values(i, Raster.DATA_NAMES))))
 
-            if data['BCdata']:
-                boundaryenabled = "true"
-                boundarystationary = "true"
-            else:
-                boundaryenabled = "false"
-                boundarystationary = "true"
-
             values['bc'] = str(values['bc']).lower()
             bc_stat = values['bc_stat']
             values['bc_stat'] = str(bc_stat).lower()
             data['BCdata'] = float(data['BCdata'])
-            prm.write('{i:d}\t{elev:f}\t{roughn:d}\t{init:f}\t{bcstatus}\t{bcstatus2}\t{BCdata}\t{j}\n'
-                           .format(i=self.index, j=self.boundarytype, bcstatus=boundaryenabled,
-                                   bcstatus2=boundarystationary, **data))
+            
+            boundaryenabled = cellproperties[0]
+            boundarystationary = cellproperties[1]
+            boundaryvalue = cellproperties[2]
+            boundarytype = cellproperties[3]
+
+            self.prm.write('{i:d}\t{elev:f}\t{roughn:d}\t{init:f}\t{bcstatus}\t{bcstatus2}\t{BCdata}\t{bcstatus3}\n'
+                           .format(i=self.index, bcstatus=boundaryenabled, bcstatus2=boundarystationary,
+                                   BCdata=boundaryvalue, bcstatus3=boundarytype, **data))
         prm.write('!END\n')
         prm.close()
 

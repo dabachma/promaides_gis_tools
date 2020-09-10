@@ -469,16 +469,6 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0" colspan="2">
-       <widget class="QCheckBox" name="initAbsoluteBox">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Absolute Values (relative values will be computed based on DEM elevation)</string>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="1">
        <widget class="QSpinBox" name="initBandBox">
         <property name="minimum">
@@ -486,84 +476,13 @@
         </property>
        </widget>
       </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QgsCollapsibleGroupBox" name="mGroupBox_4">
-     <property name="toolTip">
-      <string>Set here the raster with material-ids representing the roughness of the elements</string>
-     </property>
-     <property name="title">
-      <string>Boundary Condition</string>
-     </property>
-     <property name="collapsed" stdset="0">
-      <bool>true</bool>
-     </property>
-     <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_11">
-        <property name="minimumSize">
-         <size>
-          <width>140</width>
-          <height>0</height>
-         </size>
+      <item row="3" column="0" colspan="2">
+       <widget class="QCheckBox" name="initAbsoluteBox">
+        <property name="enabled">
+         <bool>false</bool>
         </property>
         <property name="text">
-         <string>No Data Value</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QDoubleSpinBox" name="BCNaNBox">
-        <property name="suffix">
-         <string/>
-        </property>
-        <property name="decimals">
-         <number>2</number>
-        </property>
-        <property name="maximum">
-         <double>999.990000000000009</double>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLabel" name="label_12">
-        <property name="minimumSize">
-         <size>
-          <width>140</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Boundary Type</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="3">
-       <widget class="QComboBox" name="bct_box"/>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_21">
-        <property name="text">
-         <string>Layer</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label_22">
-        <property name="text">
-         <string>Band</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1" colspan="3">
-       <widget class="QgsMapLayerComboBox" name="BCLayerBox"/>
-      </item>
-      <item row="4" column="1" colspan="3">
-       <widget class="QSpinBox" name="BCBandBox">
-        <property name="minimum">
-         <number>1</number>
+         <string>Absolute Values (relative values will be computed based on DEM elevation)</string>
         </property>
        </widget>
       </item>
@@ -638,6 +557,79 @@
      </item>
     </layout>
    </item>
+   <item row="4" column="0">
+    <widget class="QgsCollapsibleGroupBox" name="mGroupBox_4">
+     <property name="toolTip">
+      <string>Set here the raster with material-ids representing the roughness of the elements</string>
+     </property>
+     <property name="title">
+      <string>Boundary Condition</string>
+     </property>
+     <property name="collapsed" stdset="0">
+      <bool>true</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_21">
+        <property name="text">
+         <string>Layer</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QgsMapLayerComboBox" name="BCLayerBox"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_12">
+        <property name="minimumSize">
+         <size>
+          <width>140</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Stationary boundary condition</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QgsFieldExpressionWidget" name="stationarytype_box" native="true"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_23">
+        <property name="minimumSize">
+         <size>
+          <width>140</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Boundary condition value</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QgsFieldExpressionWidget" name="boundaryvalue_box" native="true"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_24">
+        <property name="minimumSize">
+         <size>
+          <width>140</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Boundary type</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QgsFieldExpressionWidget" name="boundarytype_box" native="true"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -651,6 +643,11 @@
    <class>QgsMapLayerComboBox</class>
    <extends>QComboBox</extends>
    <header>qgsmaplayercombobox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QgsFieldExpressionWidget</class>
+   <extends>QWidget</extends>
+   <header>qgsfieldexpressionwidget.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

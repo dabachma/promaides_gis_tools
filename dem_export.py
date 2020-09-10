@@ -48,13 +48,11 @@ class PluginDialog(QDialog):
         self.demLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.roughnessLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.initLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
-        self.BCLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
+        self.BCLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
 
         self.interpolationBox.addItem('nearest neighbor')
         self.interpolationBox.addItem('bi-linear')
         self.interpolationBox.addItem('bi-cubic')
-        self.bct_box.addItem('point')
-        self.bct_box.addItem('area')
 
         self.picker = QgsMapToolEmitPoint(self.iface.mapCanvas())
 
@@ -64,9 +62,9 @@ class PluginDialog(QDialog):
         self.removeButton.setAutoDefault(False)
         self.listWidget.currentRowChanged.connect(self.updateRasterPropertiesGroup)
         self.demLayerBox.layerChanged.connect(self.updateDEMBandBox)
+        self.BCLayerBox.layerChanged.connect(self.updatePolygonTabs)
         self.roughnessLayerBox.layerChanged.connect(self.updateRoughnessBandBox)
         self.initLayerBox.layerChanged.connect(self.updateInitBandBox)
-        self.BCLayerBox.layerChanged.connect(self.updateBCBandBox)
         self.pickButton.clicked.connect(self.enableMapPicker)
         self.pickButton.setAutoDefault(False)
         self.zoomButton.clicked.connect(self.zoomToRaster)
@@ -161,14 +159,6 @@ class PluginDialog(QDialog):
     def initNaN(self):
         return self.initNaNBox.value()
 
-    def BCLayer(self):
-        return self.BCLayerBox.currentLayer()
-
-    def BCBand(self):
-        return self.BCBandBox.value()
-
-    def BCNaN(self):
-        return self.BCNaNBox.value()
 
     def rasters(self):
 
@@ -187,13 +177,10 @@ class PluginDialog(QDialog):
             nodata = {
                 'elev': self.demNaNBox.value(),
                 'roughn': self.roughnessNaNBox.value(),
-                'init': self.initNaNBox.value(),
-                'BCdata': self.BCNaNBox.value()
+                'init': self.initNaNBox.value()
             }
 
-            boundarytype = self.bct_box.currentText()
-
-            raster = RasterWriter(xll, yll, dc, dr, nc, nr,boundarytype, angle / 180.0 * math.pi, nodata)
+            raster = RasterWriter(xll, yll, dc, dr, nc, nr, angle / 180.0 * math.pi, nodata)
             filename = os.path.join(self.folderEdit.text(), item.text() + '.txt')
             result.append((raster, filename))
 
@@ -239,14 +226,10 @@ class PluginDialog(QDialog):
         self.initBandBox.setMaximum(layer.bandCount())
         self.initBandBox.setValue(1)
 
-    def updateBCBandBox(self, layer):
-        if not layer:
-            self.BCBandBox.setEnabled(False)
-            return
-
-        self.BCBandBox.setEnabled(True)
-        self.BCBandBox.setMaximum(layer.bandCount())
-        self.BCBandBox.setValue(1)
+    def updatePolygonTabs(self, layer):
+        self.stationarytype_box.setLayer(self.BCLayerBox.currentLayer())
+        self.boundaryvalue_box.setLayer(self.BCLayerBox.currentLayer())
+        self.boundarytype_box.setLayer(self.BCLayerBox.currentLayer())
 
 
     def addNewRasterItem(self):
@@ -371,6 +354,11 @@ class DEMExport(object):
         self.dialog.rasterRemoved.connect(self.removeRasterBounds)
         self.dialog.setModal(False)
 
+        #filters for boundary fields
+        self.dialog.stationarytype_box.setFilters(QgsFieldProxyModel.String)
+        self.dialog.boundaryvalue_box.setFilters(QgsFieldProxyModel.Numeric)
+        self.dialog.boundarytype_box.setFilters(QgsFieldProxyModel.String)
+
         self.previewLayer = QgsVectorLayer('Polygon', 'ProMaIDes DEM Raster', 'memory')
         # set layer properties
         my_symbol = QgsFillSymbol.createSimple({'color': 'black', 'outline_color': 'red', 'outline_width': '0.8',
@@ -378,8 +366,6 @@ class DEMExport(object):
 
         self.previewLayer.renderer().setSymbol(my_symbol)
         QgsProject.instance().addMapLayer(self.previewLayer)
-
-
 
         self.act.setEnabled(False)
         self.dialog.show()
@@ -417,12 +403,6 @@ class DEMExport(object):
                 'band': self.dialog.initBand(),
                 'interpol_mode': 'nearest neighbor',
                 'nan': self.dialog.initNaN()
-            },
-            'BCdata': {
-                'layer': self.dialog.BCLayer(),
-                'band': self.dialog.BCBand(),
-                'interpol_mode': 'nearest neighbor',
-                'nan': self.dialog.BCNaN()
             }
         }
 
@@ -475,11 +455,64 @@ class DEMExport(object):
             interpol[data_name] = RasterInterpolator(items['layer'], items['band'], items['interpol_mode'], items['nan']).interpolate
 
         out_raster.open(filename, input_layers)
+
+        ########################################################################
+        #reading polygon data
+        polygonlayer = self.dialog.BCLayerBox.currentLayer()
+        if polygonlayer:
+            boundarystationary, ok = QgsVectorLayerUtils.getValues(polygonlayer,
+                                                                   self.dialog.stationarytype_box.expression(),
+                                                                   False)
+            if not ok:
+                self.iface.messageBar().pushCritical(
+                    '2D-Floodplain Export',
+                    'Invalid expression for stationary boundary condition !'
+                )
+                return
+
+            boundaryvalue, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundaryvalue_box.expression(),
+                                                              False)
+            if not ok:
+                self.iface.messageBar().pushCritical(
+                    '2D-Floodplain Export',
+                    'Invalid expression for boundary condition value!'
+                )
+                return
+
+            boundarytype, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundarytype_box.expression(),
+                                                             False)
+            if not ok:
+                self.iface.messageBar().pushCritical(
+                    '2D-Floodplain Export',
+                    'Invalid expression for boundary type!'
+                )
+                return
+        #######################################################################
+        defaultcellproperties=["false", "false", "0", "point"]
+
+
         # write cell values
         for i in range(out_raster.num_cells()):
             point = out_raster.cell_center(i)
+
+            if polygonlayer:
+                features_main = polygonlayer.getFeatures()
+                for poly in features_main:
+                    geom_pol = poly.geometry()
+                    if geom_pol.contains(QgsPointXY(point)) == True:
+                        boundaryenabledforcell="true"
+                        cellstationary=str(boundarystationary[poly.id()])
+                        cellboundaryvalue=str(boundaryvalue[poly.id()])
+                        cellboundarytype=str(boundarytype[poly.id()])
+                        cellproperties=[boundaryenabledforcell,cellstationary,cellboundaryvalue,cellboundarytype]
+                        break
+                    else:
+                        cellproperties = defaultcellproperties
+            else:
+                cellproperties = defaultcellproperties
+
             values = {data_name: interpol[data_name](trans[data_name](point)) for data_name in list(input_layers.keys())}
-            out_raster.write_cell(values)
+            out_raster.write_cell(values,cellproperties)
             if progress:
                 progress.setValue(progress.value() + 1)
         out_raster.close()
