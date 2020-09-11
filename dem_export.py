@@ -380,6 +380,7 @@ class DEMExport(object):
         self.dialog.boundarytype_box.setFilters(QgsFieldProxyModel.String)
 
         self.previewLayer = QgsVectorLayer('Polygon', 'ProMaIDes DEM Raster', 'memory')
+        self.previewLayer.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
         # set layer properties
         my_symbol = QgsFillSymbol.createSimple({'color': 'black', 'outline_color': 'red', 'outline_width': '0.8',
                                                 'style':'no'})
