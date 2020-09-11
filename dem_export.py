@@ -56,6 +56,40 @@ class PluginDialog(QDialog):
 
         self.picker = QgsMapToolEmitPoint(self.iface.mapCanvas())
 
+        #############################################
+        #boundary condition button function
+        self.BCLayerBox.setEnabled(False)
+        self.stationarytype_box.setEnabled(False)
+        self.boundaryvalue_box.setEnabled(False)
+        self.boundarytype_box.setEnabled(False)
+
+
+        def enableclicked(state):
+            if state > 0:
+                self.BCLayerBox.setEnabled(True)
+                self.stationarytype_box.setEnabled(True)
+                self.boundaryvalue_box.setEnabled(True)
+                self.boundarytype_box.setEnabled(True)
+            else:
+                self.BCLayerBox.setEnabled(False)
+                self.stationarytype_box.setEnabled(False)
+                self.boundaryvalue_box.setEnabled(False)
+                self.boundarytype_box.setEnabled(False)
+
+        self.boundaryenabled_box.stateChanged.connect(enableclicked)
+        #############################################
+
+        self.addButton.setEnabled(False)
+        self.zoomButton.setEnabled(False)
+        self.removeButton.setEnabled(False)
+        self.bandBox.setEnabled(False)
+        self.ilmBox.setEnabled(False)
+        self.groupBox.setEnabled(False)
+        self.roughnessLayerBox.setLayer(None)
+        self.initLayerBox.setLayer(None)
+        self.BCLayerBox.setLayer(None)
+        self.demLayerBox.setLayer(self.demLayerBox.currentLayer())
+
         self.addButton.clicked.connect(self.addNewRasterItem)
         self.addButton.setAutoDefault(False)
         self.removeButton.clicked.connect(self.removeRasterItems)
@@ -82,16 +116,6 @@ class PluginDialog(QDialog):
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
         self.browseButton.setAutoDefault(False)
 
-        self.addButton.setEnabled(False)
-        self.zoomButton.setEnabled(False)
-        self.removeButton.setEnabled(False)
-        self.bandBox.setEnabled(False)
-        self.ilmBox.setEnabled(False)
-        self.groupBox.setEnabled(False)
-        self.roughnessLayerBox.setLayer(None)
-        self.initLayerBox.setLayer(None)
-        self.BCLayerBox.setLayer(None)
-        self.demLayerBox.setLayer(self.demLayerBox.currentLayer())
 
     def createIlmFile(self):
         if self.ilmBox.checkState() == Qt.Checked:
@@ -458,35 +482,36 @@ class DEMExport(object):
 
         ########################################################################
         #reading polygon data
-        polygonlayer = self.dialog.BCLayerBox.currentLayer()
-        if polygonlayer:
-            boundarystationary, ok = QgsVectorLayerUtils.getValues(polygonlayer,
+        if self.dialog.boundaryenabled_box.isChecked():
+            polygonlayer = self.dialog.BCLayerBox.currentLayer()
+            if polygonlayer:
+                boundarystationary, ok = QgsVectorLayerUtils.getValues(polygonlayer,
                                                                    self.dialog.stationarytype_box.expression(),
                                                                    False)
-            if not ok:
-                self.iface.messageBar().pushCritical(
-                    '2D-Floodplain Export',
-                    'Invalid expression for stationary boundary condition !'
-                )
-                return
+                if not ok:
+                    self.iface.messageBar().pushCritical(
+                        '2D-Floodplain Export',
+                        'Invalid expression for stationary boundary condition !'
+                    )
+                    return
 
-            boundaryvalue, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundaryvalue_box.expression(),
+                boundaryvalue, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundaryvalue_box.expression(),
                                                               False)
-            if not ok:
-                self.iface.messageBar().pushCritical(
-                    '2D-Floodplain Export',
-                    'Invalid expression for boundary condition value!'
-                )
-                return
+                if not ok:
+                    self.iface.messageBar().pushCritical(
+                        '2D-Floodplain Export',
+                        'Invalid expression for boundary condition value!'
+                    )
+                    return
 
-            boundarytype, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundarytype_box.expression(),
+                boundarytype, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundarytype_box.expression(),
                                                              False)
-            if not ok:
-                self.iface.messageBar().pushCritical(
-                    '2D-Floodplain Export',
-                    'Invalid expression for boundary type!'
-                )
-                return
+                if not ok:
+                    self.iface.messageBar().pushCritical(
+                        '2D-Floodplain Export',
+                        'Invalid expression for boundary type!'
+                    )
+                    return
         #######################################################################
         defaultcellproperties=["false", "false", "0", "point"]
 
@@ -494,20 +519,22 @@ class DEMExport(object):
         # write cell values
         for i in range(out_raster.num_cells()):
             point = out_raster.cell_center(i)
-
-            if polygonlayer:
-                features_main = polygonlayer.getFeatures()
-                for poly in features_main:
-                    geom_pol = poly.geometry()
-                    if geom_pol.contains(QgsPointXY(point)) == True:
-                        boundaryenabledforcell="true"
-                        cellstationary=str(boundarystationary[poly.id()])
-                        cellboundaryvalue=str(boundaryvalue[poly.id()])
-                        cellboundarytype=str(boundarytype[poly.id()])
-                        cellproperties=[boundaryenabledforcell,cellstationary,cellboundaryvalue,cellboundarytype]
-                        break
-                    else:
-                        cellproperties = defaultcellproperties
+            if self.dialog.boundaryenabled_box.isChecked():
+                if polygonlayer:
+                    features_main = polygonlayer.getFeatures()
+                    for poly in features_main:
+                        geom_pol = poly.geometry()
+                        if geom_pol.contains(QgsPointXY(point)) == True:
+                            boundaryenabledforcell="true"
+                            cellstationary=str(boundarystationary[poly.id()])
+                            cellboundaryvalue=str(boundaryvalue[poly.id()])
+                            cellboundarytype=str(boundarytype[poly.id()])
+                            cellproperties=[boundaryenabledforcell,cellstationary,cellboundaryvalue,cellboundarytype]
+                            break
+                        else:
+                            cellproperties = defaultcellproperties
+                else:
+                    cellproperties = defaultcellproperties
             else:
                 cellproperties = defaultcellproperties
 
