@@ -19,6 +19,7 @@ from .interpolate import RasterInterpolator
 from .raster import RasterWriter
 from .environment import get_ui_path
 from .version import *
+from .utils import *
 
 
 UI_PATH = get_ui_path('ui_dem_export.ui')
@@ -56,28 +57,6 @@ class PluginDialog(QDialog):
 
         self.picker = QgsMapToolEmitPoint(self.iface.mapCanvas())
 
-        #############################################
-        #boundary condition button function
-        self.BCLayerBox.setEnabled(False)
-        self.stationarytype_box.setEnabled(False)
-        self.boundaryvalue_box.setEnabled(False)
-        self.boundarytype_box.setEnabled(False)
-
-
-        def enableclicked(state):
-            if state > 0:
-                self.BCLayerBox.setEnabled(True)
-                self.stationarytype_box.setEnabled(True)
-                self.boundaryvalue_box.setEnabled(True)
-                self.boundarytype_box.setEnabled(True)
-            else:
-                self.BCLayerBox.setEnabled(False)
-                self.stationarytype_box.setEnabled(False)
-                self.boundaryvalue_box.setEnabled(False)
-                self.boundarytype_box.setEnabled(False)
-
-        self.boundaryenabled_box.stateChanged.connect(enableclicked)
-        #############################################
 
         self.addButton.setEnabled(False)
         self.zoomButton.setEnabled(False)
@@ -183,6 +162,8 @@ class PluginDialog(QDialog):
     def initNaN(self):
         return self.initNaNBox.value()
 
+    def BCLayer(self):
+        return self.BCLayerBox.currentLayer()
 
     def rasters(self):
 
@@ -251,9 +232,9 @@ class PluginDialog(QDialog):
         self.initBandBox.setValue(1)
 
     def updatePolygonTabs(self, layer):
-        self.stationarytype_box.setLayer(self.BCLayerBox.currentLayer())
-        self.boundaryvalue_box.setLayer(self.BCLayerBox.currentLayer())
-        self.boundarytype_box.setLayer(self.BCLayerBox.currentLayer())
+        self.stationarytype_box.setLayer(self.BCLayer())
+        self.boundaryvalue_box.setLayer(self.BCLayer())
+        self.boundarytype_box.setLayer(self.BCLayer())
 
 
     def addNewRasterItem(self):
@@ -399,8 +380,8 @@ class DEMExport(object):
 
     def quitDialog(self):
         #self.dialog = None
-
-        QgsProject.instance().removeMapLayer(self.previewLayer.id())
+        if type(self.previewLayer) != type(None):
+            QgsProject.instance().removeMapLayer(self.previewLayer.id())
         self.previewLayer = None
         self.act.setEnabled(True)
         self.cancel = False
@@ -482,8 +463,8 @@ class DEMExport(object):
 
         ########################################################################
         #reading polygon data
-        if self.dialog.boundaryenabled_box.isChecked():
-            polygonlayer = self.dialog.BCLayerBox.currentLayer()
+        if self.dialog.mGroupBox_4.isChecked():
+            polygonlayer = self.dialog.BCLayer()
             if polygonlayer:
                 boundarystationary, ok = QgsVectorLayerUtils.getValues(polygonlayer,
                                                                    self.dialog.stationarytype_box.expression(),
@@ -519,12 +500,34 @@ class DEMExport(object):
         # write cell values
         for i in range(out_raster.num_cells()):
             point = out_raster.cell_center(i)
-            if self.dialog.boundaryenabled_box.isChecked():
+            if self.dialog.mGroupBox_4.isChecked():
                 if polygonlayer:
                     features_main = polygonlayer.getFeatures()
                     for poly in features_main:
                         geom_pol = poly.geometry()
                         if geom_pol.contains(QgsPointXY(point)) == True:
+
+                            ##########################################################################
+                            #value check
+                            boundarystationarystatus = str(boundarystationary[poly.id()]).lower()
+                            if check_true_false(boundarystationarystatus) == 0:
+                                self.iface.messageBar().pushCritical(
+                                    '2D-Floodplain Export',
+                                    'Invalid expression for stationary boundary condition !'
+                                )
+                                self.quitDialog()
+                                return
+
+                            cellboundarytypestatus=str(boundarytype[poly.id()])
+                            if check_cell_boundary_type(cellboundarytypestatus) == 0:
+                                self.iface.messageBar().pushCritical(
+                                    '2D-Floodplain Export',
+                                    'Invalid expression for boundary type !'
+                                )
+                                self.quitDialog()
+                                return
+                            ##############################################################################
+
                             boundaryenabledforcell="true"
                             cellstationary=str(boundarystationary[poly.id()])
                             cellboundaryvalue=str(boundaryvalue[poly.id()])

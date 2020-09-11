@@ -29,6 +29,14 @@ def check_river_prof_connection(mystr):
     else:
         return 0
 
+
+# check for cell boundary type
+def check_cell_boundary_type(mystr):
+    if mystr.lower() == 'point' or mystr.lower() == 'area':
+        return 1
+    else:
+        return 0
+
 def deprecated(reason):
     """
     This is a decorator which can be used to mark functions
