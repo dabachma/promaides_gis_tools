@@ -95,6 +95,14 @@ class PluginDialog(QDialog):
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
         self.browseButton.setAutoDefault(False)
 
+    def __del__(self):
+        if type(self.previewLayer) != type(None):
+            QgsProject.instance().removeMapLayer(self.previewLayer)
+        self.previewLayer = None
+        self.act.setEnabled(True)
+        self.cancel = False
+        self.dialog.reject()
+
 
     def createIlmFile(self):
         if self.ilmBox.checkState() == Qt.Checked:
@@ -132,6 +140,7 @@ class PluginDialog(QDialog):
             self.yllBox.setValue(point.y())
             self.xllBox.editingFinished.emit()
 
+
     def demLayer(self):
         return self.demLayerBox.currentLayer()
 
@@ -145,7 +154,10 @@ class PluginDialog(QDialog):
         return self.demNaNBox.value()
 
     def roughnessLayer(self):
-        return self.roughnessLayerBox.currentLayer()
+        if self.mGroupBox.isChecked():
+            return self.roughnessLayerBox.currentLayer()
+        else:
+            self.roughnessLayerBox.setLayer(None)
 
     def roughnessBand(self):
         return self.roughnessBandBox.value()
@@ -154,7 +166,10 @@ class PluginDialog(QDialog):
         return self.roughnessNaNBox.value()
 
     def initLayer(self):
-        return self.initLayerBox.currentLayer()
+        if self.mGroupBox_2.isChecked():
+            return self.initLayerBox.currentLayer()
+        else:
+            self.initLayerBox.setLayer(None)
 
     def initBand(self):
         return self.initBandBox.value()
