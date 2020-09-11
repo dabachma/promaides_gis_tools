@@ -381,7 +381,7 @@ class DEMExport(object):
     def quitDialog(self):
         #self.dialog = None
         if type(self.previewLayer) != type(None):
-            QgsProject.instance().removeMapLayer(self.previewLayer.id())
+            QgsProject.instance().removeMapLayer(self.previewLayer)
         self.previewLayer = None
         self.act.setEnabled(True)
         self.cancel = False
