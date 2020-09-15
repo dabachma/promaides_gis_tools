@@ -56,6 +56,10 @@ class PluginDialog(QDialog):
         self.interpolationBox.addItem('bi-linear')
         self.interpolationBox.addItem('bi-cubic')
 
+        self.stationarytype_box.setExpression('true')
+        self.boundaryvalue_box.setExpression('0')
+        self.boundarytype_box.setExpression("'area'")
+
         self.picker = QgsMapToolEmitPoint(self.iface.mapCanvas())
 
 
@@ -483,9 +487,7 @@ class DEMExport(object):
         if self.dialog.mGroupBox_4.isChecked():
             polygonlayer = self.dialog.BCLayer()
             if polygonlayer:
-                boundarystationary, ok = QgsVectorLayerUtils.getValues(polygonlayer,
-                                                                   self.dialog.stationarytype_box.expression(),
-                                                                   False)
+                boundarystationary, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.stationarytype_box.expression(), False)
                 if not ok:
                     self.iface.messageBar().pushCritical(
                         '2D-Floodplain Export',
@@ -493,21 +495,19 @@ class DEMExport(object):
                     )
                     return
 
-                boundaryvalue, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundaryvalue_box.expression(),
-                                                              False)
+                boundaryvalue, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundaryvalue_box.expression(), False)
                 if not ok:
                     self.iface.messageBar().pushCritical(
                         '2D-Floodplain Export',
-                        'Invalid expression for boundary condition value!'
+                        'Invalid expression for boundary condition value !'
                     )
                     return
 
-                boundarytype, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundarytype_box.expression(),
-                                                             False)
+                boundarytype, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundarytype_box.expression(), False)
                 if not ok:
                     self.iface.messageBar().pushCritical(
                         '2D-Floodplain Export',
-                        'Invalid expression for boundary type!'
+                        'Invalid expression for boundary type !'
                     )
                     return
         #######################################################################
@@ -554,7 +554,25 @@ class DEMExport(object):
                         else:
                             cellproperties = defaultcellproperties
                 else:
-                    cellproperties = defaultcellproperties
+                    boundaryenabledforcell = "true"
+                    cellstationary = self.dialog.stationarytype_box.currentText().strip('\'')
+                    if check_true_false(cellstationary) == 0:
+                        self.iface.messageBar().pushCritical(
+                            '2D-Floodplain Export',
+                            'Invalid expression for stationary boundary condition !'
+                        )
+                        self.quitDialog()
+                        return
+                    cellboundaryvalue = self.dialog.boundaryvalue_box.currentText().strip('\'')
+                    cellboundarytype = self.dialog.boundarytype_box.currentText().strip('\'')
+                    if check_cell_boundary_type(cellboundarytype) == 0:
+                        self.iface.messageBar().pushCritical(
+                            '2D-Floodplain Export',
+                            'Invalid expression for boundary type !'
+                        )
+                        self.quitDialog()
+                        return
+                    cellproperties = [boundaryenabledforcell, cellstationary, cellboundaryvalue, cellboundarytype]
             else:
                 cellproperties = defaultcellproperties
 
