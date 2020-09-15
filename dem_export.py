@@ -378,6 +378,7 @@ class DEMExport(object):
         self.dialog.rasterUpdated.connect(self.updateRasterBounds)
         self.dialog.rasterRemoved.connect(self.removeRasterBounds)
         self.dialog.setModal(False)
+        self.dialog.saveaspolygonbutton.clicked.connect(self.SaveasPolygon)
 
         #filters for boundary fields
         self.dialog.stationarytype_box.setFilters(QgsFieldProxyModel.String)
@@ -398,6 +399,28 @@ class DEMExport(object):
 
     def scheduleAbort(self):
         self.cancel = True
+
+    def SaveasPolygon(self):
+        try:
+            original = self.previewLayer
+            originalpath=QgsProject.instance().homePath()
+            if not originalpath:
+                originalpath = tempfile.gettempdir()
+            originalname = original.name()
+            writingpath = originalpath + "/" + originalname + "_copy.shp"
+            _writer = QgsVectorFileWriter.writeAsVectorFormat(original, writingpath, 'utf-8',
+                                                              driverName='ESRI Shapefile')
+            loadedlayer = QgsVectorLayer(writingpath, originalname + "_copy", "ogr")
+            QgsProject.instance().addMapLayer(loadedlayer)
+            self.dialog.iface.layerTreeView().setCurrentLayer(original)
+
+        except:
+            self.iface.messageBar().pushCritical(
+                'Resample Polyline Vertices',
+                'New layer cannot be created!'
+            )
+            self.quitDialog()
+            return
 
     def quitDialog(self):
         #self.dialog = None
