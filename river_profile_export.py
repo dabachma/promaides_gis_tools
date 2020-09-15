@@ -1055,6 +1055,8 @@ class RiverProfileExport(object):
             profile_file.write('#   !$BEGINRVMODEL =  Index_(starts by 0) "NAME" \n')
             profile_file.write('#    !NOFPROF = 369 #Number of profiles in file (see below)\n')
             profile_file.write('#    !GEOMETRYFILE = "./PATH2FILE/FILE_NAME.txt"\n')
+            profile_file.write('#    !1DOUTPUT = "../../PATH/PREFIX_" #1d-output by calculation with file	\n')
+            profile_file.write('#    !2DOUTPUT = "../../PATH/PREFIX_" #2d-output by calculation with file	\n')
             profile_file.write('#    !INSTATBOUNDFILE = <SET>	\n')
             profile_file.write('#       $FILENAME="./PATH2FILE/FILE_NAME.txt" #Instationary boundary file of river\n')
             profile_file.write('#       $NUMBER_CURVE = 1 #number of curves in instationary boundary file\n')

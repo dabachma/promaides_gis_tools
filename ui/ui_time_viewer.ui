@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>459</width>
+    <height>214</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>318</width>
+    <height>0</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>16777215</width>
+    <height>16777215</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Time Viewer (beta)</string>
+  </property>
+  <property name="modal">
+   <bool>false</bool>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="4" column="0" rowspan="2" colspan="2">
+    <widget class="QPushButton" name="PlayButton">
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="text">
+      <string>Play</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="2" rowspan="2">
+    <widget class="QCheckBox" name="SaveFrameBox">
+     <property name="text">
+      <string>Save Frames as </string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="3" rowspan="2">
+    <widget class="QComboBox" name="SaveBox"/>
+   </item>
+   <item row="5" column="1">
+    <widget class="QLabel" name="input_label">
+     <property name="text">
+      <string/>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="4">
+    <widget class="QPushButton" name="browseButton">
+     <property name="maximumSize">
+      <size>
+       <width>27</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>...</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_21">
+     <property name="text">
+      <string>Input Layer</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_22">
+     <property name="text">
+      <string>Frame ID</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_24">
+     <property name="text">
+      <string>Additional Filters</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_23">
+     <property name="text">
+      <string>FPS</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QSpinBox" name="FPSBox">
+     <property name="maximum">
+      <number>999999999</number>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="4">
+    <widget class="QLineEdit" name="folderEdit">
+     <property name="toolTip">
+      <string>Set output folder</string>
+     </property>
+     <property name="placeholderText">
+      <string>&lt;output folder&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1" colspan="4">
+    <widget class="QgsMapLayerComboBox" name="InputLayerBox"/>
+   </item>
+   <item row="1" column="1" colspan="4">
+    <widget class="QgsFieldExpressionWidget" name="FieldIDBox" native="true">
+     <property name="toolTip">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1" colspan="4">
+    <widget class="QLineEdit" name="addfilterbox">
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="placeholderText">
+      <string>e.g. &quot;waterlevel&quot;  &gt;=  0.1 AND &quot;type&quot; = 'point'</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QgsFieldExpressionWidget</class>
+   <extends>QWidget</extends>
+   <header>qgis.gui</header>
+  </customwidget>
+  <customwidget>
+   <class>QgsMapLayerComboBox</class>
+   <extends>QComboBox</extends>
+   <header>qgsmaplayercombobox.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

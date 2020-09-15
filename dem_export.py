@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import os
 import math
 from datetime import datetime
+import tempfile
 
 # QGIS modules
 from qgis.core import *
@@ -478,7 +479,7 @@ class DEMExport(object):
         out_raster.open(filename, input_layers)
 
         ########################################################################
-        #reading polygon data
+        #reading boundary polygon data
         if self.dialog.mGroupBox_4.isChecked():
             polygonlayer = self.dialog.BCLayer()
             if polygonlayer:
