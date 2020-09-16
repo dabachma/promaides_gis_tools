@@ -27,9 +27,7 @@ from .environment import get_ui_path
 UI_PATH = get_ui_path('ui_time_viewer.ui')
 
 
-
 class PluginDialog(QDialog):
-
 
     def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
         QDialog.__init__(self, parent, flags)
@@ -60,8 +58,12 @@ class PluginDialog(QDialog):
         self.SaveBox.setEnabled(False)
         self.folderEdit.setEnabled(False)
         self.browseButton.setEnabled(False)
+        self.PauseButton.setEnabled(False)
+        self.StopButton.setEnabled(False)
 
         self.PlayButton.clicked.connect(self.ReadFrameIDs)
+        self.PauseButton.clicked.connect(self.PausePlay)
+        self.StopButton.clicked.connect(self.StopPlay)
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
         self.SaveFrameBox.stateChanged.connect(saveframeclicked)
         self.browseButton.setAutoDefault(False)
@@ -72,7 +74,10 @@ class PluginDialog(QDialog):
 
     FrameIDs = []
     def ReadFrameIDs(self):
+        self.PauseButton.setEnabled(True)
+        self.StopButton.setEnabled(True)
         layer = self.InputLayer()
+        layer.setSubsetString('')
         self.FrameIDs, ok = QgsVectorLayerUtils.getValues(layer, self.FieldIDBox.expression(), False)
         if not ok:
             self.iface.messageBar().pushCritical(
@@ -87,6 +92,12 @@ class PluginDialog(QDialog):
 
     def InputLayer(self):
         return self.InputLayerBox.currentLayer()
+
+    def PausePlay(self):
+        self.PausePressed=True
+
+    def StopPlay(self):
+        self.StopPressed=True
 
     def onBrowseButtonClicked(self):
         currentFolder = self.folderEdit.text()
@@ -105,8 +116,24 @@ class PluginDialog(QDialog):
             return 0
 
     count = 0
+    StopPressed=False
+    PausePressed=False
     def play1(self):
         layer = self.InputLayer()
+        if self.PausePressed==True:
+            self.PauseButton.setEnabled(False)
+            self.StopButton.setEnabled(False)
+            self.StopPressed = False
+            self.PausePressed = False
+            return
+        if self.StopPressed == True:
+            self.count=0
+            self.PauseButton.setEnabled(False)
+            self.StopButton.setEnabled(False)
+            self.StopPressed = False
+            self.PausePressed = False
+            layer.setSubsetString('')
+            return
         if self.check_fps(self.FPSBox.value())==1:
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
@@ -124,9 +151,24 @@ class PluginDialog(QDialog):
         QTimer.singleShot(FPS, self.play2)
 
 
+
     def play2(self):
         global count
         layer = self.InputLayer()
+        if self.PausePressed==True:
+            self.PauseButton.setEnabled(False)
+            self.StopButton.setEnabled(False)
+            self.StopPressed = False
+            self.PausePressed = False
+            return
+        if self.StopPressed == True:
+            self.count=0
+            self.PauseButton.setEnabled(False)
+            self.StopButton.setEnabled(False)
+            self.StopPressed = False
+            self.PausePressed = False
+            layer.setSubsetString('')
+            return
         layer.setSubsetString('')
         layername = self.InputLayer().name()
         if self.SaveFrameBox.isChecked():
@@ -142,6 +184,10 @@ class PluginDialog(QDialog):
             QTimer.singleShot(0.1, self.play1) # Wait a second and prepare next map
             self.count += 1
         else:
+            self.PauseButton.setEnabled(False)
+            self.StopButton.setEnabled(False)
+            self.StopPressed = False
+            self.PausePressed = False
             self.count=0
 
 
