@@ -35,7 +35,7 @@ class PluginDialog(QDialog):
 
         self.iface = iface
 
-        self.FieldIDBox.setFilters(QgsFieldProxyModel.Numeric)
+        #self.FieldIDBox.setFilters(QgsFieldProxyModel.Numeric)
         self.InputLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
         self.InputLayerBox.setLayer(None)
         self.InputLayerBox.layerChanged.connect(self.UpdateFrameID)
@@ -145,9 +145,9 @@ class PluginDialog(QDialog):
         field = self.FieldIDBox.currentText()
         value = self.FrameIDs[self.count]
         if str(self.addfilterbox.text()) == "":
-            layer.setSubsetString("\"{a}\"={b}".format(a=field, b=value))
+            layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
         else:
-            layer.setSubsetString("\"{a}\"={b} AND {c}".format(a=field, b=value, c=self.addfilterbox.text()))
+            layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.addfilterbox.text()))
         QTimer.singleShot(FPS, self.play2)
 
 
