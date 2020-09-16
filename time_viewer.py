@@ -27,7 +27,9 @@ from .environment import get_ui_path
 UI_PATH = get_ui_path('ui_time_viewer.ui')
 
 
+
 class PluginDialog(QDialog):
+
 
     def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
         QDialog.__init__(self, parent, flags)
@@ -59,7 +61,7 @@ class PluginDialog(QDialog):
         self.folderEdit.setEnabled(False)
         self.browseButton.setEnabled(False)
 
-        self.PlayButton.clicked.connect(self.play1)
+        self.PlayButton.clicked.connect(self.ReadFrameIDs)
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
         self.SaveFrameBox.stateChanged.connect(saveframeclicked)
         self.browseButton.setAutoDefault(False)
@@ -67,6 +69,21 @@ class PluginDialog(QDialog):
 
     def UpdateFrameID(self, layer):
         self.FieldIDBox.setLayer(self.InputLayer())
+
+    FrameIDs = []
+    def ReadFrameIDs(self):
+        layer = self.InputLayer()
+        self.FrameIDs, ok = QgsVectorLayerUtils.getValues(layer, self.FieldIDBox.expression(), False)
+        if not ok:
+            self.iface.messageBar().pushCritical(
+                'Time Viewer',
+                'Invalid expression for Frame ID !'
+            )
+            return
+        self.FrameIDs = list(dict.fromkeys(self.FrameIDs))
+        self.FrameIDs.sort()
+        self.play1()
+
 
     def InputLayer(self):
         return self.InputLayerBox.currentLayer()
@@ -90,16 +107,6 @@ class PluginDialog(QDialog):
     count = 0
     def play1(self):
         layer = self.InputLayer()
-        FrameIDs, ok = QgsVectorLayerUtils.getValues(layer, self.FieldIDBox.expression(), False)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'Time Viewer',
-                'Invalid expression for Frame ID !'
-            )
-            return
-        FrameIDscorrected = list(dict.fromkeys(FrameIDs))
-        FrameIDscorrected.sort()
-
         if self.check_fps(self.FPSBox.value())==1:
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
@@ -109,53 +116,33 @@ class PluginDialog(QDialog):
         else:
             FPS = 1000 / self.FPSBox.value()
         field = self.FieldIDBox.currentText()
-        value = FrameIDscorrected[self.count]
+        value = self.FrameIDs[self.count]
         if str(self.addfilterbox.text()) == "":
             layer.setSubsetString("\"{a}\"={b}".format(a=field, b=value))
         else:
             layer.setSubsetString("\"{a}\"={b} AND {c}".format(a=field, b=value, c=self.addfilterbox.text()))
-        node = QgsProject.instance().layerTreeRoot().findLayer(layer)
-        if node:
-            node.setItemVisibilityChecked(True)
         QTimer.singleShot(FPS, self.play2)
 
 
     def play2(self):
         global count
         layer = self.InputLayer()
-        node = QgsProject.instance().layerTreeRoot().findLayer(layer)
-        if node:
-            node.setItemVisibilityChecked(False)
         layer.setSubsetString('')
-        FrameIDs, ok = QgsVectorLayerUtils.getValues(layer, self.FieldIDBox.expression(), False)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'Time Viewer',
-                'Invalid expression for Frame ID !'
-            )
-            return
-        FrameIDscorrected = list(dict.fromkeys(FrameIDs))
-        FrameIDscorrected.sort()
         layername = self.InputLayer().name()
-        value = FrameIDscorrected[self.count]
         if self.SaveFrameBox.isChecked():
             if self.SaveBox.currentText()=="PNG":
-                iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + str(layername) + "_" + str(value) + ".png")
-                os.remove(str(self.outFolder()) + "/" + str(layername) + "_" + str(value) + ".pgw")
+                iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + str(layername) + "_" + str(self.count) + ".png")
+                os.remove(str(self.outFolder()) + "/" + str(layername) + "_" + str(self.count) + ".pgw")
 
             elif self.SaveBox.currentText()=="JPEG":
-                iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + str(layername) + "_" + str(value) + ".jpg")
-                os.remove(str(self.outFolder()) + "/" + str(layername) + "_" + str(value) + ".jgw")
+                iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + str(layername) + "_" + str(self.count) + ".jpg")
+                os.remove(str(self.outFolder()) + "/" + str(layername) + "_" + str(self.count) + ".jgw")
 
-
-        if self.count <= len(FrameIDscorrected)-2:
-            QTimer.singleShot(0.01, self.play1) # Wait a second and prepare next map
+        if self.count <= len(self.FrameIDs)-2:
+            QTimer.singleShot(0.1, self.play1) # Wait a second and prepare next map
             self.count += 1
         else:
             self.count=0
-            node = QgsProject.instance().layerTreeRoot().findLayer(layer)
-            if node:
-                node.setItemVisibilityChecked(True)
 
 
 class TimeViewer(object):
