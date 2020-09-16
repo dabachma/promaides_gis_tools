@@ -89,14 +89,6 @@ class PluginDialog(QDialog):
         self.zoomButton.setAutoDefault(False)
 
 
-        self.xllBox.editingFinished.connect(self.saveRasterProperties)
-        self.yllBox.editingFinished.connect(self.saveRasterProperties)
-        self.drBox.editingFinished.connect(self.saveRasterProperties)
-        self.dcBox.editingFinished.connect(self.saveRasterProperties)
-        self.nrBox.editingFinished.connect(self.saveRasterProperties)
-        self.ncBox.editingFinished.connect(self.saveRasterProperties)
-        self.angleBox.editingFinished.connect(self.saveRasterProperties)
-
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
         self.browseButton.setAutoDefault(False)
 
@@ -313,33 +305,6 @@ class PluginDialog(QDialog):
         self.dcBox.setValue(item.data(PluginDialog.dcRole))
         self.angleBox.setValue(item.data(PluginDialog.angleRole))
 
-    def saveRasterPropertiesNoRedraw(self):
-        self.saveRasterProperties(False)
-
-    def saveRasterProperties(self, redraw=True):
-
-        item = self.listWidget.currentItem()
-
-        if not item:
-            return
-
-        xll = self.xllBox.value()
-        yll = self.yllBox.value()
-        dx = self.ncBox.value() * self.dcBox.value()
-        dy = self.nrBox.value() * self.drBox.value()
-        angle = self.angleBox.value()
-
-        item.setData(PluginDialog.xllRole, xll)
-        item.setData(PluginDialog.yllRole, yll)
-        item.setData(PluginDialog.nrRole, self.nrBox.value())
-        item.setData(PluginDialog.ncRole, self.ncBox.value())
-        item.setData(PluginDialog.drRole, self.drBox.value())
-        item.setData(PluginDialog.dcRole, self.dcBox.value())
-        item.setData(PluginDialog.angleRole, angle)
-
-        if redraw:
-            self.rasterUpdated.emit(int(self.listWidget.row(item) + 1),
-                                    self.polygon(xll, yll, dx, dy, angle / 180.0 * math.pi))
 
 
 class DEMExport(object):
@@ -378,7 +343,16 @@ class DEMExport(object):
         self.dialog.rasterUpdated.connect(self.updateRasterBounds)
         self.dialog.rasterRemoved.connect(self.removeRasterBounds)
         self.dialog.setModal(False)
-        self.dialog.saveaspolygonbutton.clicked.connect(self.SaveasPolygon)
+        self.dialog.ExportasPolygonButton.clicked.connect(self.SaveasPolygon)
+
+
+        self.dialog.xllBox.editingFinished.connect(self.saveRasterProperties)
+        self.dialog.yllBox.editingFinished.connect(self.saveRasterProperties)
+        self.dialog.drBox.editingFinished.connect(self.saveRasterProperties)
+        self.dialog.dcBox.editingFinished.connect(self.saveRasterProperties)
+        self.dialog.nrBox.editingFinished.connect(self.saveRasterProperties)
+        self.dialog.ncBox.editingFinished.connect(self.saveRasterProperties)
+        self.dialog.angleBox.editingFinished.connect(self.saveRasterProperties)
 
         #filters for boundary fields
         self.dialog.stationarytype_box.setFilters(QgsFieldProxyModel.String)
@@ -387,6 +361,10 @@ class DEMExport(object):
 
         self.previewLayer = QgsVectorLayer('Polygon', 'ProMaIDes DEM Raster', 'memory')
         self.previewLayer.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
+        self.previewLayer.dataProvider().addAttributes([QgsField("xll", QVariant.Double), QgsField("yll", QVariant.Double), QgsField("dy*nr", QVariant.Double),QgsField("dx*nc", QVariant.Double), QgsField("angle", QVariant.Double)])
+        self.previewLayer.updateFields()
+
+
         # set layer properties
         my_symbol = QgsFillSymbol.createSimple({'color': 'black', 'outline_color': 'red', 'outline_width': '0.8',
                                                 'style':'no'})
@@ -407,7 +385,7 @@ class DEMExport(object):
             if not originalpath:
                 originalpath = tempfile.gettempdir()
             originalname = original.name()
-            writingpath = originalpath + "/" + originalname + "_copy.shp"
+            writingpath = originalpath + "/" + originalname + "_exported.shp"
             _writer = QgsVectorFileWriter.writeAsVectorFormat(original, writingpath, 'utf-8',
                                                               driverName='ESRI Shapefile')
             loadedlayer = QgsVectorLayer(writingpath, originalname + "_copy", "ogr")
@@ -421,6 +399,51 @@ class DEMExport(object):
             )
             self.quitDialog()
             return
+
+    def saveRasterPropertiesNoRedraw(self):
+        self.saveRasterProperties(False)
+
+    def saveRasterProperties(self, redraw=True):
+
+        item = self.dialog.listWidget.currentItem()
+
+        if not item:
+            return
+
+        xll = self.dialog.xllBox.value()
+        yll = self.dialog.yllBox.value()
+        dx = self.dialog.ncBox.value() * self.dialog.dcBox.value()
+        dy = self.dialog.nrBox.value() * self.dialog.drBox.value()
+        angle = self.dialog.angleBox.value()
+
+        layer=self.previewLayer
+        prov = layer.dataProvider()
+        # lookup index of fields using their names
+        xll_idx = layer.fields().lookupField('xll')
+        yll_idx = layer.fields().lookupField('yll')
+        dxnc_idx = layer.fields().lookupField('dx*nc')
+        dynr_idx = layer.fields().lookupField('dy*nr')
+        angle_idx = layer.fields().lookupField('angle')
+
+        # create a dictionary with field index as key and the attribute you want as value
+        atts = {xll_idx: xll, yll_idx: yll, dxnc_idx: dx, dynr_idx: dy, angle_idx: angle}
+
+        # store reference to feature you want to update
+        feat = layer.getFeature(self.dialog.listWidget.row(item)+1)
+        # call changeAttributeValues(), pass feature id and attribute dictionary
+        prov.changeAttributeValues({feat.id(): atts})
+
+        item.setData(PluginDialog.xllRole, xll)
+        item.setData(PluginDialog.yllRole, yll)
+        item.setData(PluginDialog.nrRole, self.dialog.nrBox.value())
+        item.setData(PluginDialog.ncRole, self.dialog.ncBox.value())
+        item.setData(PluginDialog.drRole, self.dialog.drBox.value())
+        item.setData(PluginDialog.dcRole, self.dialog.dcBox.value())
+        item.setData(PluginDialog.angleRole, angle)
+
+        if redraw:
+            self.dialog.rasterUpdated.emit(int(self.dialog.listWidget.row(item) + 1),
+                                    self.dialog.polygon(xll, yll, dx, dy, angle / 180.0 * math.pi))
 
     def quitDialog(self):
         #self.dialog = None
