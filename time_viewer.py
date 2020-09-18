@@ -46,6 +46,8 @@ class PluginDialog(QDialog):
         self.SaveBox.addItem('AVI')
         self.FPSBox.setValue(1)
 
+        self.Displayer.setText("Hello!")
+
         def saveframeclicked(state):
             if state > 0:
                 self.SaveBox.setEnabled(True)
@@ -64,7 +66,7 @@ class PluginDialog(QDialog):
         self.StopButton.setEnabled(False)
 
         self.PlayButton.clicked.connect(self.play1)
-        self.ProcessButton.clicked.connect(self.ReadFrameIDs)
+        self.ProcessButton.clicked.connect(self.WriteProcessing)
         self.PauseButton.clicked.connect(self.PausePlay)
         self.StopButton.clicked.connect(self.StopPlay)
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
@@ -77,8 +79,14 @@ class PluginDialog(QDialog):
         self.PlayButton.setEnabled(False)
         self.ProcessButton.setEnabled(True)
 
+    def WriteProcessing(self):
+        self.Displayer.setText("Processing...")
+        QTimer.singleShot(10, self.ReadFrameIDs)
+
+
     FrameIDs = []
     def ReadFrameIDs(self):
+        self.FrameIDs = []
         layer = self.InputLayer()
         layer.setSubsetString('')
         self.FrameIDs, ok = QgsVectorLayerUtils.getValues(layer, self.FieldIDBox.expression(), False)
@@ -92,10 +100,13 @@ class PluginDialog(QDialog):
         self.FrameIDs.sort()
         self.ProcessButton.setEnabled(False)
         self.PlayButton.setEnabled(True)
+        self.Displayer.setText("Ready!")
+
 
     def UpdateProcessButton(self):
         self.ProcessButton.setEnabled(True)
         self.PlayButton.setEnabled(False)
+        self.Displayer.setText("Hello!")
 
 
     def InputLayer(self):
@@ -135,6 +146,7 @@ class PluginDialog(QDialog):
             self.StopButton.setEnabled(False)
             self.StopPressed = False
             self.PausePressed = False
+            self.Displayer.setText("Paused!")
             return
         if self.StopPressed == True:
             self.count=0
@@ -143,6 +155,7 @@ class PluginDialog(QDialog):
             self.StopPressed = False
             self.PausePressed = False
             layer.setSubsetString('')
+            self.Displayer.setText("Ready!")
             return
         if self.check_fps(self.FPSBox.value())==1:
             self.iface.messageBar().pushCritical(
@@ -154,6 +167,7 @@ class PluginDialog(QDialog):
             FPS = 1000 / self.FPSBox.value()
         field = self.FieldIDBox.currentText()
         value = self.FrameIDs[self.count]
+        self.Displayer.setText("{a}={b}".format(a=field, b=value))
         if str(self.addfilterbox.text()) == "":
             layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
         else:
@@ -170,6 +184,7 @@ class PluginDialog(QDialog):
             self.StopButton.setEnabled(False)
             self.StopPressed = False
             self.PausePressed = False
+            self.Displayer.setText("Paused!")
             return
         if self.StopPressed == True:
             self.count=0
@@ -178,6 +193,7 @@ class PluginDialog(QDialog):
             self.StopPressed = False
             self.PausePressed = False
             layer.setSubsetString('')
+            self.Displayer.setText("Ready!")
             return
         layer.setSubsetString('')
         layername = self.InputLayer().name()
@@ -199,6 +215,7 @@ class PluginDialog(QDialog):
             self.StopPressed = False
             self.PausePressed = False
             self.count=0
+            self.Displayer.setText("Ready!")
 
 
 class TimeViewer(object):
