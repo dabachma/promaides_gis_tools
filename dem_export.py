@@ -427,6 +427,7 @@ class DEMExport(object):
                     '2D-Floodplain Export',
                     'Area Cannot be Imported from Polygon !'
                 )
+                self.ImportFromPolygon = False
                 return
 
         num = self.dialog.listWidget.count() + 1
@@ -534,28 +535,29 @@ class DEMExport(object):
         if not item:
             return
 
-        xll = self.dialog.xllBox.value()
-        yll = self.dialog.yllBox.value()
-        dx = self.dialog.ncBox.value() * self.dialog.dcBox.value()
-        dy = self.dialog.nrBox.value() * self.dialog.drBox.value()
-        angle = self.dialog.angleBox.value()
+        if type(self.previewLayer) != type(None):
+            xll = self.dialog.xllBox.value()
+            yll = self.dialog.yllBox.value()
+            dx = self.dialog.ncBox.value() * self.dialog.dcBox.value()
+            dy = self.dialog.nrBox.value() * self.dialog.drBox.value()
+            angle = self.dialog.angleBox.value()
 
-        layer=self.previewLayer
-        prov = layer.dataProvider()
-        # lookup index of fields using their names
-        xll_idx = layer.fields().lookupField('xll')
-        yll_idx = layer.fields().lookupField('yll')
-        dxnc_idx = layer.fields().lookupField('dx*nc')
-        dynr_idx = layer.fields().lookupField('dy*nr')
-        angle_idx = layer.fields().lookupField('angle')
+            layer=self.previewLayer
+            prov = layer.dataProvider()
+            # lookup index of fields using their names
+            xll_idx = layer.fields().lookupField('xll')
+            yll_idx = layer.fields().lookupField('yll')
+            dxnc_idx = layer.fields().lookupField('dx*nc')
+            dynr_idx = layer.fields().lookupField('dy*nr')
+            angle_idx = layer.fields().lookupField('angle')
 
-        # create a dictionary with field index as key and the attribute you want as value
-        atts = {xll_idx: xll, yll_idx: yll, dxnc_idx: dx, dynr_idx: dy, angle_idx: angle}
+            # create a dictionary with field index as key and the attribute you want as value
+            atts = {xll_idx: xll, yll_idx: yll, dxnc_idx: dx, dynr_idx: dy, angle_idx: angle}
 
-        # store reference to feature you want to update
-        feat = layer.getFeature(self.dialog.listWidget.row(item)+1)
-        # call changeAttributeValues(), pass feature id and attribute dictionary
-        prov.changeAttributeValues({feat.id(): atts})
+            # store reference to feature you want to update
+            feat = layer.getFeature(self.dialog.listWidget.row(item)+1)
+            # call changeAttributeValues(), pass feature id and attribute dictionary
+            prov.changeAttributeValues({feat.id(): atts})
 
         item.setData(PluginDialog.xllRole, xll)
         item.setData(PluginDialog.yllRole, yll)

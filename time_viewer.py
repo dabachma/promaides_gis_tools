@@ -39,6 +39,7 @@ class PluginDialog(QDialog):
         self.InputLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
         self.InputLayerBox.setLayer(None)
         self.InputLayerBox.layerChanged.connect(self.UpdateFrameID)
+        self.FieldIDBox.fieldChanged.connect(self.UpdateProcessButton)
 
         self.SaveBox.addItem('JPEG')
         self.SaveBox.addItem('PNG')
@@ -58,10 +59,12 @@ class PluginDialog(QDialog):
         self.SaveBox.setEnabled(False)
         self.folderEdit.setEnabled(False)
         self.browseButton.setEnabled(False)
+        self.PlayButton.setEnabled(False)
         self.PauseButton.setEnabled(False)
         self.StopButton.setEnabled(False)
 
-        self.PlayButton.clicked.connect(self.ReadFrameIDs)
+        self.PlayButton.clicked.connect(self.play1)
+        self.ProcessButton.clicked.connect(self.ReadFrameIDs)
         self.PauseButton.clicked.connect(self.PausePlay)
         self.StopButton.clicked.connect(self.StopPlay)
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
@@ -71,11 +74,11 @@ class PluginDialog(QDialog):
 
     def UpdateFrameID(self, layer):
         self.FieldIDBox.setLayer(self.InputLayer())
+        self.PlayButton.setEnabled(False)
+        self.ProcessButton.setEnabled(True)
 
     FrameIDs = []
     def ReadFrameIDs(self):
-        self.PauseButton.setEnabled(True)
-        self.StopButton.setEnabled(True)
         layer = self.InputLayer()
         layer.setSubsetString('')
         self.FrameIDs, ok = QgsVectorLayerUtils.getValues(layer, self.FieldIDBox.expression(), False)
@@ -87,7 +90,12 @@ class PluginDialog(QDialog):
             return
         self.FrameIDs = list(dict.fromkeys(self.FrameIDs))
         self.FrameIDs.sort()
-        self.play1()
+        self.ProcessButton.setEnabled(False)
+        self.PlayButton.setEnabled(True)
+
+    def UpdateProcessButton(self):
+        self.ProcessButton.setEnabled(True)
+        self.PlayButton.setEnabled(False)
 
 
     def InputLayer(self):
@@ -119,6 +127,8 @@ class PluginDialog(QDialog):
     StopPressed=False
     PausePressed=False
     def play1(self):
+        self.PauseButton.setEnabled(True)
+        self.StopButton.setEnabled(True)
         layer = self.InputLayer()
         if self.PausePressed==True:
             self.PauseButton.setEnabled(False)
