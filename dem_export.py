@@ -51,6 +51,7 @@ class PluginDialog(QDialog):
         self.roughnessLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.initLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.BCLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
+        self.AreaLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
 
         self.interpolationBox.addItem('nearest neighbor')
         self.interpolationBox.addItem('bi-linear')
@@ -66,21 +67,26 @@ class PluginDialog(QDialog):
         self.addButton.setEnabled(False)
         self.zoomButton.setEnabled(False)
         self.removeButton.setEnabled(False)
+        self.ExportasPolygonButton.setEnabled(False)
         self.bandBox.setEnabled(False)
         self.ilmBox.setEnabled(False)
         self.groupBox.setEnabled(False)
+        self.ImportasPolygonButton.setEnabled(False)
+        self.AreadxBox.setEnabled(False)
+        self.AreadyBox.setEnabled(False)
         self.roughnessLayerBox.setLayer(None)
         self.initLayerBox.setLayer(None)
         self.BCLayerBox.setLayer(None)
-        self.demLayerBox.setLayer(self.demLayerBox.currentLayer())
+        self.AreaLayerBox.setLayer(None)
+        self.demLayerBox.setLayer(None)
 
-        self.addButton.clicked.connect(self.addNewRasterItem)
-        self.addButton.setAutoDefault(False)
+
         self.removeButton.clicked.connect(self.removeRasterItems)
         self.removeButton.setAutoDefault(False)
         self.listWidget.currentRowChanged.connect(self.updateRasterPropertiesGroup)
         self.demLayerBox.layerChanged.connect(self.updateDEMBandBox)
         self.BCLayerBox.layerChanged.connect(self.updatePolygonTabs)
+        self.AreaLayerBox.layerChanged.connect(self.UpdateImportButtons)
         self.roughnessLayerBox.layerChanged.connect(self.updateRoughnessBandBox)
         self.initLayerBox.layerChanged.connect(self.updateInitBandBox)
         self.pickButton.clicked.connect(self.enableMapPicker)
@@ -92,20 +98,25 @@ class PluginDialog(QDialog):
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
         self.browseButton.setAutoDefault(False)
 
-    def __del__(self):
-        if type(self.previewLayer) != type(None):
-            QgsProject.instance().removeMapLayer(self.previewLayer)
-        self.previewLayer = None
-        self.act.setEnabled(True)
-        self.cancel = False
-        self.dialog.reject()
-
-
     def createIlmFile(self):
         if self.ilmBox.checkState() == Qt.Checked:
             return True
         else:
             return False
+
+
+
+    def UpdateImportButtons(self):
+        if self.AreaLayerBox.currentLayer():
+            self.ImportasPolygonButton.setEnabled(True)
+            self.AreadxBox.setEnabled(True)
+            self.AreadyBox.setEnabled(True)
+        else:
+            self.ImportasPolygonButton.setEnabled(False)
+            self.AreadxBox.setEnabled(False)
+            self.AreadyBox.setEnabled(False)
+
+
 
     def zoomToRaster(self):
 
@@ -177,31 +188,6 @@ class PluginDialog(QDialog):
     def BCLayer(self):
         return self.BCLayerBox.currentLayer()
 
-    def rasters(self):
-
-        result = []
-        for row in range(self.listWidget.count()):
-            item = self.listWidget.item(row)
-
-            xll = item.data(PluginDialog.xllRole)
-            yll = item.data(PluginDialog.yllRole)
-            nr = item.data(PluginDialog.nrRole)
-            nc = item.data(PluginDialog.ncRole)
-            dr = item.data(PluginDialog.drRole)
-            dc = item.data(PluginDialog.dcRole)
-            angle = item.data(PluginDialog.angleRole)
-
-            nodata = {
-                'elev': self.demNaNBox.value(),
-                'roughn': self.roughnessNaNBox.value(),
-                'init': self.initNaNBox.value()
-            }
-
-            raster = RasterWriter(xll, yll, dc, dr, nc, nr, angle / 180.0 * math.pi, nodata)
-            filename = os.path.join(self.folderEdit.text(), item.text() + '.txt')
-            result.append((raster, filename))
-
-        return result
 
     def onBrowseButtonClicked(self):
         currentFolder = self.folderEdit.text()
@@ -221,6 +207,20 @@ class PluginDialog(QDialog):
 
         self.bandBox.setEnabled(True)
         self.addButton.setEnabled(True)
+        self.groupBox.setEnabled(True)
+
+        ############################################
+        # raster settings
+        self.xllBox.setEnabled(False)
+        self.yllBox.setEnabled(False)
+        self.pickButton.setEnabled(False)
+        self.drBox.setEnabled(False)
+        self.dcBox.setEnabled(False)
+        self.nrBox.setEnabled(False)
+        self.ncBox.setEnabled(False)
+        self.angleBox.setEnabled(False)
+        self.ExportasPolygonButton.setEnabled(False)
+        #############################################
 
         self.bandBox.setMaximum(layer.bandCount())
         self.bandBox.setValue(1)
@@ -249,36 +249,6 @@ class PluginDialog(QDialog):
         self.boundarytype_box.setLayer(self.BCLayer())
 
 
-    def addNewRasterItem(self):
-        num = self.listWidget.count() + 1
-        item = QListWidgetItem('raster_{:d}'.format(num))
-        item.setData(PluginDialog.xllRole, 0.0)
-        item.setData(PluginDialog.yllRole, 0.0)
-        item.setData(PluginDialog.nrRole, 100)
-        item.setData(PluginDialog.ncRole, 100)
-        item.setData(PluginDialog.drRole, 1.0)
-        item.setData(PluginDialog.dcRole, 1.0)
-        item.setData(PluginDialog.angleRole, 0.0)
-
-        item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled)
-
-        self.removeButton.setEnabled(True)
-        self.zoomButton.setEnabled(True)
-        self.groupBox.setEnabled(True)
-        self.ilmBox.setEnabled(True)
-
-        polygon = self.polygon(0.0, 0.0, 100.0, 100.0, 0.0)
-        self.rasterAdded.emit(int(self.listWidget.count() + 1), polygon)
-
-        self.listWidget.addItem(item)
-        self.listWidget.setCurrentItem(item)
-
-    def polygon(self, xll, yll, dx, dy, angle):
-        poly = [QgsPointXY(xll, yll), QgsPointXY(xll + dx * math.cos(angle), yll + dx * math.sin(angle)),
-                QgsPointXY(xll + (dx * math.cos(angle) - dy * math.sin(angle)),
-                           yll + (dy * math.cos(angle) + dx * math.sin(angle))),
-                QgsPointXY(xll - dy * math.sin(angle), yll + dy * math.cos(angle))]
-        return QgsGeometry.fromPolygonXY([poly])
 
     def removeRasterItems(self):
         for item in self.listWidget.selectedItems():
@@ -289,7 +259,20 @@ class PluginDialog(QDialog):
         if self.listWidget.count() == 0:
             self.zoomButton.setEnabled(False)
             self.removeButton.setEnabled(False)
-            self.groupBox.setEnabled(False)
+            self.ExportasPolygonButton.setEnabled(False)
+            #self.groupBox.setEnabled(False)
+            ############################################
+            #raster settings
+            self.xllBox.setEnabled(False)
+            self.yllBox.setEnabled(False)
+            self.pickButton.setEnabled(False)
+            self.drBox.setEnabled(False)
+            self.dcBox.setEnabled(False)
+            self.nrBox.setEnabled(False)
+            self.ncBox.setEnabled(False)
+            self.angleBox.setEnabled(False)
+            self.ExportasPolygonButton.setEnabled(False)
+            #############################################
             self.ilmBox.setEnabled(False)
 
     def updateRasterPropertiesGroup(self, row):
@@ -344,6 +327,9 @@ class DEMExport(object):
         self.dialog.rasterRemoved.connect(self.removeRasterBounds)
         self.dialog.setModal(False)
         self.dialog.ExportasPolygonButton.clicked.connect(self.SaveasPolygon)
+        self.dialog.addButton.clicked.connect(self.addNewRasterItem)
+        self.dialog.addButton.setAutoDefault(False)
+        self.dialog.ImportasPolygonButton.clicked.connect(self.ImportAreaFromPolygon)
 
 
         self.dialog.xllBox.editingFinished.connect(self.saveRasterProperties)
@@ -378,6 +364,118 @@ class DEMExport(object):
     def scheduleAbort(self):
         self.cancel = True
 
+    ImportFromPolygon = False
+
+    def ImportAreaFromPolygon(self):
+        if self.dialog.AreadxBox.value() <= 0 or self.dialog.AreadyBox.value() <= 0:
+            self.dialog.iface.messageBar().pushCritical(
+                'Resample Polyline Vertices',
+                'Invalid Values for dx or dy !'
+            )
+            return
+        self.ImportFromPolygon = True
+        self.addNewRasterItem()
+
+    def addNewRasterItem(self):
+
+        if self.ImportFromPolygon == True:
+            try:
+                layer = self.dialog.AreaLayerBox.currentLayer()
+                features = layer.getFeatures()
+                for i, f in enumerate(features):
+                    num = self.dialog.listWidget.count() + 1
+                    item = QListWidgetItem('raster_{:d}'.format(num))
+                    item.setData(PluginDialog.xllRole, f.attribute("xll"))
+                    item.setData(PluginDialog.yllRole, f.attribute("yll"))
+                    item.setData(PluginDialog.nrRole, f.attribute("dy*nr") / self.dialog.AreadyBox.value())
+                    item.setData(PluginDialog.ncRole, f.attribute("dx*nc") / self.dialog.AreadxBox.value())
+                    item.setData(PluginDialog.drRole, self.dialog.AreadyBox.value())
+                    item.setData(PluginDialog.dcRole, self.dialog.AreadxBox.value())
+                    item.setData(PluginDialog.angleRole, f.attribute("angle"))
+
+                    item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled)
+
+                    self.dialog.removeButton.setEnabled(True)
+                    self.dialog.ExportasPolygonButton.setEnabled(True)
+                    self.dialog.zoomButton.setEnabled(True)
+                    self.dialog.groupBox.setEnabled(True)
+                    ############################################
+                    # raster settings
+                    self.dialog.xllBox.setEnabled(True)
+                    self.dialog.yllBox.setEnabled(True)
+                    self.dialog.pickButton.setEnabled(True)
+                    self.dialog.drBox.setEnabled(True)
+                    self.dialog.dcBox.setEnabled(True)
+                    self.dialog.nrBox.setEnabled(True)
+                    self.dialog.ncBox.setEnabled(True)
+                    self.dialog.angleBox.setEnabled(True)
+                    self.dialog.ExportasPolygonButton.setEnabled(True)
+                    #############################################
+                    self.dialog.ilmBox.setEnabled(True)
+
+                    polygon = self.polygon(0.0, 0.0, 100.0, 100.0, 0.0)
+                    self.dialog.rasterAdded.emit(int(self.dialog.listWidget.count() + 1), polygon)
+
+                    self.dialog.listWidget.addItem(item)
+                    self.dialog.listWidget.setCurrentItem(item)
+                    self.saveRasterProperties()
+                    if i == layer.featureCount() - 1:
+                        self.ImportFromPolygon = False
+                        return
+            except:
+                self.iface.messageBar().pushCritical(
+                    '2D-Floodplain Export',
+                    'Area Cannot be Imported from Polygon !'
+                )
+                return
+
+        num = self.dialog.listWidget.count() + 1
+        item = QListWidgetItem('raster_{:d}'.format(num))
+        item.setData(PluginDialog.xllRole, 0.0)
+        item.setData(PluginDialog.yllRole, 0.0)
+        item.setData(PluginDialog.nrRole, 100)
+        item.setData(PluginDialog.ncRole, 100)
+        item.setData(PluginDialog.drRole, 1.0)
+        item.setData(PluginDialog.dcRole, 1.0)
+        item.setData(PluginDialog.angleRole, 0.0)
+
+
+        item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled)
+
+        self.dialog.removeButton.setEnabled(True)
+        self.dialog.ExportasPolygonButton.setEnabled(True)
+        self.dialog.zoomButton.setEnabled(True)
+        self.dialog.groupBox.setEnabled(True)
+        ############################################
+        # raster settings
+        self.dialog.xllBox.setEnabled(True)
+        self.dialog.yllBox.setEnabled(True)
+        self.dialog.pickButton.setEnabled(True)
+        self.dialog.drBox.setEnabled(True)
+        self.dialog.dcBox.setEnabled(True)
+        self.dialog.nrBox.setEnabled(True)
+        self.dialog.ncBox.setEnabled(True)
+        self.dialog.angleBox.setEnabled(True)
+        self.dialog.ExportasPolygonButton.setEnabled(True)
+        #############################################
+        self.dialog.ilmBox.setEnabled(True)
+
+        polygon = self.polygon(0.0, 0.0, 100.0, 100.0, 0.0)
+        self.dialog.rasterAdded.emit(int(self.dialog.listWidget.count() + 1), polygon)
+
+        self.dialog.listWidget.addItem(item)
+        self.dialog.listWidget.setCurrentItem(item)
+
+        self.saveRasterProperties()
+
+
+    def polygon(self, xll, yll, dx, dy, angle):
+        poly = [QgsPointXY(xll, yll), QgsPointXY(xll + dx * math.cos(angle), yll + dx * math.sin(angle)),
+                QgsPointXY(xll + (dx * math.cos(angle) - dy * math.sin(angle)),
+                           yll + (dy * math.cos(angle) + dx * math.sin(angle))),
+                QgsPointXY(xll - dy * math.sin(angle), yll + dy * math.cos(angle))]
+        return QgsGeometry.fromPolygonXY([poly])
+
     def SaveasPolygon(self):
         try:
             original = self.previewLayer
@@ -388,17 +486,43 @@ class DEMExport(object):
             writingpath = originalpath + "/" + originalname + "_exported.shp"
             _writer = QgsVectorFileWriter.writeAsVectorFormat(original, writingpath, 'utf-8',
                                                               driverName='ESRI Shapefile')
-            loadedlayer = QgsVectorLayer(writingpath, originalname + "_copy", "ogr")
+            loadedlayer = QgsVectorLayer(writingpath, originalname + "_exported", "ogr")
             QgsProject.instance().addMapLayer(loadedlayer)
             self.dialog.iface.layerTreeView().setCurrentLayer(original)
 
         except:
             self.iface.messageBar().pushCritical(
-                'Resample Polyline Vertices',
+                '2D-Floodplain Export',
                 'New layer cannot be created!'
             )
             self.quitDialog()
             return
+
+    def rasters(self):
+
+        result = []
+        for row in range(self.dialog.listWidget.count()):
+            item = self.dialog.listWidget.item(row)
+
+            xll = item.data(PluginDialog.xllRole)
+            yll = item.data(PluginDialog.yllRole)
+            nr = item.data(PluginDialog.nrRole)
+            nc = item.data(PluginDialog.ncRole)
+            dr = item.data(PluginDialog.drRole)
+            dc = item.data(PluginDialog.dcRole)
+            angle = item.data(PluginDialog.angleRole)
+
+            nodata = {
+                'elev': self.dialog.demNaNBox.value(),
+                'roughn': self.dialog.roughnessNaNBox.value(),
+                'init': self.dialog.initNaNBox.value()
+            }
+
+            raster = RasterWriter(xll, yll, dc, dr, nc, nr, angle / 180.0 * math.pi, nodata)
+            filename = os.path.join(self.dialog.folderEdit.text(), item.text() + '.txt')
+            result.append((raster, filename))
+
+        return result
 
     def saveRasterPropertiesNoRedraw(self):
         self.saveRasterProperties(False)
@@ -441,9 +565,9 @@ class DEMExport(object):
         item.setData(PluginDialog.dcRole, self.dialog.dcBox.value())
         item.setData(PluginDialog.angleRole, angle)
 
-        if redraw:
+        if True:
             self.dialog.rasterUpdated.emit(int(self.dialog.listWidget.row(item) + 1),
-                                    self.dialog.polygon(xll, yll, dx, dy, angle / 180.0 * math.pi))
+                                    self.polygon(xll, yll, dx, dy, angle / 180.0 * math.pi))
 
     def quitDialog(self):
         #self.dialog = None
@@ -478,7 +602,7 @@ class DEMExport(object):
             }
         }
 
-        rasters = self.dialog.rasters()  # list of tuples (raster, filename)
+        rasters = self.rasters()  # list of tuples (raster, filename)
         num_cells = sum([r.num_cells() for r, f in rasters])
 
         if num_cells == 0:
@@ -561,7 +685,7 @@ class DEMExport(object):
 
 
         # write cell values
-        for i in range(out_raster.num_cells()):
+        for i in range(int(out_raster.num_cells())):
             point = out_raster.cell_center(i)
             if self.dialog.mGroupBox_4.isChecked():
                 if polygonlayer:
@@ -631,22 +755,50 @@ class DEMExport(object):
     def addRasterBounds(self, id, polygon):
         if type(self.previewLayer) != type(None):
             dp = self.previewLayer.dataProvider()
-            newPoly = QgsFeature(id)
+            newPoly = QgsFeature()
             newPoly.setGeometry(polygon)
             dp.addFeatures([newPoly])
-
+            
+            
         self.previewLayer.updateExtents()
         self.previewLayer.triggerRepaint()
 
     def updateRasterBounds(self, id, polygon):
         if type(self.previewLayer) != type(None):
-            self.previewLayer.dataProvider().changeGeometryValues({id: polygon})
+            feat=self.previewLayer.getFeatures()
+            idlist=[]
+            for f in feat:
+                i=f.id()
+                idlist.append(i)
+                idlist.sort()
+            idtemp=idlist[id-1]
+            self.previewLayer.dataProvider().changeGeometryValues({idtemp: polygon})
             self.previewLayer.updateExtents()
             self.previewLayer.triggerRepaint()
 
     def removeRasterBounds(self, id):
         if type(self.previewLayer) != type(None):
-            self.previewLayer.dataProvider().deleteFeatures([id])
+            layer = self.previewLayer
+            prov = layer.dataProvider()
+            feat=self.previewLayer.getFeatures()
+            idlist=[]
+            for f in feat:
+                i=f.id()
+                idlist.append(i)
+                idlist.sort()
+            idtemp=idlist[id-1]
+
+            f = layer.getFeature(idtemp)
+            xll_idx = layer.fields().lookupField('xll')
+            yll_idx = layer.fields().lookupField('yll')
+            dxnc_idx = layer.fields().lookupField('dx*nc')
+            dynr_idx = layer.fields().lookupField('dy*nr')
+            angle_idx = layer.fields().lookupField('angle')
+
+            atts = {xll_idx: 0, yll_idx: 0, dxnc_idx: 0, dynr_idx: 0, angle_idx: 0}
+            prov.changeAttributeValues({f.id(): atts})
+            layer.updateFields()
+            self.previewLayer.dataProvider().deleteFeatures([idtemp])
             self.previewLayer.updateExtents()
             self.previewLayer.triggerRepaint()
 
