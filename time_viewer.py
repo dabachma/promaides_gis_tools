@@ -64,8 +64,12 @@ class PluginDialog(QDialog):
         self.PlayButton.setEnabled(False)
         self.PauseButton.setEnabled(False)
         self.StopButton.setEnabled(False)
+        self.PreviousButton.setEnabled(False)
+        self.NextButton.setEnabled(False)
 
         self.PlayButton.clicked.connect(self.play1)
+        self.NextButton.clicked.connect(self.Next)
+        self.PreviousButton.clicked.connect(self.Previous)
         self.ProcessButton.clicked.connect(self.WriteProcessing)
         self.PauseButton.clicked.connect(self.PausePlay)
         self.StopButton.clicked.connect(self.StopPlay)
@@ -100,6 +104,8 @@ class PluginDialog(QDialog):
         self.FrameIDs.sort()
         self.ProcessButton.setEnabled(False)
         self.PlayButton.setEnabled(True)
+        self.PreviousButton.setEnabled(True)
+        self.NextButton.setEnabled(True)
         self.Displayer.setText("Ready!")
 
 
@@ -114,6 +120,32 @@ class PluginDialog(QDialog):
 
     def PausePlay(self):
         self.PausePressed=True
+
+    NextPressed = False
+    def Next(self):
+        if self.count==len(self.FrameIDs)-1:
+            self.iface.messageBar().pushCritical(
+                'Time Viewer',
+                'Next Frame Not Available !'
+            )
+            return
+        else:
+            self.NextPressed=True
+            self.count=self.count+1
+            self.play1()
+
+    PreviousPressed = False
+    def Previous(self):
+        if self.count==0:
+            self.iface.messageBar().pushCritical(
+                'Time Viewer',
+                'Previous Frame Not Available !'
+            )
+            return
+        else:
+            self.PreviousPressed = True
+            self.count = self.count - 1
+            self.play1()
 
     def StopPlay(self):
         self.StopPressed=True
@@ -138,22 +170,31 @@ class PluginDialog(QDialog):
     StopPressed=False
     PausePressed=False
     def play1(self):
+        self.PlayButton.setEnabled(False)
         self.PauseButton.setEnabled(True)
         self.StopButton.setEnabled(True)
+        self.PreviousButton.setEnabled(False)
+        self.NextButton.setEnabled(False)
         layer = self.InputLayer()
         if self.PausePressed==True:
+            self.PlayButton.setEnabled(True)
             self.PauseButton.setEnabled(False)
             self.StopButton.setEnabled(False)
             self.StopPressed = False
             self.PausePressed = False
+            self.PreviousButton.setEnabled(True)
+            self.NextButton.setEnabled(True)
             self.Displayer.setText("Paused!")
             return
         if self.StopPressed == True:
             self.count=0
+            self.PlayButton.setEnabled(True)
             self.PauseButton.setEnabled(False)
             self.StopButton.setEnabled(False)
             self.StopPressed = False
             self.PausePressed = False
+            self.PreviousButton.setEnabled(True)
+            self.NextButton.setEnabled(True)
             layer.setSubsetString('')
             self.Displayer.setText("Ready!")
             return
@@ -172,6 +213,13 @@ class PluginDialog(QDialog):
             layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
         else:
             layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.addfilterbox.text()))
+        if self.NextPressed or self.PreviousPressed:
+            self.NextPressed=False
+            self.PreviousPressed=False
+            self.PreviousButton.setEnabled(True)
+            self.NextButton.setEnabled(True)
+            self.PlayButton.setEnabled(True)
+            return
         QTimer.singleShot(FPS, self.play2)
 
 
@@ -180,18 +228,24 @@ class PluginDialog(QDialog):
         global count
         layer = self.InputLayer()
         if self.PausePressed==True:
+            self.PlayButton.setEnabled(True)
             self.PauseButton.setEnabled(False)
             self.StopButton.setEnabled(False)
             self.StopPressed = False
             self.PausePressed = False
+            self.PreviousButton.setEnabled(True)
+            self.NextButton.setEnabled(True)
             self.Displayer.setText("Paused!")
             return
         if self.StopPressed == True:
             self.count=0
+            self.PlayButton.setEnabled(True)
             self.PauseButton.setEnabled(False)
             self.StopButton.setEnabled(False)
             self.StopPressed = False
             self.PausePressed = False
+            self.PreviousButton.setEnabled(True)
+            self.NextButton.setEnabled(True)
             layer.setSubsetString('')
             self.Displayer.setText("Ready!")
             return
@@ -210,8 +264,11 @@ class PluginDialog(QDialog):
             QTimer.singleShot(0.1, self.play1) # Wait a second and prepare next map
             self.count += 1
         else:
+            self.PlayButton.setEnabled(True)
             self.PauseButton.setEnabled(False)
             self.StopButton.setEnabled(False)
+            self.PreviousButton.setEnabled(True)
+            self.NextButton.setEnabled(True)
             self.StopPressed = False
             self.PausePressed = False
             self.count=0
