@@ -219,6 +219,8 @@ class PluginDialog(QDialog):
             self.PreviousButton.setEnabled(True)
             self.NextButton.setEnabled(True)
             self.PlayButton.setEnabled(True)
+            self.PauseButton.setEnabled(False)
+            self.StopButton.setEnabled(False)
             return
         QTimer.singleShot(FPS, self.play2)
 
