@@ -93,14 +93,11 @@ class PluginDialog(QDialog):
         self.FrameIDs = []
         layer = self.InputLayer()
         layer.setSubsetString('')
-        self.FrameIDs, ok = QgsVectorLayerUtils.getValues(layer, self.FieldIDBox.expression(), False)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'Time Viewer',
-                'Invalid expression for Frame ID !'
-            )
-            return
-        self.FrameIDs = list(dict.fromkeys(self.FrameIDs))
+        field = self.FieldIDBox.currentText()
+        idx = layer.fields().indexOf('{index}'.format(index=field))
+        FrameIDvalues = layer.uniqueValues(idx)
+        for i in FrameIDvalues:
+            self.FrameIDs.append(i)
         self.FrameIDs.sort()
         self.ProcessButton.setEnabled(False)
         self.PlayButton.setEnabled(True)
