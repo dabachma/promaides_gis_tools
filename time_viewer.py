@@ -40,6 +40,7 @@ class PluginDialog(QDialog):
         self.InputLayerBox.setLayer(None)
         self.InputLayerBox.layerChanged.connect(self.UpdateFrameID)
         self.FieldIDBox.fieldChanged.connect(self.UpdateProcessButton)
+        self.TimeSlider.valueChanged.connect(self.SliderUpdated)
 
         self.SaveBox.addItem('JPEG')
         self.SaveBox.addItem('PNG')
@@ -81,6 +82,8 @@ class PluginDialog(QDialog):
     def UpdateFrameID(self, layer):
         self.FieldIDBox.setLayer(self.InputLayer())
         self.PlayButton.setEnabled(False)
+        self.NextButton.setEnabled(False)
+        self.PreviousButton.setEnabled(False)
         self.ProcessButton.setEnabled(True)
 
     def WriteProcessing(self):
@@ -95,6 +98,12 @@ class PluginDialog(QDialog):
         layer.setSubsetString('')
         field = self.FieldIDBox.currentText()
         idx = layer.fields().indexOf('{index}'.format(index=field))
+        if idx==-1:
+            self.iface.messageBar().pushCritical(
+                'Time Viewer',
+                'Field Does Not Exist !'
+            )
+            return
         FrameIDvalues = layer.uniqueValues(idx)
         for i in FrameIDvalues:
             self.FrameIDs.append(i)
@@ -104,7 +113,21 @@ class PluginDialog(QDialog):
         self.PreviousButton.setEnabled(True)
         self.NextButton.setEnabled(True)
         self.Displayer.setText("Ready!")
+        self.TimeSlider.setMinimum(1)
+        self.TimeSlider.setMaximum(len(self.FrameIDs))
+        self.TimeSlider.setSingleStep(1)
+        self.TimeSlider.setValue(1)
+        self.TimeSlider.setTickInterval(len(self.FrameIDs)/5)
+        #self.TimeSlider.TicksAbove()
 
+    SliderChanged = False
+    def SliderUpdated(self):
+        if self.NextPressed or self.PreviousPressed:
+            return
+        else:
+            self.count=self.TimeSlider.value()-1
+            self.SliderChanged=True
+            self.play1()
 
     def UpdateProcessButton(self):
         self.ProcessButton.setEnabled(True)
@@ -167,6 +190,7 @@ class PluginDialog(QDialog):
     StopPressed=False
     PausePressed=False
     def play1(self):
+        self.TimeSlider.setValue(self.count+1)
         self.PlayButton.setEnabled(False)
         self.PauseButton.setEnabled(True)
         self.StopButton.setEnabled(True)
@@ -210,9 +234,10 @@ class PluginDialog(QDialog):
             layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
         else:
             layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.addfilterbox.text()))
-        if self.NextPressed or self.PreviousPressed:
+        if self.NextPressed or self.PreviousPressed or self.SliderChanged:
             self.NextPressed=False
             self.PreviousPressed=False
+            self.SliderChanged=False
             self.PreviousButton.setEnabled(True)
             self.NextButton.setEnabled(True)
             self.PlayButton.setEnabled(True)
@@ -271,6 +296,8 @@ class PluginDialog(QDialog):
             self.StopPressed = False
             self.PausePressed = False
             self.count=0
+            self.TimeSlider.setValue(1)
+
             self.Displayer.setText("Ready!")
 
 
