@@ -18,9 +18,6 @@ from qgis.PyQt import uic
 from PyQt5.QtCore import QTimer
 from qgis.utils import iface
 
-from shapely.geometry import MultiLineString, mapping, shape
-
-# This plugin resamples the vertices of a polyline; use it for a higher point density of a line;
 from .environment import get_ui_path
 
 
@@ -118,7 +115,6 @@ class PluginDialog(QDialog):
         self.TimeSlider.setSingleStep(1)
         self.TimeSlider.setValue(1)
         self.TimeSlider.setTickInterval(len(self.FrameIDs)/5)
-        #self.TimeSlider.TicksAbove()
 
     SliderChanged = False
     def SliderUpdated(self):
@@ -132,6 +128,8 @@ class PluginDialog(QDialog):
     def UpdateProcessButton(self):
         self.ProcessButton.setEnabled(True)
         self.PlayButton.setEnabled(False)
+        self.NextButton.setEnabled(False)
+        self.PreviousButton.setEnabled(False)
         self.Displayer.setText("Hello!")
 
 
