@@ -67,11 +67,11 @@ class PluginDialog(QDialog):
         self.addButton.setEnabled(False)
         self.zoomButton.setEnabled(False)
         self.removeButton.setEnabled(False)
-        self.ExportasPolygonButton.setEnabled(False)
+        self.ExportButton.setEnabled(False)
         self.bandBox.setEnabled(False)
         self.ilmBox.setEnabled(False)
         self.groupBox.setEnabled(False)
-        self.ImportasPolygonButton.setEnabled(False)
+        self.ImportButton.setEnabled(False)
         self.AreadxBox.setEnabled(False)
         self.AreadyBox.setEnabled(False)
         self.roughnessLayerBox.setLayer(None)
@@ -108,11 +108,11 @@ class PluginDialog(QDialog):
 
     def UpdateImportButtons(self):
         if self.AreaLayerBox.currentLayer():
-            self.ImportasPolygonButton.setEnabled(True)
+            self.ImportButton.setEnabled(True)
             self.AreadxBox.setEnabled(True)
             self.AreadyBox.setEnabled(True)
         else:
-            self.ImportasPolygonButton.setEnabled(False)
+            self.ImportButton.setEnabled(False)
             self.AreadxBox.setEnabled(False)
             self.AreadyBox.setEnabled(False)
 
@@ -218,8 +218,8 @@ class PluginDialog(QDialog):
         self.dcBox.setEnabled(False)
         self.nrBox.setEnabled(False)
         self.ncBox.setEnabled(False)
+        self.ExportButton.setEnabled(False)
         self.angleBox.setEnabled(False)
-        self.ExportasPolygonButton.setEnabled(False)
         #############################################
 
         self.bandBox.setMaximum(layer.bandCount())
@@ -259,7 +259,7 @@ class PluginDialog(QDialog):
         if self.listWidget.count() == 0:
             self.zoomButton.setEnabled(False)
             self.removeButton.setEnabled(False)
-            self.ExportasPolygonButton.setEnabled(False)
+            self.ExportButton.setEnabled(False)
             #self.groupBox.setEnabled(False)
             ############################################
             #raster settings
@@ -270,8 +270,8 @@ class PluginDialog(QDialog):
             self.dcBox.setEnabled(False)
             self.nrBox.setEnabled(False)
             self.ncBox.setEnabled(False)
+            self.ExportButton.setEnabled(False)
             self.angleBox.setEnabled(False)
-            self.ExportasPolygonButton.setEnabled(False)
             #############################################
             self.ilmBox.setEnabled(False)
 
@@ -326,10 +326,10 @@ class DEMExport(object):
         self.dialog.rasterUpdated.connect(self.updateRasterBounds)
         self.dialog.rasterRemoved.connect(self.removeRasterBounds)
         self.dialog.setModal(False)
-        self.dialog.ExportasPolygonButton.clicked.connect(self.SaveasPolygon)
+        self.dialog.ExportButton.clicked.connect(self.SaveasPolygon)
         self.dialog.addButton.clicked.connect(self.addNewRasterItem)
         self.dialog.addButton.setAutoDefault(False)
-        self.dialog.ImportasPolygonButton.clicked.connect(self.ImportAreaFromPolygon)
+        self.dialog.ImportButton.clicked.connect(self.ImportAreaFromPolygon)
 
 
         self.dialog.xllBox.editingFinished.connect(self.saveRasterProperties)
@@ -396,7 +396,7 @@ class DEMExport(object):
                     item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled)
 
                     self.dialog.removeButton.setEnabled(True)
-                    self.dialog.ExportasPolygonButton.setEnabled(True)
+                    self.dialog.ExportButton.setEnabled(True)
                     self.dialog.zoomButton.setEnabled(True)
                     self.dialog.groupBox.setEnabled(True)
                     ############################################
@@ -408,8 +408,8 @@ class DEMExport(object):
                     self.dialog.dcBox.setEnabled(True)
                     self.dialog.nrBox.setEnabled(True)
                     self.dialog.ncBox.setEnabled(True)
+                    self.dialog.ExportButton.setEnabled(True)
                     self.dialog.angleBox.setEnabled(True)
-                    self.dialog.ExportasPolygonButton.setEnabled(True)
                     #############################################
                     self.dialog.ilmBox.setEnabled(True)
 
@@ -444,7 +444,7 @@ class DEMExport(object):
         item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled)
 
         self.dialog.removeButton.setEnabled(True)
-        self.dialog.ExportasPolygonButton.setEnabled(True)
+        self.dialog.ExportButton.setEnabled(True)
         self.dialog.zoomButton.setEnabled(True)
         self.dialog.groupBox.setEnabled(True)
         ############################################
@@ -456,8 +456,8 @@ class DEMExport(object):
         self.dialog.dcBox.setEnabled(True)
         self.dialog.nrBox.setEnabled(True)
         self.dialog.ncBox.setEnabled(True)
+        self.dialog.ExportButton.setEnabled(True)
         self.dialog.angleBox.setEnabled(True)
-        self.dialog.ExportasPolygonButton.setEnabled(True)
         #############################################
         self.dialog.ilmBox.setEnabled(True)
 
@@ -559,13 +559,13 @@ class DEMExport(object):
             # call changeAttributeValues(), pass feature id and attribute dictionary
             prov.changeAttributeValues({feat.id(): atts})
 
-        item.setData(PluginDialog.xllRole, xll)
-        item.setData(PluginDialog.yllRole, yll)
-        item.setData(PluginDialog.nrRole, self.dialog.nrBox.value())
-        item.setData(PluginDialog.ncRole, self.dialog.ncBox.value())
-        item.setData(PluginDialog.drRole, self.dialog.drBox.value())
-        item.setData(PluginDialog.dcRole, self.dialog.dcBox.value())
-        item.setData(PluginDialog.angleRole, angle)
+            item.setData(PluginDialog.xllRole, xll)
+            item.setData(PluginDialog.yllRole, yll)
+            item.setData(PluginDialog.nrRole, self.dialog.nrBox.value())
+            item.setData(PluginDialog.ncRole, self.dialog.ncBox.value())
+            item.setData(PluginDialog.drRole, self.dialog.drBox.value())
+            item.setData(PluginDialog.dcRole, self.dialog.dcBox.value())
+            item.setData(PluginDialog.angleRole, angle)
 
         if True:
             self.dialog.rasterUpdated.emit(int(self.dialog.listWidget.row(item) + 1),
