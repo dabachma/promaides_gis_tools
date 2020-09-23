@@ -64,6 +64,7 @@ class PluginDialog(QDialog):
         self.StopButton.setEnabled(False)
         self.PreviousButton.setEnabled(False)
         self.NextButton.setEnabled(False)
+        self.TimeSlider.setEnabled(False)
 
         self.PlayButton.clicked.connect(self.play1)
         self.NextButton.clicked.connect(self.Next)
@@ -80,6 +81,7 @@ class PluginDialog(QDialog):
         self.FieldIDBox.setLayer(self.InputLayer())
         self.PlayButton.setEnabled(False)
         self.NextButton.setEnabled(False)
+        self.TimeSlider.setEnabled(False)
         self.PreviousButton.setEnabled(False)
         self.ProcessButton.setEnabled(True)
 
@@ -96,6 +98,7 @@ class PluginDialog(QDialog):
         field = self.FieldIDBox.currentText()
         idx = layer.fields().indexOf('{index}'.format(index=field))
         if idx==-1:
+            self.Displayer.setText("Ready!")
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
                 'Field Does Not Exist !'
@@ -107,6 +110,7 @@ class PluginDialog(QDialog):
         self.FrameIDs.sort()
         self.ProcessButton.setEnabled(False)
         self.PlayButton.setEnabled(True)
+        self.TimeSlider.setEnabled(True)
         self.PreviousButton.setEnabled(True)
         self.NextButton.setEnabled(True)
         self.Displayer.setText("Ready!")
@@ -128,6 +132,7 @@ class PluginDialog(QDialog):
     def UpdateProcessButton(self):
         self.ProcessButton.setEnabled(True)
         self.PlayButton.setEnabled(False)
+        self.TimeSlider.setEnabled(False)
         self.NextButton.setEnabled(False)
         self.PreviousButton.setEnabled(False)
         self.Displayer.setText("Hello!")
@@ -166,6 +171,7 @@ class PluginDialog(QDialog):
             self.play1()
 
     def StopPlay(self):
+        self.TimeSlider.setValue(1)
         self.StopPressed=True
 
     def onBrowseButtonClicked(self):
