@@ -56,6 +56,7 @@ class RainGenerator(object):
         self.act = QAction('Rain Generator', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
 
+
     def initGui(self, menu=None):
         if menu is not None:
             menu.addAction(self.act)
@@ -68,6 +69,24 @@ class RainGenerator(object):
         else:
             self.iface.removeToolBarIcon(self.act)
 
+
+    def CreateGenerationArea(self):
+        layer = self.dialog.GenerationAreaLayer.currentLayer()
+        ex = layer.extent()
+        #xmax = ex.xMaximum()
+        #ymax = ex.yMaximum()
+        #xmin = ex.xMinimum()
+        #ymin = ex.yMinimum()
+        layer2 = QgsVectorLayer("Polygon", 'Test2', 'memory')
+        prov = layer2.dataProvider()
+        feat = QgsFeature()
+        feat.setGeometry(QgsGeometry.fromRect(layer.extent()))
+        prov.addFeatures([feat])
+        layer2.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
+        layer2.updateExtents()
+        QgsProject.instance().addMapLayer(layer2)
+
+
     def execDialog(self):
         """
         """
@@ -77,6 +96,8 @@ class RainGenerator(object):
         self.dialog.setModal(False)
         self.act.setEnabled(False)
         self.dialog.show()
+
+        self.dialog.CheckButton.clicked.connect(self.CreateGenerationArea)
 
     def scheduleAbort(self):
         self.cancel = True
