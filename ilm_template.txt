@@ -47,24 +47,6 @@
   $GRAMSCHMIDT = MODIFIED_GS
 </SET>
 
-#!OUTPUT = <STANDARD> #Choose the standard values (see standard below)
-!OUTPUT = <SET> #choose individual definition
-	#Is a output for 1D-results as .dat file required; work with the file in Tecplot
-	$TECPLOT_1D =false
-	#Is a output for 2D-results as .dat file required; work with the file in Tecplot
-	$TECPLOT_2D =false
-	#Is a output for 2D-results as .r2s file required; work with the file in BlueKenue
-	$BLUEKENUE_2D =true
-	#Is a output for 2D-results as .vtk file required; work with the file in ParaView
-	$PARAVIEW_2D =true
-	#Is a output for 1D-results as .csv file required; work with the file in ParaView or Excel
-	$PARAVIEW_EXCEL_1D =false
-	#Relative path to .ilmfile; just used in calculation with file anmd during the database import of the system
-	$OUTPUT_FOLDER =   ./ 
-	#Is a database output of instationary results required   
-	$DATBASE_INSTAT = false
-</SET>
-
 # relative file path to materials file
 !MATERIALFILE = "./rauhigkeiten.man"
 

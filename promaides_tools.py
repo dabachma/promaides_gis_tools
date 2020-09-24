@@ -18,6 +18,7 @@ from .dem_export import DEMExport
 from .database_export import DatabaseExport
 from .hello_world import HelloWorld
 from .time_viewer import TimeViewer
+from .rain_generator import RainGenerator
 
 import os
 
@@ -43,6 +44,7 @@ class PromaidesToolbox(object):
         self.db_exprt = DatabaseExport(self.iface)
         self.hello_world = HelloWorld(self.iface)
         self.time = TimeViewer(self.iface)
+        self.rain = RainGenerator(self.iface)
 
     def initGui(self):
         """
@@ -71,6 +73,7 @@ class PromaidesToolbox(object):
         self.db_exprt.initGui(self.submenu_general)
         self.hello_world.initGui(self.submenu_general)
         self.time.initGui(self.submenu_general)
+        self.rain.initGui(self.submenu_general)
 
         #Add about
         self.plugin_menu.addAction('About', self.showAbout)
@@ -91,6 +94,7 @@ class PromaidesToolbox(object):
         self.db_exprt.unload(self.submenu_general)
         self.hello_world.unload(self.submenu_general)
         self.time.unload(self.submenu_general)
+        self.rain.unload(self.submenu_general)
 
         self.iface.pluginMenu().removeAction(self.plugin_menu.menuAction())
 
