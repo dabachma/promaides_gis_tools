@@ -41,7 +41,7 @@ class PluginDialog(QDialog):
 
         self.DataTypeBox.addItem('minutely')
         self.DataTypeBox.addItem('Hourly')
-        self.DataTypeBox.addItem('Monthly')
+        self.DataTypeBox.addItem('Daily')
 
         self.dxBox.setValue(10)
         self.dyBox.setValue(10)
