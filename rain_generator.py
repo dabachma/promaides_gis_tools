@@ -11,6 +11,7 @@ from qgis.core import *
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt import uic
+from PyQt5.QtCore import *
 
 from shapely.geometry import MultiLineString, mapping, shape
 
@@ -42,9 +43,22 @@ class PluginDialog(QDialog):
         self.DataTypeBox.addItem('Hourly')
         self.DataTypeBox.addItem('Monthly')
 
+        self.dxBox.setValue(10)
+        self.dyBox.setValue(10)
+
+        self.browseButton.clicked.connect(self.onBrowseButtonClicked)
+        self.browseButton.setAutoDefault(False)
+
 
     def UpdateDataAddressField(self, layer):
         self.DataAddressField.setLayer(self.RainGaugeLayer.currentLayer())
+
+    def onBrowseButtonClicked(self):
+        currentFolder = self.folderEdit.text()
+        folder = QFileDialog.getExistingDirectory(self.iface.mainWindow(), 'Rain Generator', currentFolder)
+        if folder != '':
+            self.folderEdit.setText(folder)
+            self.folderEdit.editingFinished.emit()
 
 
 class RainGenerator(object):
@@ -71,17 +85,66 @@ class RainGenerator(object):
 
 
     def CreateGenerationArea(self):
+        if type(self.dialog.GenerationAreaLayer.currentLayer()) == type(None):
+            self.dialog.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'No Layer Selected !'
+            )
+            return
+
         layer = self.dialog.GenerationAreaLayer.currentLayer()
         ex = layer.extent()
-        #xmax = ex.xMaximum()
-        #ymax = ex.yMaximum()
-        #xmin = ex.xMinimum()
-        #ymin = ex.yMinimum()
-        layer2 = QgsVectorLayer("Polygon", 'Test2', 'memory')
+        xmax = ex.xMaximum()
+        ymax = ex.yMaximum()
+        xmin = ex.xMinimum()
+        ymin = ex.yMinimum()
+        layer2 = QgsVectorLayer("Polygon", 'Generation Area', 'memory')
         prov = layer2.dataProvider()
-        feat = QgsFeature()
-        feat.setGeometry(QgsGeometry.fromRect(layer.extent()))
-        prov.addFeatures([feat])
+
+        fields = QgsFields()
+        fields.append(QgsField('ID', QVariant.Int, '', 10, 0))
+        fields.append(QgsField('XMIN', QVariant.Double, '', 24, 6))
+        fields.append(QgsField('XMAX', QVariant.Double, '', 24, 6))
+        fields.append(QgsField('YMIN', QVariant.Double, '', 24, 6))
+        fields.append(QgsField('YMAX', QVariant.Double, '', 24, 6))
+        prov.addAttributes(fields)
+        layer2.updateExtents()
+        layer2.updateFields()
+
+        if self.dialog.dxBox.value() <= 0 or self.dialog.dyBox.value() <= 0:
+            self.dialog.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'Invalid Values for dx or dy !'
+            )
+            return
+        else:
+            hspacing = self.dialog.dxBox.value()
+            vspacing = self.dialog.dyBox.value()
+
+
+
+        id = 0
+        y = ymax
+        while y >= ymin:
+            x = xmin
+            while x <= xmax:
+                point1 = QgsPointXY(x, y)
+                point2 = QgsPointXY(x + hspacing, y)
+                point3 = QgsPointXY(x + hspacing, y - vspacing)
+                point4 = QgsPointXY(x, y - vspacing)
+                vertices = [point1, point2, point3, point4]  # Vertices of the polygon for the current id
+                inAttr = [id, x, x + hspacing, y - vspacing, y]
+                feat = QgsFeature()
+                feat.setGeometry(QgsGeometry().fromPolygonXY([vertices]))  # Set geometry for the current id
+                feat.setAttributes(inAttr)  # Set attributes for the current id
+                prov.addFeatures([feat])
+                x = x + hspacing
+                id += 1
+            y = y - vspacing
+
+        #feat = QgsFeature()
+        #feat.setGeometry(QgsGeometry.fromRect(layer.extent()))
+        #prov.addFeatures([feat])
         layer2.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
         layer2.updateExtents()
         QgsProject.instance().addMapLayer(layer2)
@@ -97,7 +160,7 @@ class RainGenerator(object):
         self.act.setEnabled(False)
         self.dialog.show()
 
-        self.dialog.CheckButton.clicked.connect(self.CreateGenerationArea)
+        self.dialog.ProcessAreaButton.clicked.connect(self.CreateGenerationArea)
 
     def scheduleAbort(self):
         self.cancel = True
