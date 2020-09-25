@@ -6,6 +6,8 @@ import math
 import os
 import tempfile
 
+import numpy as np
+
 # QGIS modules
 from qgis.core import *
 from qgis.PyQt.QtCore import Qt
@@ -83,7 +85,7 @@ class RainGenerator(object):
         else:
             self.iface.removeToolBarIcon(self.act)
 
-
+##########################################################################
     def CreateGenerationArea(self):
         if type(self.dialog.GenerationAreaLayer.currentLayer()) == type(None):
             self.dialog.iface.messageBar().pushCritical(
@@ -148,7 +150,7 @@ class RainGenerator(object):
         layer2.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
         layer2.updateExtents()
         QgsProject.instance().addMapLayer(layer2)
-
+####################################################################
 
     def execDialog(self):
         """
@@ -161,6 +163,7 @@ class RainGenerator(object):
         self.dialog.show()
 
         self.dialog.ProcessAreaButton.clicked.connect(self.CreateGenerationArea)
+        self.dialog.CheckButton.clicked.connect(self.CheckFiles)
 
     def scheduleAbort(self):
         self.cancel = True
@@ -169,6 +172,63 @@ class RainGenerator(object):
         self.dialog = None
         self.act.setEnabled(True)
         self.cancel = False
+
+############################################################
+    def CheckFiles(self):
+        files, ok = QgsVectorLayerUtils.getValues(self.dialog.RainGaugeLayer.currentLayer(), self.dialog.DataAddressField.expression(), False)
+        if not ok:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'Invalid File Locations!'
+            )
+            return
+        numberoftimes = 0
+        numberofrains = 0
+        for i, locations in enumerate(files):
+            address=locations.replace("\\","/")
+            if not os.path.isfile(address.strip("\u202a")):
+                self.iface.messageBar().pushCritical(
+                    'Rain Generator',
+                    'File Does Not Exist!'
+                )
+                return
+            f = open(address.strip("\u202a"), "r")
+            lines = f.readlines()
+            times = []
+            rains = []
+            for x in lines:
+                times.append(x.split(' ')[0])
+                rains.append(x.split(' ')[1])
+            f.close()
+            if len(times) >= numberoftimes:
+                numberoftimes = len(times)
+            if len(rains) >= numberofrains:
+                numberofrains = len(rains)
+
+        #puttin data in an array
+        ngauges = len(files)
+        ntimes = numberoftimes
+        nrains = numberofrains
+
+        data = []
+        for x in range(ngauges):
+            data.append([])
+            for y in range(2):
+                data[x].append([])
+                #for z in range(nrains):
+                    #data[x][y].append(0)
+
+        for i, locations in enumerate(files):
+            address = locations.replace("\\", "/")
+            f = open(address.strip("\u202a"), "r")
+            lines = f.readlines()
+            for x in lines:
+                x=x.replace('\n','')
+                data[i][0].append((x.split(' ')[0]).strip("\\n"))
+                data[i][1].append((x.split(' ')[1]).strip("\\n"))
+            f.close()
+###########################################################
+
 
     def execTool(self):
         primt("hello")
