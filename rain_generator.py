@@ -164,6 +164,7 @@ class RainGenerator(object):
 
         self.dialog.ProcessAreaButton.clicked.connect(self.CreateGenerationArea)
         self.dialog.CheckButton.clicked.connect(self.CheckFiles)
+        self.dialog.TestButton.clicked.connect(self.DataAnalysis)
 
     def scheduleAbort(self):
         self.cancel = True
@@ -173,6 +174,10 @@ class RainGenerator(object):
         self.act.setEnabled(True)
         self.cancel = False
 
+    data = []
+    ngauges = 0
+    ntimes = 0
+    nrains = 0
 ############################################################
     def CheckFiles(self):
         files, ok = QgsVectorLayerUtils.getValues(self.dialog.RainGaugeLayer.currentLayer(), self.dialog.DataAddressField.expression(), False)
@@ -206,15 +211,15 @@ class RainGenerator(object):
                 numberofrains = len(rains)
 
         #puttin data in an array
-        ngauges = len(files)
-        ntimes = numberoftimes
-        nrains = numberofrains
+        self.ngauges = len(files)
+        self.ntimes = numberoftimes
+        self.nrains = numberofrains
 
-        data = []
-        for x in range(ngauges):
-            data.append([])
+
+        for x in range(self.ngauges):
+            self.data.append([])
             for y in range(2):
-                data[x].append([])
+                self.data[x].append([])
                 #for z in range(nrains):
                     #data[x][y].append(0)
 
@@ -224,11 +229,52 @@ class RainGenerator(object):
             lines = f.readlines()
             for x in lines:
                 x=x.replace('\n','')
-                data[i][0].append((x.split(' ')[0]).strip("\\n"))
-                data[i][1].append((x.split(' ')[1]).strip("\\n"))
+                self.data[i][0].append((x.split(' ')[0]).strip("\\n"))
+                self.data[i][1].append((x.split(' ')[1]).strip("\\n"))
             f.close()
 ###########################################################
+    rainstorm=[]
+###########################################################
+    def DataAnalysis(self):
+
+    ##########################################################
+    #calculates if there is a storm or not
+        for x in range(self.ngauges):
+            self.rainstorm.append([])
+            for y in range(1):
+                self.rainstorm[x].append([])
+
+        rain=False
+        norain=False
+        for i in range(len(self.data)):
+            for value in self.data[i][1]:
+                j=int(value)
+                print(j)
+                if j>0:
+                    rain=True
+                if j==0:
+                    norain=True
+                if j>0 and norain==True:
+                    self.rainstorm[i][0].append("nostorm")
+                    rain=True
+                    norain=False
+                if j==0 and rain==True:
+                    self.rainstorm[i][0].append("storm")
+                    rain=False
+                    norain=True
+                if j>0 and value==self.data[i][1][len(self.data[i][1])-1]:
+                    self.rainstorm[i][0].append("storm")
+                    rain=True
+                    norain=False
+                if j==0 and value==self.data[i][1][len(self.data[i][1])-1]:
+                    self.rainstorm[i][0].append("nostorm")
+                    rain=False
+                    norain=True
+
+        print(self.rainstorm)
+    ##########################################################
 
 
+    
     def execTool(self):
         primt("hello")

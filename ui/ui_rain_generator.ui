@@ -160,6 +160,13 @@
    <item row="2" column="1" colspan="3">
     <widget class="QgsMapLayerComboBox" name="GenerationAreaLayer"/>
    </item>
+   <item row="5" column="3">
+    <widget class="QPushButton" name="TestButton">
+     <property name="text">
+      <string>test</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
