@@ -40,11 +40,13 @@ class PromaidesToolbox(object):
         self.densify = DensifyLinestring(self.iface)
         self.river_profile_exprt = RiverProfileExport(self.iface)
         self.dem_export = DEMExport(self.iface)
+        self.time = TimeViewer(self.iface)
+        #HAZ
+        self.rain = RainGenerator(self.iface)
         #General
         self.db_exprt = DatabaseExport(self.iface)
         self.hello_world = HelloWorld(self.iface)
-        self.time = TimeViewer(self.iface)
-        self.rain = RainGenerator(self.iface)
+
 
     def initGui(self):
         """
@@ -53,6 +55,7 @@ class PromaidesToolbox(object):
         #Add a submenu
         self.submenu_general = self.plugin_menu.addMenu('General')
         self.submenu_hyd = self.plugin_menu.addMenu('HYD')
+        self.submenu_haz = self.plugin_menu.addMenu('HAZ')
 
 
         #Add and coonnect to funtions in other .py-files
@@ -68,12 +71,16 @@ class PromaidesToolbox(object):
         self.polygon_exprt.initGui(self.submenu_hyd)
         self.submenu_hyd.addSeparator()
         self.coastline_exprt.initGui(self.submenu_hyd)
+        self.submenu_hyd.addSeparator()
+        self.time.initGui(self.submenu_hyd)
+
+        #HAZ
+        self.rain.initGui(self.submenu_haz)
 
         #General
         self.db_exprt.initGui(self.submenu_general)
         self.hello_world.initGui(self.submenu_general)
-        self.time.initGui(self.submenu_general)
-        self.rain.initGui(self.submenu_general)
+
 
         #Add about
         self.plugin_menu.addAction('About', self.showAbout)
@@ -90,12 +97,15 @@ class PromaidesToolbox(object):
         self.densify.unload(self.submenu_hyd)
         self.river_profile_exprt.unload(self.submenu_hyd)
         self.dem_export.unload(self.submenu_hyd)
+        self.time.unload(self.submenu_hyd)
+
+        #HAZ
+        self.rain.unload(self.submenu_haz)
+
         #General
         self.db_exprt.unload(self.submenu_general)
         self.hello_world.unload(self.submenu_general)
-        self.time.unload(self.submenu_general)
-        self.rain.unload(self.submenu_general)
-
+        
         self.iface.pluginMenu().removeAction(self.plugin_menu.menuAction())
 
     def showAbout(self):
