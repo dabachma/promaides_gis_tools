@@ -34,6 +34,7 @@ class PluginDialog(QDialog):
     rasterAdded = pyqtSignal(int, QgsGeometry)
     rasterUpdated = pyqtSignal(int, QgsGeometry)
     rasterRemoved = pyqtSignal(int)
+    ClosingSignal = pyqtSignal()
 
     xllRole = 111
     yllRole = 112
@@ -103,16 +104,8 @@ class PluginDialog(QDialog):
         else:
             return False
 
-    templayer=None
-    def GetLayer(self,layer):
-        self.templayer=layer
-
     def closeEvent(self, event):
-        if type(self.templayer) != type(None):
-            qinst = QgsProject.instance()
-            #qinst.removeMapLayer(qinst.mapLayersByName('ProMaIDes DEM Raster')[0].id())
-            vl=self.templayer
-            qinst.removeMapLayer(vl.id())
+        self.ClosingSignal.emit()
 
     def UpdateImportButtons(self):
         if self.AreaLayerBox.currentLayer():
@@ -334,6 +327,8 @@ class DEMExport(object):
         self.dialog.addButton.setAutoDefault(False)
         self.dialog.ImportButton.clicked.connect(self.ImportAreaFromPolygon)
 
+        self.dialog.ClosingSignal.connect(self.quitDialog)
+
 
         self.dialog.xllBox.editingFinished.connect(self.saveRasterProperties)
         self.dialog.yllBox.editingFinished.connect(self.saveRasterProperties)
@@ -352,7 +347,6 @@ class DEMExport(object):
         self.previewLayer.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
         self.previewLayer.dataProvider().addAttributes([QgsField("xll", QVariant.Double), QgsField("yll", QVariant.Double), QgsField("dy", QVariant.Double),QgsField("dx", QVariant.Double),QgsField("nr", QVariant.Double),QgsField("nc", QVariant.Double), QgsField("angle", QVariant.Double)])
         self.previewLayer.updateFields()
-        self.dialog.GetLayer(self.previewLayer)
 
 
         # set layer properties
