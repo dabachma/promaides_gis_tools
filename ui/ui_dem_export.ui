@@ -605,6 +605,26 @@
           </property>
          </widget>
         </item>
+        <item row="8" column="1">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="9" column="0">
+         <widget class="QPushButton" name="ExportButton">
+          <property name="text">
+           <string>Export Area as Polygon</string>
+          </property>
+         </widget>
+        </item>
         <item row="9" column="1">
          <widget class="QPushButton" name="ImportButton">
           <property name="enabled">
@@ -627,60 +647,6 @@
         </item>
         <item row="11" column="1">
          <widget class="QgsMapLayerComboBox" name="AreaLayerBox"/>
-        </item>
-        <item row="12" column="0">
-         <widget class="QLabel" name="label_11">
-          <property name="text">
-           <string>dx [m]</string>
-          </property>
-         </widget>
-        </item>
-        <item row="12" column="1">
-         <widget class="QDoubleSpinBox" name="AreadxBox">
-          <property name="maximum">
-           <double>999999999.000000000000000</double>
-          </property>
-          <property name="value">
-           <double>1.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="0">
-         <widget class="QLabel" name="label_25">
-          <property name="text">
-           <string>dy [m]</string>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="1">
-         <widget class="QDoubleSpinBox" name="AreadyBox">
-          <property name="maximum">
-           <double>999999999.000000000000000</double>
-          </property>
-          <property name="value">
-           <double>1.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="1">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="9" column="0">
-         <widget class="QPushButton" name="ExportButton">
-          <property name="text">
-           <string>Export Area as Polygon</string>
-          </property>
-         </widget>
         </item>
        </layout>
       </widget>

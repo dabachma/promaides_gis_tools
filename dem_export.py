@@ -15,6 +15,7 @@ from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt import uic
 
+
 # promaides modules
 from .interpolate import RasterInterpolator
 from .raster import RasterWriter
@@ -72,8 +73,6 @@ class PluginDialog(QDialog):
         self.ilmBox.setEnabled(False)
         self.groupBox.setEnabled(False)
         self.ImportButton.setEnabled(False)
-        self.AreadxBox.setEnabled(False)
-        self.AreadyBox.setEnabled(False)
         self.roughnessLayerBox.setLayer(None)
         self.initLayerBox.setLayer(None)
         self.BCLayerBox.setLayer(None)
@@ -118,13 +117,8 @@ class PluginDialog(QDialog):
     def UpdateImportButtons(self):
         if self.AreaLayerBox.currentLayer():
             self.ImportButton.setEnabled(True)
-            self.AreadxBox.setEnabled(True)
-            self.AreadyBox.setEnabled(True)
         else:
             self.ImportButton.setEnabled(False)
-            self.AreadxBox.setEnabled(False)
-            self.AreadyBox.setEnabled(False)
-
 
 
     def zoomToRaster(self):
@@ -356,7 +350,7 @@ class DEMExport(object):
 
         self.previewLayer = QgsVectorLayer('Polygon', 'ProMaIDes DEM Raster', 'memory')
         self.previewLayer.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
-        self.previewLayer.dataProvider().addAttributes([QgsField("xll", QVariant.Double), QgsField("yll", QVariant.Double), QgsField("dy*nr", QVariant.Double),QgsField("dx*nc", QVariant.Double), QgsField("angle", QVariant.Double)])
+        self.previewLayer.dataProvider().addAttributes([QgsField("xll", QVariant.Double), QgsField("yll", QVariant.Double), QgsField("dy", QVariant.Double),QgsField("dx", QVariant.Double),QgsField("nr", QVariant.Double),QgsField("nc", QVariant.Double), QgsField("angle", QVariant.Double)])
         self.previewLayer.updateFields()
         self.dialog.GetLayer(self.previewLayer)
 
@@ -377,12 +371,6 @@ class DEMExport(object):
     ImportFromPolygon = False
 
     def ImportAreaFromPolygon(self):
-        if self.dialog.AreadxBox.value() <= 0 or self.dialog.AreadyBox.value() <= 0:
-            self.dialog.iface.messageBar().pushCritical(
-                'Resample Polyline Vertices',
-                'Invalid Values for dx or dy !'
-            )
-            return
         self.ImportFromPolygon = True
         self.addNewRasterItem()
 
@@ -397,10 +385,10 @@ class DEMExport(object):
                     item = QListWidgetItem('raster_{:d}'.format(num))
                     item.setData(PluginDialog.xllRole, f.attribute("xll"))
                     item.setData(PluginDialog.yllRole, f.attribute("yll"))
-                    item.setData(PluginDialog.nrRole, f.attribute("dy*nr") / self.dialog.AreadyBox.value())
-                    item.setData(PluginDialog.ncRole, f.attribute("dx*nc") / self.dialog.AreadxBox.value())
-                    item.setData(PluginDialog.drRole, self.dialog.AreadyBox.value())
-                    item.setData(PluginDialog.dcRole, self.dialog.AreadxBox.value())
+                    item.setData(PluginDialog.nrRole, f.attribute("nr"))
+                    item.setData(PluginDialog.ncRole, f.attribute("nc"))
+                    item.setData(PluginDialog.drRole, f.attribute("dy"))
+                    item.setData(PluginDialog.dcRole, f.attribute("dx"))
                     item.setData(PluginDialog.angleRole, f.attribute("angle"))
 
                     item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled)
@@ -550,6 +538,8 @@ class DEMExport(object):
             yll = self.dialog.yllBox.value()
             dx = self.dialog.ncBox.value() * self.dialog.dcBox.value()
             dy = self.dialog.nrBox.value() * self.dialog.drBox.value()
+            nc = self.dialog.ncBox.value()
+            nr = self.dialog.nrBox.value()
             angle = self.dialog.angleBox.value()
 
             layer=self.previewLayer
@@ -557,12 +547,14 @@ class DEMExport(object):
             # lookup index of fields using their names
             xll_idx = layer.fields().lookupField('xll')
             yll_idx = layer.fields().lookupField('yll')
-            dxnc_idx = layer.fields().lookupField('dx*nc')
-            dynr_idx = layer.fields().lookupField('dy*nr')
+            dx_idx = layer.fields().lookupField('dx')
+            dy_idx = layer.fields().lookupField('dy')
+            nc_idx = layer.fields().lookupField('nc')
+            nr_idx = layer.fields().lookupField('nr')
             angle_idx = layer.fields().lookupField('angle')
 
             # create a dictionary with field index as key and the attribute you want as value
-            atts = {xll_idx: xll, yll_idx: yll, dxnc_idx: dx, dynr_idx: dy, angle_idx: angle}
+            atts = {xll_idx: xll, yll_idx: yll, dx_idx: dx/nc, dy_idx: dy/nr,nc_idx: nc, nr_idx: nr, angle_idx: angle}
 
             # store reference to feature you want to update
             feat = layer.getFeature(self.dialog.listWidget.row(item)+1)
@@ -803,11 +795,13 @@ class DEMExport(object):
             f = layer.getFeature(idtemp)
             xll_idx = layer.fields().lookupField('xll')
             yll_idx = layer.fields().lookupField('yll')
-            dxnc_idx = layer.fields().lookupField('dx*nc')
-            dynr_idx = layer.fields().lookupField('dy*nr')
+            dx_idx = layer.fields().lookupField('dx')
+            dy_idx = layer.fields().lookupField('dy')
+            nc_idx = layer.fields().lookupField('nc')
+            nr_idx = layer.fields().lookupField('nr')
             angle_idx = layer.fields().lookupField('angle')
 
-            atts = {xll_idx: 0, yll_idx: 0, dxnc_idx: 0, dynr_idx: 0, angle_idx: 0}
+            atts = {xll_idx: 0, yll_idx: 0, dx_idx: 0, dy_idx: 0,nc_idx: 0, nr_idx: 0, angle_idx: 0}
             prov.changeAttributeValues({f.id(): atts})
             layer.updateFields()
             self.previewLayer.dataProvider().deleteFeatures([idtemp])
