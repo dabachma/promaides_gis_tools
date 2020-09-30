@@ -12,7 +12,7 @@ import sys
 
 # QGIS modules
 from qgis.core import *
-from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtCore import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt import uic
 from PyQt5.QtCore import QTimer
@@ -25,6 +25,8 @@ UI_PATH = get_ui_path('ui_time_viewer.ui')
 
 
 class PluginDialog(QDialog):
+    
+    ClosingSignal = pyqtSignal()
 
     def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
         QDialog.__init__(self, parent, flags)
@@ -32,7 +34,6 @@ class PluginDialog(QDialog):
 
         self.iface = iface
 
-        #self.FieldIDBox.setFilters(QgsFieldProxyModel.Numeric)
         self.InputLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
         self.InputLayerBox.setLayer(None)
         self.InputLayerBox.layerChanged.connect(self.UpdateFrameID)
@@ -45,7 +46,7 @@ class PluginDialog(QDialog):
         self.FPSBox.setValue(1)
 
         self.Displayer.setText("Hello!")
-
+            
         def saveframeclicked(state):
             if state > 0:
                 self.SaveBox.setEnabled(True)
@@ -76,6 +77,13 @@ class PluginDialog(QDialog):
         self.SaveFrameBox.stateChanged.connect(saveframeclicked)
         self.browseButton.setAutoDefault(False)
 
+    def closeEvent(self, event):
+        if type(self.InputLayerBox.currentLayer()) != type(None):
+            layer = self.InputLayerBox.currentLayer()
+            layer.setSubsetString(self.InitialFilter)
+        self.StopPlay()
+        self.ClosingSignal.emit()
+
 
     def UpdateFrameID(self, layer):
         self.FieldIDBox.setLayer(self.InputLayer())
@@ -91,9 +99,11 @@ class PluginDialog(QDialog):
 
 
     FrameIDs = []
+    InitialFilter = ""
     def ReadFrameIDs(self):
         self.FrameIDs = []
         layer = self.InputLayer()
+        self.InitialFilter = layer.subsetString()
         layer.setSubsetString('')
         field = self.FieldIDBox.currentText()
         idx = layer.fields().indexOf('{index}'.format(index=field))
@@ -120,14 +130,22 @@ class PluginDialog(QDialog):
         self.TimeSlider.setValue(1)
         self.TimeSlider.setTickInterval(len(self.FrameIDs)/5)
 
-    SliderChanged = False
+
     def SliderUpdated(self):
-        if self.NextPressed or self.PreviousPressed:
+        if self.Playing==True:
             return
         else:
-            self.count=self.TimeSlider.value()-1
-            self.SliderChanged=True
-            self.play1()
+            if type(self.InputLayerBox.currentLayer()) != type(None):
+                layer = self.InputLayer()
+                layer.setSubsetString('')
+                self.count=self.TimeSlider.value()-1
+                field = self.FieldIDBox.currentText()
+                value = self.FrameIDs[self.count]
+                self.Displayer.setText("{a}={b}".format(a=field, b=value))
+                if str(self.InitialFilter) == "":
+                    layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
+                else:
+                    layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilter))
 
     def UpdateProcessButton(self):
         self.ProcessButton.setEnabled(True)
@@ -144,8 +162,10 @@ class PluginDialog(QDialog):
     def PausePlay(self):
         self.PausePressed=True
 
-    NextPressed = False
     def Next(self):
+        layer = self.InputLayer()
+        layer.setSubsetString(self.InitialFilter)
+        self.TimeSlider.setValue(self.count + 2)
         if self.count==len(self.FrameIDs)-1:
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
@@ -153,12 +173,20 @@ class PluginDialog(QDialog):
             )
             return
         else:
-            self.NextPressed=True
             self.count=self.count+1
-            self.play1()
+            field = self.FieldIDBox.currentText()
+            value = self.FrameIDs[self.count]
+            self.Displayer.setText("{a}={b}".format(a=field, b=value))
+            if str(self.InitialFilter) == "":
+                layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
+            else:
+                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilter))
 
-    PreviousPressed = False
+
     def Previous(self):
+        layer = self.InputLayer()
+        layer.setSubsetString(self.InitialFilter)
+        self.TimeSlider.setValue(self.count - 1)
         if self.count==0:
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
@@ -166,9 +194,14 @@ class PluginDialog(QDialog):
             )
             return
         else:
-            self.PreviousPressed = True
             self.count = self.count - 1
-            self.play1()
+            field = self.FieldIDBox.currentText()
+            value = self.FrameIDs[self.count]
+            self.Displayer.setText("{a}={b}".format(a=field, b=value))
+            if str(self.InitialFilter) == "":
+                layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
+            else:
+                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilter))
 
     def StopPlay(self):
         self.TimeSlider.setValue(1)
@@ -193,7 +226,9 @@ class PluginDialog(QDialog):
     count = 0
     StopPressed=False
     PausePressed=False
+    Playing = False
     def play1(self):
+        self.Playing=True
         self.TimeSlider.setValue(self.count+1)
         self.PlayButton.setEnabled(False)
         self.PauseButton.setEnabled(True)
@@ -202,6 +237,7 @@ class PluginDialog(QDialog):
         self.NextButton.setEnabled(False)
         layer = self.InputLayer()
         if self.PausePressed==True:
+            self.Playing = False
             self.PlayButton.setEnabled(True)
             self.PauseButton.setEnabled(False)
             self.StopButton.setEnabled(False)
@@ -212,6 +248,7 @@ class PluginDialog(QDialog):
             self.Displayer.setText("Paused!")
             return
         if self.StopPressed == True:
+            self.Playing = False
             self.count=0
             self.PlayButton.setEnabled(True)
             self.PauseButton.setEnabled(False)
@@ -220,7 +257,7 @@ class PluginDialog(QDialog):
             self.PausePressed = False
             self.PreviousButton.setEnabled(True)
             self.NextButton.setEnabled(True)
-            layer.setSubsetString('')
+            layer.setSubsetString(self.InitialFilter)
             self.Displayer.setText("Ready!")
             return
         if self.check_fps(self.FPSBox.value())==1:
@@ -234,20 +271,12 @@ class PluginDialog(QDialog):
         field = self.FieldIDBox.currentText()
         value = self.FrameIDs[self.count]
         self.Displayer.setText("{a}={b}".format(a=field, b=value))
-        if str(self.addfilterbox.text()) == "":
+        if str(self.InitialFilter) == "":
             layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
+            print("\"{a}\"=\'{b}\'".format(a=field, b=value),"1")
         else:
-            layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.addfilterbox.text()))
-        if self.NextPressed or self.PreviousPressed or self.SliderChanged:
-            self.NextPressed=False
-            self.PreviousPressed=False
-            self.SliderChanged=False
-            self.PreviousButton.setEnabled(True)
-            self.NextButton.setEnabled(True)
-            self.PlayButton.setEnabled(True)
-            self.PauseButton.setEnabled(False)
-            self.StopButton.setEnabled(False)
-            return
+            layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilter))
+            print("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilter))
         QTimer.singleShot(FPS, self.play2)
 
 
@@ -256,6 +285,7 @@ class PluginDialog(QDialog):
         global count
         layer = self.InputLayer()
         if self.PausePressed==True:
+            self.Playing = False
             self.PlayButton.setEnabled(True)
             self.PauseButton.setEnabled(False)
             self.StopButton.setEnabled(False)
@@ -266,6 +296,7 @@ class PluginDialog(QDialog):
             self.Displayer.setText("Paused!")
             return
         if self.StopPressed == True:
+            self.Playing = False
             self.count=0
             self.PlayButton.setEnabled(True)
             self.PauseButton.setEnabled(False)
@@ -274,10 +305,10 @@ class PluginDialog(QDialog):
             self.PausePressed = False
             self.PreviousButton.setEnabled(True)
             self.NextButton.setEnabled(True)
-            layer.setSubsetString('')
+            layer.setSubsetString(self.InitialFilter)
             self.Displayer.setText("Ready!")
             return
-        layer.setSubsetString('')
+        layer.setSubsetString(self.InitialFilter)
         layername = self.InputLayer().name()
         if self.SaveFrameBox.isChecked():
             if self.SaveBox.currentText()=="PNG":
@@ -289,9 +320,10 @@ class PluginDialog(QDialog):
                 os.remove(str(self.outFolder()) + "/" + str(layername) + "_" + str(self.count) + ".jgw")
 
         if self.count <= len(self.FrameIDs)-2:
-            QTimer.singleShot(0.1, self.play1) # Wait a second and prepare next map
+            QTimer.singleShot(10, self.play1) # Wait a second (1000) and prepare next map
             self.count += 1
         else:
+            self.Playing = False
             self.PlayButton.setEnabled(True)
             self.PauseButton.setEnabled(False)
             self.StopButton.setEnabled(False)
@@ -301,7 +333,6 @@ class PluginDialog(QDialog):
             self.PausePressed = False
             self.count=0
             self.TimeSlider.setValue(1)
-
             self.Displayer.setText("Ready!")
 
 
@@ -335,8 +366,15 @@ class TimeViewer(object):
         self.dialog.setModal(False)
         self.act.setEnabled(False)
         self.dialog.show()
+        self.dialog.ClosingSignal.connect(self.quitDialog)
 
     def scheduleAbort(self):
         self.cancel = True
+
+    def quitDialog(self):
+        #self.dialog = None
+        self.act.setEnabled(True)
+        self.cancel = False
+        self.dialog.reject()
 
 
