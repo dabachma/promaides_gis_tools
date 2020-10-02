@@ -132,13 +132,13 @@ class PluginDialog(QDialog):
 
 
     def SliderUpdated(self):
+        self.count = self.TimeSlider.value() - 1
         if self.Playing==True:
             return
         else:
             if type(self.InputLayerBox.currentLayer()) != type(None):
                 layer = self.InputLayer()
                 layer.setSubsetString('')
-                self.count=self.TimeSlider.value()-1
                 field = self.FieldIDBox.currentText()
                 value = self.FrameIDs[self.count]
                 self.Displayer.setText("{a}={b}".format(a=field, b=value))
