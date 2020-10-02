@@ -235,7 +235,8 @@ class PluginDialog(QDialog):
                         layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
 
     def UpdateProcessButton(self):
-        self.ProcessButton.setEnabled(True)
+        if len(self.layers)>0:
+            self.ProcessButton.setEnabled(True)
         self.PlayButton.setEnabled(False)
         self.TimeSlider.setEnabled(False)
         self.NextButton.setEnabled(False)
