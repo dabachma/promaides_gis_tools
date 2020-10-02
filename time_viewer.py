@@ -87,6 +87,8 @@ class PluginDialog(QDialog):
                 if len(self.InitialFilters) > 0:
                     if n <= (len(self.InitialFilters) - 1):
                         layer.setSubsetString(self.InitialFilters[n])
+        del self.layers[:]
+        del self.InitialFilters[:]
         self.layers=[]
         self.InitialFilters=[]
         self.StopPlay()
