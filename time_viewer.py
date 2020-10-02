@@ -123,6 +123,7 @@ class PluginDialog(QDialog):
         self.PauseButton.setEnabled(False)
         self.StopButton.setEnabled(False)
         self.NextButton.setEnabled(False)
+        self.TimeSlider.setEnabled(False)
         self.PreviousButton.setEnabled(False)
         for n, layer in enumerate(self.layers):
             if len(self.InitialFilters)>0:
@@ -162,6 +163,7 @@ class PluginDialog(QDialog):
         self.PauseButton.setEnabled(False)
         self.StopButton.setEnabled(False)
         self.NextButton.setEnabled(False)
+        self.TimeSlider.setEnabled(False)
         self.PreviousButton.setEnabled(False)
 
         self.InitialFilters = []
