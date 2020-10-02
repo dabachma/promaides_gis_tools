@@ -148,7 +148,8 @@ class PluginDialog(QDialog):
 
         for n, l in enumerate(self.layers):
             if len(self.InitialFilters)>0:
-                l.setSubsetString(self.InitialFilters[n])
+                if n <= (len(self.InitialFilters) - 1):
+                    l.setSubsetString(self.InitialFilters[n])
 
         newlayername = layer.name() + "\n"
         self.layerlist=self.layerlist.replace(newlayername,"")
