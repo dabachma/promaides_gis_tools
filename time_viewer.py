@@ -40,12 +40,12 @@ class PluginDialog(QDialog):
         self.FieldIDBox.fieldChanged.connect(self.UpdateProcessButton)
         self.TimeSlider.valueChanged.connect(self.SliderUpdated)
 
-        self.SaveBox.addItem('JPEG')
         self.SaveBox.addItem('PNG')
-        self.SaveBox.addItem('AVI')
+        self.SaveBox.addItem('JPEG')
         self.FPSBox.setValue(1)
 
         self.Displayer.setText("Hello!")
+        self.LayerDisplayer.setText("No Layer Selected")
             
         def saveframeclicked(state):
             if state > 0:
@@ -66,6 +66,10 @@ class PluginDialog(QDialog):
         self.PreviousButton.setEnabled(False)
         self.NextButton.setEnabled(False)
         self.TimeSlider.setEnabled(False)
+        self.ProcessButton.setEnabled(False)
+
+        self.AddButton.clicked.connect(self.AddLayer)
+        self.RemoveButton.clicked.connect(self.RemoveLayer)
 
         self.PlayButton.clicked.connect(self.play1)
         self.NextButton.clicked.connect(self.Next)
@@ -79,10 +83,89 @@ class PluginDialog(QDialog):
 
     def closeEvent(self, event):
         if type(self.InputLayerBox.currentLayer()) != type(None):
-            layer = self.InputLayerBox.currentLayer()
-            layer.setSubsetString(self.InitialFilter)
+            for n, layer in enumerate(self.layers):
+                if len(self.InitialFilters) > 0:
+                    if n <= (len(self.InitialFilters) - 1):
+                        layer.setSubsetString(self.InitialFilters[n])
+        self.layers=[]
+        self.InitialFilters=[]
         self.StopPlay()
         self.ClosingSignal.emit()
+
+
+    layerlist=""
+    layers=[]
+    def AddLayer(self):
+        if type(self.InputLayerBox.currentLayer()) == type(None):
+            self.iface.messageBar().pushCritical(
+                'Time Viewer',
+                'No Layer Selected !'
+            )
+            return
+        else:
+            layer = self.InputLayer()
+
+        if layer in self.layers:
+            self.iface.messageBar().pushCritical(
+                'Time Viewer',
+                'Layer Already Selected !'
+            )
+            return
+
+        newlayername = layer.name() + "\n"
+        self.layerlist = self.layerlist + newlayername
+        self.LayerDisplayer.setText(self.layerlist)
+        self.layers.append(layer)
+        self.ProcessButton.setEnabled(True)
+        self.PlayButton.setEnabled(False)
+        self.PauseButton.setEnabled(False)
+        self.StopButton.setEnabled(False)
+        self.NextButton.setEnabled(False)
+        self.PreviousButton.setEnabled(False)
+        for n, layer in enumerate(self.layers):
+            if len(self.InitialFilters)>0:
+                if n <= (len(self.InitialFilters)-1):
+                    layer.setSubsetString(self.InitialFilters[n])
+
+        self.InitialFilters = []
+
+    def RemoveLayer(self):
+        if type(self.InputLayerBox.currentLayer()) == type(None):
+            self.iface.messageBar().pushCritical(
+                'Time Viewer',
+                'No Layer Selected !'
+            )
+            return
+        else:
+            layer = self.InputLayer()
+
+        if layer not in self.layers:
+            self.iface.messageBar().pushCritical(
+                'Time Viewer',
+                'Layer Not Selected !'
+            )
+            return
+
+        for n, l in enumerate(self.layers):
+            if len(self.InitialFilters)>0:
+                l.setSubsetString(self.InitialFilters[n])
+
+        newlayername = layer.name() + "\n"
+        self.layerlist=self.layerlist.replace(newlayername,"")
+        self.LayerDisplayer.setText(self.layerlist)
+        self.layers.remove(layer)
+        self.ProcessButton.setEnabled(True)
+        self.PlayButton.setEnabled(False)
+        self.PauseButton.setEnabled(False)
+        self.StopButton.setEnabled(False)
+        self.NextButton.setEnabled(False)
+        self.PreviousButton.setEnabled(False)
+
+        self.InitialFilters = []
+        if self.layerlist=="":
+            self.LayerDisplayer.setText("No Layer Selected")
+            self.ProcessButton.setEnabled(False)
+
 
 
     def UpdateFrameID(self, layer):
@@ -91,7 +174,7 @@ class PluginDialog(QDialog):
         self.NextButton.setEnabled(False)
         self.TimeSlider.setEnabled(False)
         self.PreviousButton.setEnabled(False)
-        self.ProcessButton.setEnabled(True)
+
 
     def WriteProcessing(self):
         self.Displayer.setText("Processing...")
@@ -99,24 +182,27 @@ class PluginDialog(QDialog):
 
 
     FrameIDs = []
-    InitialFilter = ""
+    InitialFilters = []
     def ReadFrameIDs(self):
         self.FrameIDs = []
-        layer = self.InputLayer()
-        self.InitialFilter = layer.subsetString()
-        layer.setSubsetString('')
-        field = self.FieldIDBox.currentText()
-        idx = layer.fields().indexOf('{index}'.format(index=field))
-        if idx==-1:
-            self.Displayer.setText("Ready!")
-            self.iface.messageBar().pushCritical(
-                'Time Viewer',
-                'Field Does Not Exist !'
-            )
-            return
-        FrameIDvalues = layer.uniqueValues(idx)
-        for i in FrameIDvalues:
-            self.FrameIDs.append(i)
+        #layer = self.InputLayer()
+        for layer in self.layers:
+            InitialFilter = layer.subsetString()
+            self.InitialFilters.append(layer.subsetString())
+            layer.setSubsetString(InitialFilter)
+            field = self.FieldIDBox.currentText()
+            idx = layer.fields().indexOf('{index}'.format(index=field))
+            if idx==-1:
+                self.Displayer.setText("Ready!")
+                self.iface.messageBar().pushCritical(
+                    'Time Viewer',
+                    'Field Does Not Exist in {} '.format(layer.name())
+                )
+                return
+            FrameIDvalues = layer.uniqueValues(idx)
+            for i in FrameIDvalues:
+                self.FrameIDs.append(i)
+        self.FrameIDs = list(dict.fromkeys(self.FrameIDs))
         self.FrameIDs.sort()
         self.ProcessButton.setEnabled(False)
         self.PlayButton.setEnabled(True)
@@ -137,15 +223,16 @@ class PluginDialog(QDialog):
             return
         else:
             if type(self.InputLayerBox.currentLayer()) != type(None):
-                layer = self.InputLayer()
-                layer.setSubsetString('')
-                field = self.FieldIDBox.currentText()
-                value = self.FrameIDs[self.count]
-                self.Displayer.setText("{a}={b}".format(a=field, b=value))
-                if str(self.InitialFilter) == "":
-                    layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
-                else:
-                    layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilter))
+                #layer = self.InputLayer()
+                for n, layer in enumerate(self.layers):
+                    layer.setSubsetString('')
+                    field = self.FieldIDBox.currentText()
+                    value = self.FrameIDs[self.count]
+                    self.Displayer.setText("{a}={b}".format(a=field, b=value))
+                    if str(self.InitialFilters[n]) == "":
+                        layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
+                    else:
+                        layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
 
     def UpdateProcessButton(self):
         self.ProcessButton.setEnabled(True)
@@ -163,45 +250,43 @@ class PluginDialog(QDialog):
         self.PausePressed=True
 
     def Next(self):
-        layer = self.InputLayer()
-        layer.setSubsetString(self.InitialFilter)
-        self.TimeSlider.setValue(self.count + 2)
-        if self.count==len(self.FrameIDs)-1:
+        if self.count == len(self.FrameIDs) - 1:
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
                 'Next Frame Not Available !'
             )
             return
-        else:
-            self.count=self.count+1
+        self.count = self.count + 1
+        self.TimeSlider.setValue(self.count + 1)
+        for n, layer in enumerate(self.layers):
+            layer.setSubsetString(self.InitialFilters[n])
             field = self.FieldIDBox.currentText()
             value = self.FrameIDs[self.count]
             self.Displayer.setText("{a}={b}".format(a=field, b=value))
-            if str(self.InitialFilter) == "":
+            if str(self.InitialFilters[n]) == "":
                 layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
             else:
-                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilter))
+                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
 
 
     def Previous(self):
-        layer = self.InputLayer()
-        layer.setSubsetString(self.InitialFilter)
-        self.TimeSlider.setValue(self.count - 1)
-        if self.count==0:
+        if self.count == 0:
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
                 'Previous Frame Not Available !'
             )
             return
-        else:
-            self.count = self.count - 1
+        self.count = self.count - 1
+        self.TimeSlider.setValue(self.count+1)
+        for n, layer in enumerate(self.layers):
+            layer.setSubsetString(self.InitialFilters[n])
             field = self.FieldIDBox.currentText()
             value = self.FrameIDs[self.count]
             self.Displayer.setText("{a}={b}".format(a=field, b=value))
-            if str(self.InitialFilter) == "":
+            if str(self.InitialFilters[n]) == "":
                 layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
             else:
-                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilter))
+                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
 
     def StopPlay(self):
         self.TimeSlider.setValue(1)
@@ -235,90 +320,100 @@ class PluginDialog(QDialog):
         self.StopButton.setEnabled(True)
         self.PreviousButton.setEnabled(False)
         self.NextButton.setEnabled(False)
-        layer = self.InputLayer()
-        if self.PausePressed==True:
-            self.Playing = False
-            self.PlayButton.setEnabled(True)
-            self.PauseButton.setEnabled(False)
-            self.StopButton.setEnabled(False)
-            self.StopPressed = False
-            self.PausePressed = False
-            self.PreviousButton.setEnabled(True)
-            self.NextButton.setEnabled(True)
-            self.Displayer.setText("Paused!")
-            return
-        if self.StopPressed == True:
-            self.Playing = False
-            self.count=0
-            self.PlayButton.setEnabled(True)
-            self.PauseButton.setEnabled(False)
-            self.StopButton.setEnabled(False)
-            self.StopPressed = False
-            self.PausePressed = False
-            self.PreviousButton.setEnabled(True)
-            self.NextButton.setEnabled(True)
-            layer.setSubsetString(self.InitialFilter)
-            self.Displayer.setText("Ready!")
-            return
-        if self.check_fps(self.FPSBox.value())==1:
+        self.AddButton.setEnabled(False)
+        self.RemoveButton.setEnabled(False)
+        #layer = self.InputLayer()
+        for n, layer in enumerate(self.layers):
+            if self.PausePressed==True:
+                self.Playing = False
+                self.PlayButton.setEnabled(True)
+                self.PauseButton.setEnabled(False)
+                self.StopButton.setEnabled(False)
+                self.StopPressed = False
+                self.PausePressed = False
+                self.PreviousButton.setEnabled(True)
+                self.NextButton.setEnabled(True)
+                self.AddButton.setEnabled(True)
+                self.RemoveButton.setEnabled(True)
+                self.Displayer.setText("Paused!")
+                return
+            if self.StopPressed == True:
+                self.Playing = False
+                self.count=0
+                self.PlayButton.setEnabled(True)
+                self.PauseButton.setEnabled(False)
+                self.StopButton.setEnabled(False)
+                self.StopPressed = False
+                self.PausePressed = False
+                self.PreviousButton.setEnabled(True)
+                self.NextButton.setEnabled(True)
+                self.AddButton.setEnabled(True)
+                self.RemoveButton.setEnabled(True)
+                layer.setSubsetString(self.InitialFilters[n])
+                self.Displayer.setText("Ready!")
+                return
+            field = self.FieldIDBox.currentText()
+            value = self.FrameIDs[self.count]
+            self.Displayer.setText("{a}={b}".format(a=field, b=value))
+            if str(self.InitialFilters[n]) == "":
+                layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
+            else:
+                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
+
+        if self.check_fps(self.FPSBox.value()) == 1:
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
                 'Invalid Value for FPS !'
             )
-            return
+            FPS = 1000 / 1
         else:
             FPS = 1000 / self.FPSBox.value()
-        field = self.FieldIDBox.currentText()
-        value = self.FrameIDs[self.count]
-        self.Displayer.setText("{a}={b}".format(a=field, b=value))
-        if str(self.InitialFilter) == "":
-            layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
-            print("\"{a}\"=\'{b}\'".format(a=field, b=value),"1")
-        else:
-            layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilter))
-            print("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilter))
         QTimer.singleShot(FPS, self.play2)
 
 
 
     def play2(self):
         global count
-        layer = self.InputLayer()
-        if self.PausePressed==True:
-            self.Playing = False
-            self.PlayButton.setEnabled(True)
-            self.PauseButton.setEnabled(False)
-            self.StopButton.setEnabled(False)
-            self.StopPressed = False
-            self.PausePressed = False
-            self.PreviousButton.setEnabled(True)
-            self.NextButton.setEnabled(True)
-            self.Displayer.setText("Paused!")
-            return
-        if self.StopPressed == True:
-            self.Playing = False
-            self.count=0
-            self.PlayButton.setEnabled(True)
-            self.PauseButton.setEnabled(False)
-            self.StopButton.setEnabled(False)
-            self.StopPressed = False
-            self.PausePressed = False
-            self.PreviousButton.setEnabled(True)
-            self.NextButton.setEnabled(True)
-            layer.setSubsetString(self.InitialFilter)
-            self.Displayer.setText("Ready!")
-            return
-        layer.setSubsetString(self.InitialFilter)
-        layername = self.InputLayer().name()
+        #layer = self.InputLayer()
         if self.SaveFrameBox.isChecked():
             if self.SaveBox.currentText()=="PNG":
-                iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + str(layername) + "_" + str(self.count) + ".png")
-                os.remove(str(self.outFolder()) + "/" + str(layername) + "_" + str(self.count) + ".pgw")
-
-            elif self.SaveBox.currentText()=="JPEG":
-                iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + str(layername) + "_" + str(self.count) + ".jpg")
-                os.remove(str(self.outFolder()) + "/" + str(layername) + "_" + str(self.count) + ".jgw")
-
+                if str(self.outFolder()) != "":
+                    iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + "TimeViewer" + "_" + str(self.count) + ".png")
+                    os.remove(str(self.outFolder()) + "/" + "TimeViewer" + "_" + str(self.count) + ".pgw")
+            if self.SaveBox.currentText()=="JPEG":
+                if str(self.outFolder()) != "":
+                    iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + "TimeViewer" + "_" + str(self.count) + ".jpg")
+                    os.remove(str(self.outFolder()) + "/" + "TimeViewer" + "_" + str(self.count) + ".jgw")
+        for n, layer in enumerate(self.layers):
+            if self.PausePressed==True:
+                self.Playing = False
+                self.PlayButton.setEnabled(True)
+                self.PauseButton.setEnabled(False)
+                self.StopButton.setEnabled(False)
+                self.StopPressed = False
+                self.PausePressed = False
+                self.PreviousButton.setEnabled(True)
+                self.NextButton.setEnabled(True)
+                self.AddButton.setEnabled(True)
+                self.RemoveButton.setEnabled(True)
+                self.Displayer.setText("Paused!")
+                return
+            if self.StopPressed == True:
+                self.Playing = False
+                self.count=0
+                self.PlayButton.setEnabled(True)
+                self.PauseButton.setEnabled(False)
+                self.StopButton.setEnabled(False)
+                self.StopPressed = False
+                self.PausePressed = False
+                self.PreviousButton.setEnabled(True)
+                self.NextButton.setEnabled(True)
+                self.AddButton.setEnabled(True)
+                self.RemoveButton.setEnabled(True)
+                layer.setSubsetString(self.InitialFilters[n])
+                self.Displayer.setText("Ready!")
+                return
+            layer.setSubsetString(self.InitialFilters[n])
         if self.count <= len(self.FrameIDs)-2:
             QTimer.singleShot(10, self.play1) # Wait a second (1000) and prepare next map
             self.count += 1
@@ -329,11 +424,16 @@ class PluginDialog(QDialog):
             self.StopButton.setEnabled(False)
             self.PreviousButton.setEnabled(True)
             self.NextButton.setEnabled(True)
+            self.AddButton.setEnabled(True)
+            self.RemoveButton.setEnabled(True)
             self.StopPressed = False
             self.PausePressed = False
             self.count=0
             self.TimeSlider.setValue(1)
             self.Displayer.setText("Ready!")
+            for n, layer in enumerate(self.layers):
+                layer.setSubsetString(self.InitialFilters[n])
+
 
 
 class TimeViewer(object):

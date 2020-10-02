@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>459</width>
+    <width>689</width>
     <height>250</height>
    </rect>
   </property>
@@ -35,6 +35,13 @@
    <bool>false</bool>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="2" column="1" colspan="4">
+    <widget class="QSpinBox" name="FPSBox">
+     <property name="maximum">
+      <number>999999999</number>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="0">
     <widget class="QLabel" name="label_21">
      <property name="text">
@@ -42,17 +49,57 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1" colspan="5">
-    <widget class="QgsFieldExpressionWidget" name="FieldIDBox" native="true">
-     <property name="toolTip">
-      <string/>
+   <item row="3" column="0" colspan="5">
+    <widget class="QSlider" name="TimeSlider">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
     </widget>
    </item>
-   <item row="2" column="1" colspan="6">
-    <widget class="QSpinBox" name="FPSBox">
-     <property name="maximum">
-      <number>999999999</number>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_23">
+     <property name="text">
+      <string>FPS</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="5">
+    <widget class="QLabel" name="Displayer">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="wordWrap">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QCheckBox" name="SaveFrameBox">
+     <property name="text">
+      <string>Save Frames as </string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="6">
+    <widget class="QLabel" name="label_24">
+     <property name="text">
+      <string>Selected Layers:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1" colspan="2">
+    <widget class="QgsMapLayerComboBox" name="InputLayerBox"/>
+   </item>
+   <item row="1" column="1" colspan="3">
+    <widget class="QgsFieldExpressionWidget" name="FieldIDBox" native="true">
+     <property name="toolTip">
+      <string/>
      </property>
     </widget>
    </item>
@@ -63,10 +110,10 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_23">
+   <item row="4" column="4">
+    <widget class="QPushButton" name="NextButton">
      <property name="text">
-      <string>FPS</string>
+      <string>Next</string>
      </property>
     </widget>
    </item>
@@ -80,7 +127,27 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="6">
+   <item row="4" column="2">
+    <widget class="QPushButton" name="StopButton">
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="text">
+      <string>Stop</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3">
+    <widget class="QPushButton" name="AddButton">
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="text">
+      <string>Add</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="4">
     <widget class="QPushButton" name="ProcessButton">
      <property name="toolTip">
       <string/>
@@ -90,27 +157,13 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="0">
-    <widget class="QCheckBox" name="SaveFrameBox">
-     <property name="text">
-      <string>Save Frames as </string>
-     </property>
-    </widget>
+   <item row="6" column="1" colspan="4">
+    <widget class="QComboBox" name="SaveBox"/>
    </item>
-   <item row="4" column="5" colspan="2">
-    <widget class="QPushButton" name="NextButton">
+   <item row="4" column="3">
+    <widget class="QPushButton" name="PreviousButton">
      <property name="text">
-      <string>Next</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="2">
-    <widget class="QPushButton" name="StopButton">
-     <property name="toolTip">
-      <string/>
-     </property>
-     <property name="text">
-      <string>Stop</string>
+      <string>Previous</string>
      </property>
     </widget>
    </item>
@@ -124,30 +177,49 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="1" colspan="6">
-    <widget class="QgsMapLayerComboBox" name="InputLayerBox"/>
-   </item>
-   <item row="6" column="1" colspan="6">
-    <widget class="QComboBox" name="SaveBox"/>
-   </item>
-   <item row="4" column="3" colspan="2">
-    <widget class="QPushButton" name="PreviousButton">
-     <property name="text">
-      <string>Previous</string>
+   <item row="1" column="6" rowspan="8" colspan="2">
+    <widget class="QLabel" name="LayerDisplayer">
+     <property name="font">
+      <font>
+       <pointsize>8</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
      </property>
-    </widget>
-   </item>
-   <item row="5" column="0" colspan="7">
-    <widget class="QLabel" name="Displayer">
+     <property name="autoFillBackground">
+      <bool>true</bool>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
      <property name="text">
       <string/>
+     </property>
+     <property name="scaledContents">
+      <bool>false</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
      </property>
      <property name="wordWrap">
       <bool>false</bool>
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="6">
+   <item row="0" column="4">
+    <widget class="QPushButton" name="RemoveButton">
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="text">
+      <string>Remove</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="4">
     <widget class="QLineEdit" name="folderEdit">
      <property name="toolTip">
       <string>Set output folder</string>
@@ -157,14 +229,7 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0" colspan="7">
-    <widget class="QSlider" name="TimeSlider">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="6">
+   <item row="8" column="4">
     <widget class="QPushButton" name="browseButton">
      <property name="maximumSize">
       <size>
