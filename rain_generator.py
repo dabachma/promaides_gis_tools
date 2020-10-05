@@ -234,47 +234,64 @@ class RainGenerator(object):
             f.close()
 ###########################################################
     rainstorm=[]
+    norainduration=[]
+    rainduration=[]
 ###########################################################
     def DataAnalysis(self):
 
     ##########################################################
-    #calculates if there is a storm or not
+    #calculates if there is a storm or not and their duration
         for x in range(self.ngauges):
             self.rainstorm.append([])
+            self.norainduration.append([])
+            self.rainduration.append([])
             for y in range(1):
                 self.rainstorm[x].append([])
+                self.norainduration[x].append([])
+                self.rainduration[x].append([])
 
-        rain=False
-        norain=False
         for i in range(len(self.data)):
-            for value in self.data[i][1]:
+            raincount = 0
+            noraincount = 0
+            rain = False
+            norain = False
+            for k, value in enumerate(self.data[i][1]):
                 j=int(value)
-                print(j)
                 if j>0:
+                    raincount = raincount + 1
                     rain=True
                 if j==0:
+                    noraincount = noraincount + 1
                     norain=True
                 if j>0 and norain==True:
+                    self.norainduration[i][0].append(noraincount)
+                    noraincount=0
                     self.rainstorm[i][0].append("nostorm")
                     rain=True
                     norain=False
                 if j==0 and rain==True:
+                    self.rainduration[i][0].append(raincount)
+                    raincount=0
                     self.rainstorm[i][0].append("storm")
                     rain=False
                     norain=True
-                if j>0 and value==self.data[i][1][len(self.data[i][1])-1]:
+                if j>0 and k==len(self.data[i][1])-1:
+                    self.rainduration[i][0].append(raincount)
                     self.rainstorm[i][0].append("storm")
                     rain=True
                     norain=False
-                if j==0 and value==self.data[i][1][len(self.data[i][1])-1]:
+                if j==0 and k==len(self.data[i][1])-1:
+                    self.norainduration[i][0].append(noraincount)
                     self.rainstorm[i][0].append("nostorm")
                     rain=False
                     norain=True
 
         print(self.rainstorm)
+        print(self.norainduration,"norain")
+        print(self.rainduration,"rain")
     ##########################################################
 
 
     
     def execTool(self):
-        primt("hello")
+        print("hello")
