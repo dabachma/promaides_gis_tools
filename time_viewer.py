@@ -243,7 +243,7 @@ class PluginDialog(QDialog):
         if len(self.layers)>0:
             self.ProcessButton.setEnabled(True)
         self.PlayButton.setEnabled(False)
-        self.TimeSlider.setEnabled(False)
+        #self.TimeSlider.setEnabled(False)
         self.NextButton.setEnabled(False)
         self.PreviousButton.setEnabled(False)
         self.Displayer.setText("Hello!")
