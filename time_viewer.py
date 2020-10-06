@@ -8,6 +8,7 @@ import tempfile
 import time
 import subprocess
 import sys
+import glob
 
 
 # QGIS modules
@@ -22,7 +23,6 @@ from .environment import get_ui_path
 
 
 UI_PATH = get_ui_path('ui_time_viewer.ui')
-
 
 class PluginDialog(QDialog):
     
@@ -40,6 +40,7 @@ class PluginDialog(QDialog):
         self.FieldIDBox.fieldChanged.connect(self.UpdateProcessButton)
         self.TimeSlider.valueChanged.connect(self.SliderUpdated)
 
+
         self.SaveBox.addItem('PNG')
         self.SaveBox.addItem('JPEG')
         self.FPSBox.setValue(1)
@@ -50,12 +51,9 @@ class PluginDialog(QDialog):
         def saveframeclicked(state):
             if state > 0:
                 self.SaveBox.setEnabled(True)
-                self.folderEdit.setEnabled(True)
-                self.browseButton.setEnabled(True)
+
             else:
                 self.SaveBox.setEnabled(False)
-                self.folderEdit.setEnabled(False)
-                self.browseButton.setEnabled(False)
 
         self.SaveBox.setEnabled(False)
         self.folderEdit.setEnabled(False)
@@ -67,6 +65,7 @@ class PluginDialog(QDialog):
         self.NextButton.setEnabled(False)
         self.TimeSlider.setEnabled(False)
         self.ProcessButton.setEnabled(False)
+        self.ExportVideoButton.setEnabled(False)
 
         self.AddButton.clicked.connect(self.AddLayer)
         self.RemoveButton.clicked.connect(self.RemoveLayer)
@@ -79,6 +78,7 @@ class PluginDialog(QDialog):
         self.StopButton.clicked.connect(self.StopPlay)
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
         self.SaveFrameBox.stateChanged.connect(saveframeclicked)
+        self.ExportVideoButton.clicked.connect(self.OpenVideoExportDialog)
         self.browseButton.setAutoDefault(False)
 
     def closeEvent(self, event):
@@ -92,6 +92,8 @@ class PluginDialog(QDialog):
         self.layers=[]
         self.InitialFilters=[]
         self.StopPlay()
+        self.ExportVideo = False
+        self.groupBox.setEnabled(True)
         self.ClosingSignal.emit()
 
 
@@ -125,6 +127,8 @@ class PluginDialog(QDialog):
         self.NextButton.setEnabled(False)
         self.TimeSlider.setEnabled(False)
         self.PreviousButton.setEnabled(False)
+        self.folderEdit.setEnabled(False)
+        self.browseButton.setEnabled(False)
         for n, layer in enumerate(self.layers):
             if len(self.InitialFilters)>0:
                 if n <= (len(self.InitialFilters)-1):
@@ -165,6 +169,8 @@ class PluginDialog(QDialog):
         self.NextButton.setEnabled(False)
         self.TimeSlider.setEnabled(False)
         self.PreviousButton.setEnabled(False)
+        self.folderEdit.setEnabled(False)
+        self.browseButton.setEnabled(False)
 
         self.InitialFilters = []
         if self.layerlist=="":
@@ -179,6 +185,8 @@ class PluginDialog(QDialog):
         self.NextButton.setEnabled(False)
         self.TimeSlider.setEnabled(False)
         self.PreviousButton.setEnabled(False)
+        self.folderEdit.setEnabled(False)
+        self.browseButton.setEnabled(False)
 
 
     def WriteProcessing(self):
@@ -190,7 +198,6 @@ class PluginDialog(QDialog):
     InitialFilters = []
     def ReadFrameIDs(self):
         self.FrameIDs = []
-        #layer = self.InputLayer()
         for layer in self.layers:
             InitialFilter = layer.subsetString()
             self.InitialFilters.append(layer.subsetString())
@@ -214,6 +221,9 @@ class PluginDialog(QDialog):
         self.TimeSlider.setEnabled(True)
         self.PreviousButton.setEnabled(True)
         self.NextButton.setEnabled(True)
+        self.folderEdit.setEnabled(True)
+        self.browseButton.setEnabled(True)
+        self.ExportVideoButton.setEnabled(True)
         self.Displayer.setText("Ready!")
         self.TimeSlider.setMinimum(1)
         self.TimeSlider.setMaximum(len(self.FrameIDs))
@@ -228,7 +238,6 @@ class PluginDialog(QDialog):
             return
         else:
             if type(self.InputLayerBox.currentLayer()) != type(None):
-                #layer = self.InputLayer()
                 for n, layer in enumerate(self.layers):
                     layer.setSubsetString('')
                     field = self.FieldIDBox.currentText()
@@ -243,7 +252,7 @@ class PluginDialog(QDialog):
         if len(self.layers)>0:
             self.ProcessButton.setEnabled(True)
         self.PlayButton.setEnabled(False)
-        #self.TimeSlider.setEnabled(False)
+        self.TimeSlider.setEnabled(False)
         self.NextButton.setEnabled(False)
         self.PreviousButton.setEnabled(False)
         self.Displayer.setText("Hello!")
@@ -328,7 +337,6 @@ class PluginDialog(QDialog):
         self.NextButton.setEnabled(False)
         self.AddButton.setEnabled(False)
         self.RemoveButton.setEnabled(False)
-        #layer = self.InputLayer()
         for n, layer in enumerate(self.layers):
             if self.PausePressed==True:
                 self.Playing = False
@@ -380,16 +388,18 @@ class PluginDialog(QDialog):
 
     def play2(self):
         global count
-        #layer = self.InputLayer()
+        if self.ExportVideo==True:
+            iface.mapCanvas().saveAsImage(str(self.VideoTempFolder) + "/" + "TimeViewer" + str(self.count + 1) + ".png")
+            os.remove(str(self.VideoTempFolder) + "/" + "TimeViewer" + str(self.count + 1) + ".pgw")
         if self.SaveFrameBox.isChecked():
             if self.SaveBox.currentText()=="PNG":
                 if str(self.outFolder()) != "":
-                    iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + "TimeViewer" + "_" + str(self.count) + ".png")
-                    os.remove(str(self.outFolder()) + "/" + "TimeViewer" + "_" + str(self.count) + ".pgw")
+                    iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + "TimeViewer"  + str(self.count+1) + ".png")
+                    os.remove(str(self.outFolder()) + "/" + "TimeViewer"  + str(self.count+1) + ".pgw")
             if self.SaveBox.currentText()=="JPEG":
                 if str(self.outFolder()) != "":
-                    iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + "TimeViewer" + "_" + str(self.count) + ".jpg")
-                    os.remove(str(self.outFolder()) + "/" + "TimeViewer" + "_" + str(self.count) + ".jgw")
+                    iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + "TimeViewer" + str(self.count+1) + ".jpg")
+                    os.remove(str(self.outFolder()) + "/" + "TimeViewer"  + str(self.count+1) + ".jgw")
         for n, layer in enumerate(self.layers):
             if self.PausePressed==True:
                 self.Playing = False
@@ -424,6 +434,22 @@ class PluginDialog(QDialog):
             QTimer.singleShot(10, self.play1) # Wait a second (1000) and prepare next map
             self.count += 1
         else:
+            if self.ExportVideo==True:
+                if os.path.isfile(self.VideoTempFolder + "TimeViewerOutput.avi"):
+                    os.remove(self.VideoTempFolder + "TimeViewerOutput.avi")
+                os.chdir(self.VideoTempFolder)
+                Executable = self.ffmpegaddress
+                myCommand = Executable + " -framerate " + str(10) +" -i " + " TimeViewer%d.png"  + " TimeViewerOutput.avi"
+                os.system(myCommand)
+                if os.path.isfile(str(self.outFolder()) + "/TimeViewerOutput.avi"):
+                    os.remove(str(self.outFolder()) + "/TimeViewerOutput.avi")
+                os.rename(self.VideoTempFolder + "TimeViewerOutput.avi" , str(self.outFolder()) + "/TimeViewerOutput.avi")
+                files = glob.glob(self.VideoTempFolder+"*")
+                for f in files:
+                    os.remove(f)
+                self.ExportVideo=False
+                self.groupBox.setEnabled(True)
+
             self.Playing = False
             self.PlayButton.setEnabled(True)
             self.PauseButton.setEnabled(False)
@@ -439,6 +465,48 @@ class PluginDialog(QDialog):
             self.Displayer.setText("Ready!")
             for n, layer in enumerate(self.layers):
                 layer.setSubsetString(self.InitialFilters[n])
+
+    def OpenVideoExportDialog(self):
+        if str(self.outFolder()) == "":
+            self.iface.messageBar().pushCritical(
+                'Time Viewer',
+                'No Output Location Set !'
+            )
+            return
+        new_filename, __ = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Please select ffmpeg.exe', "*ffmpeg.exe")
+        if new_filename != '':
+            self.ffmpegaddress=new_filename
+        else:
+            self.iface.messageBar().pushCritical(
+                'Time Viewer',
+                'Invalid Location for ffmpeg !'
+            )
+            return
+        self.ExportVideo()
+
+
+    ExportVideo=False
+    VideoTempFolder=""
+    ffmpegaddress=""
+    def ExportVideo(self):
+
+        if self.ffmpegaddress=="":
+            self.iface.messageBar().pushCritical(
+                'Time Viewer',
+                'Invalid Location for ffmpeg.exe !'
+            )
+            return
+        self.VideoTempFolder = tempfile.gettempdir() + "\TimeViewerTemp/"
+        if os.path.exists(self.VideoTempFolder):
+            print("")
+        else:
+            os.mkdir(self.VideoTempFolder)
+        self.count=0
+        self.ExportVideo=True
+        self.FPSBox.setValue(1)
+        self.Displayer.setText("Exporting Video... Please Wait")
+        self.groupBox.setEnabled(False)
+        self.play1()
 
 
 
@@ -473,6 +541,7 @@ class TimeViewer(object):
         self.act.setEnabled(False)
         self.dialog.show()
         self.dialog.ClosingSignal.connect(self.quitDialog)
+
 
     def scheduleAbort(self):
         self.cancel = True
