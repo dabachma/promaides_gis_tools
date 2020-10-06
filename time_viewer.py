@@ -94,6 +94,7 @@ class PluginDialog(QDialog):
         self.StopPlay()
         self.ExportVideo = False
         self.groupBox.setEnabled(True)
+        self.ExportVideoButton.setEnabled(True)
         self.ClosingSignal.emit()
 
 
@@ -337,6 +338,7 @@ class PluginDialog(QDialog):
         self.NextButton.setEnabled(False)
         self.AddButton.setEnabled(False)
         self.RemoveButton.setEnabled(False)
+        self.ExportVideoButton.setEnabled(False)
         for n, layer in enumerate(self.layers):
             if self.PausePressed==True:
                 self.Playing = False
@@ -349,6 +351,7 @@ class PluginDialog(QDialog):
                 self.NextButton.setEnabled(True)
                 self.AddButton.setEnabled(True)
                 self.RemoveButton.setEnabled(True)
+                self.ExportVideoButton.setEnabled(True)
                 self.Displayer.setText("Paused!")
                 return
             if self.StopPressed == True:
@@ -363,6 +366,7 @@ class PluginDialog(QDialog):
                 self.NextButton.setEnabled(True)
                 self.AddButton.setEnabled(True)
                 self.RemoveButton.setEnabled(True)
+                self.ExportVideoButton.setEnabled(True)
                 layer.setSubsetString(self.InitialFilters[n])
                 self.Displayer.setText("Ready!")
                 return
@@ -412,6 +416,7 @@ class PluginDialog(QDialog):
                 self.NextButton.setEnabled(True)
                 self.AddButton.setEnabled(True)
                 self.RemoveButton.setEnabled(True)
+                self.ExportVideoButton.setEnabled(True)
                 self.Displayer.setText("Paused!")
                 return
             if self.StopPressed == True:
@@ -426,6 +431,7 @@ class PluginDialog(QDialog):
                 self.NextButton.setEnabled(True)
                 self.AddButton.setEnabled(True)
                 self.RemoveButton.setEnabled(True)
+                self.ExportVideoButton.setEnabled(True)
                 layer.setSubsetString(self.InitialFilters[n])
                 self.Displayer.setText("Ready!")
                 return
@@ -458,6 +464,7 @@ class PluginDialog(QDialog):
             self.NextButton.setEnabled(True)
             self.AddButton.setEnabled(True)
             self.RemoveButton.setEnabled(True)
+            self.ExportVideoButton.setEnabled(True)
             self.StopPressed = False
             self.PausePressed = False
             self.count=0
