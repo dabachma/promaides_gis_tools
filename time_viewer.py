@@ -441,15 +441,16 @@ class PluginDialog(QDialog):
             self.count += 1
         else:
             if self.ExportVideo==True:
-                if os.path.isfile(self.VideoTempFolder + "TimeViewerOutput.avi"):
-                    os.remove(self.VideoTempFolder + "TimeViewerOutput.avi")
+                if os.path.isfile(self.VideoTempFolder + "TimeViewerOutput.mp4"):
+                    os.remove(self.VideoTempFolder + "TimeViewerOutput.mp4")
                 os.chdir(self.VideoTempFolder)
                 Executable = self.ffmpegaddress
-                myCommand = Executable + " -framerate " + str(10) +" -i " + " TimeViewer%d.png"  + " TimeViewerOutput.avi"
+                myCommand = Executable + " -r 15 -f image2 -s 1920x1080" + " -i " + " TimeViewer%d.png"  +  " -vcodec libx264 -crf 25  -pix_fmt yuv420p -vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\"" + " TimeViewerOutput.mp4"
                 os.system(myCommand)
-                if os.path.isfile(str(self.outFolder()) + "/TimeViewerOutput.avi"):
-                    os.remove(str(self.outFolder()) + "/TimeViewerOutput.avi")
-                os.rename(self.VideoTempFolder + "TimeViewerOutput.avi" , str(self.outFolder()) + "/TimeViewerOutput.avi")
+                print(myCommand)
+                if os.path.isfile(str(self.outFolder()) + "/TimeViewerOutput.mp4"):
+                    os.remove(str(self.outFolder()) + "/TimeViewerOutput.mp4")
+                os.rename(self.VideoTempFolder + "TimeViewerOutput.mp4" , str(self.outFolder()) + "/TimeViewerOutput.mp4")
                 files = glob.glob(self.VideoTempFolder+"*")
                 for f in files:
                     os.remove(f)
