@@ -69,13 +69,10 @@
     <item row="0" column="1" colspan="3">
      <widget class="QgsMapLayerComboBox" name="InputLayerBox"/>
     </item>
-    <item row="0" column="4">
-     <widget class="QPushButton" name="AddButton">
-      <property name="toolTip">
-       <string/>
-      </property>
-      <property name="text">
-       <string>Add</string>
+    <item row="2" column="1">
+     <widget class="QSpinBox" name="FPSBox">
+      <property name="maximum">
+       <number>999999999</number>
       </property>
      </widget>
     </item>
@@ -86,10 +83,13 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="1">
-     <widget class="QSpinBox" name="FPSBox">
-      <property name="maximum">
-       <number>999999999</number>
+    <item row="0" column="4">
+     <widget class="QPushButton" name="AddButton">
+      <property name="toolTip">
+       <string/>
+      </property>
+      <property name="text">
+       <string>Add</string>
       </property>
      </widget>
     </item>
@@ -97,6 +97,16 @@
      <widget class="QLabel" name="label_22">
       <property name="text">
        <string>Frame ID</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="2" colspan="2">
+     <widget class="QPushButton" name="SavePreferenceButton">
+      <property name="toolTip">
+       <string/>
+      </property>
+      <property name="text">
+       <string>Save State</string>
       </property>
      </widget>
     </item>
@@ -131,16 +141,6 @@
       <property name="icon">
        <iconset>
         <normaloff>../icons/PreviousButton.png</normaloff>../icons/PreviousButton.png</iconset>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="2" colspan="2">
-     <widget class="QPushButton" name="SavePreferenceButton">
-      <property name="toolTip">
-       <string/>
-      </property>
-      <property name="text">
-       <string>Save State</string>
       </property>
      </widget>
     </item>
@@ -251,6 +251,19 @@
       </property>
      </widget>
     </item>
+    <item row="7" column="5">
+     <widget class="QPushButton" name="browseButton">
+      <property name="maximumSize">
+       <size>
+        <width>27</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>...</string>
+      </property>
+     </widget>
+    </item>
     <item row="6" column="0" colspan="2">
      <widget class="QCheckBox" name="SaveFrameBox">
       <property name="text">
@@ -292,19 +305,6 @@
       <property name="icon">
        <iconset>
         <normaloff>../icons/PauseButton.png</normaloff>../icons/PauseButton.png</iconset>
-      </property>
-     </widget>
-    </item>
-    <item row="7" column="5">
-     <widget class="QPushButton" name="browseButton">
-      <property name="maximumSize">
-       <size>
-        <width>27</width>
-        <height>16777215</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>...</string>
       </property>
      </widget>
     </item>
@@ -352,6 +352,26 @@
       </property>
      </widget>
     </item>
+    <item row="1" column="5">
+     <widget class="QPushButton" name="ProcessButton">
+      <property name="toolTip">
+       <string/>
+      </property>
+      <property name="text">
+       <string>Process</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="5">
+     <widget class="QPushButton" name="RemoveButton">
+      <property name="toolTip">
+       <string/>
+      </property>
+      <property name="text">
+       <string>Remove</string>
+      </property>
+     </widget>
+    </item>
     <item row="4" column="4" colspan="2">
      <widget class="QPushButton" name="NextButton">
       <property name="minimumSize">
@@ -386,36 +406,6 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="5">
-     <widget class="QPushButton" name="ProcessButton">
-      <property name="toolTip">
-       <string/>
-      </property>
-      <property name="text">
-       <string>Process</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="5">
-     <widget class="QPushButton" name="RemoveButton">
-      <property name="toolTip">
-       <string/>
-      </property>
-      <property name="text">
-       <string>Remove</string>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="5">
-     <widget class="QCheckBox" name="LoopBox">
-      <property name="text">
-       <string>Loop</string>
-      </property>
-     </widget>
-    </item>
-    <item row="6" column="2" colspan="4">
-     <widget class="QComboBox" name="SaveBox"/>
-    </item>
     <item row="5" column="0" colspan="5">
      <widget class="QLabel" name="Displayer">
       <property name="font">
@@ -431,6 +421,9 @@
        <bool>false</bool>
       </property>
      </widget>
+    </item>
+    <item row="6" column="2" colspan="4">
+     <widget class="QComboBox" name="SaveBox"/>
     </item>
     <item row="7" column="2" colspan="3">
      <widget class="QLineEdit" name="folderEdit">
@@ -449,6 +442,32 @@
       </property>
       <property name="text">
        <string>Export Video</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="5">
+     <widget class="QCheckBox" name="LoopBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="layoutDirection">
+       <enum>Qt::LeftToRight</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normaloff>../icons/LoopIcon.png</normaloff>../icons/LoopIcon.png</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>25</width>
+        <height>25</height>
+       </size>
       </property>
      </widget>
     </item>
