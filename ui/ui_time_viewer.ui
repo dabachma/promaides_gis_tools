@@ -109,7 +109,7 @@
        <string/>
       </property>
       <property name="text">
-       <string>Save State</string>
+       <string>Save Session</string>
       </property>
      </widget>
     </item>
@@ -206,7 +206,7 @@
        <string/>
       </property>
       <property name="text">
-       <string>Restore State</string>
+       <string>Restore Session</string>
       </property>
      </widget>
     </item>

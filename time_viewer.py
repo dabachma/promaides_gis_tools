@@ -116,6 +116,14 @@ class PluginDialog(QDialog):
         proj.writeEntry("TimeViewer", "FPS", self.FPSBox.value())
         proj.writeEntry("TimeViewer", "ffmpegaddress", self.ffmpegaddress)
 
+        self.iface.messageBar().pushSuccess(
+            'Time Viewer',
+            'Session Saved Successfully  !'
+        )
+        return
+
+        pushSuccess
+
 
     def ReadSettings(self):
         try:
