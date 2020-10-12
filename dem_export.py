@@ -472,9 +472,14 @@ class DEMExport(object):
     def SaveasPolygon(self):
         try:
             original = self.previewLayer
-            originalpath=QgsProject.instance().homePath()
-            if not originalpath:
-                originalpath = tempfile.gettempdir()
+            currentFolder = QgsProject.instance().homePath()
+            originalpath = QFileDialog.getExistingDirectory(self.iface.mainWindow(), '2D-Floodplain Export', currentFolder)
+            if originalpath == '':
+                self.iface.messageBar().pushCritical(
+                    '2D-Floodplain Export',
+                    'New layer cannot be created!'
+                )
+                return
             originalname = original.name()
             writingpath = originalpath + "/" + originalname + "_exported.shp"
             _writer = QgsVectorFileWriter.writeAsVectorFormat(original, writingpath, 'utf-8',
