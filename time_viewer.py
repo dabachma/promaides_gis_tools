@@ -481,14 +481,9 @@ class PluginDialog(QDialog):
             else:
                 layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
 
-        if self.check_fps(self.FPSBox.value()) == 1:
-            self.iface.messageBar().pushCritical(
-                'Time Viewer',
-                'Invalid Value for FPS !'
-            )
-            FPS = 1000 / 1
-        else:
-            FPS = 1000 / self.FPSBox.value()
+        FPS = 1000 / self.FPSBox.value()
+        canvas = iface.mapCanvas()
+        canvas.waitWhileRendering()
         QTimer.singleShot(FPS, self.play2)
 
 
@@ -543,8 +538,9 @@ class PluginDialog(QDialog):
                 self.Displayer.setText("Ready!")
                 return
             layer.setSubsetString(self.InitialFilters[n])
+
         if self.count <= len(self.FrameIDs)-2:
-            QTimer.singleShot(10, self.play1) # Wait a second (1000) and prepare next map
+            QTimer.singleShot(1, self.play1) # Wait a second (1000) and prepare next map
             self.count += 1
         else:
             if self.LoopBox.isChecked() and self.ExportVideoState==False:
