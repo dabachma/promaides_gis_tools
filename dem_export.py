@@ -835,6 +835,21 @@ class DEMExport(object):
 
                 ilm.write('!FLOODPLAINFILE = "./%s"\n' % os.path.basename(filename))
 
+                ilm.write('#!INSTATBOUNDFILE = <SET>\n')
+                ilm.write('      #$FILENAME= "./Your_FIle_Address.txt" \n')
+                ilm.write('      #$NUMBER_CURVE= 1 \n')
+                ilm.write('      # </SET> \n')
+
+                ilm.write('#!NOFLOWFILE = <SET>\n')
+                ilm.write('      #$FILENAME= "./Your_FIle_Address.txt" \n')
+                ilm.write('      #$NO_POLYGONS= 1 \n')
+                ilm.write('      # </SET> \n')
+
+                ilm.write('#!DIKELINEFILE = <SET>\n')
+                ilm.write('      #$FILENAME= "./Your_FIle_Address.txt" \n')
+                ilm.write('      #$NO_POLYLINES= 2 \n')
+                ilm.write('      # </SET> \n')
+
                 ilm.write('!LIMITS = <SET>  # numerical limits for 2D simulation\n')
                 ilm.write('  $RTOL = 1e-9  # relative tolerances   [optional, standard value = 1e-9]\n')
                 ilm.write('  $ATOL = 1e-5   # absolute tolerances   [optional, standard value = 1e-5]\n')
