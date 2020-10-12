@@ -833,8 +833,7 @@ class DEMExport(object):
                 ilm.write('  $ANGLE       = %f\n' % angle)
                 ilm.write('</SET> \n')
 
-
-                ilm.write('!FLOODPLAINFILE = "%s"\n' % filename)
+                ilm.write('!FLOODPLAINFILE = "./%s"\n' % os.path.basename(filename))
 
                 ilm.write('!LIMITS = <SET>  # numerical limits for 2D simulation\n')
                 ilm.write('  $RTOL = 1e-9  # relative tolerances   [optional, standard value = 1e-9]\n')
