@@ -47,8 +47,25 @@
   $GRAMSCHMIDT = MODIFIED_GS
 </SET>
 
-# relative file path to materials file
+# relative file path to materials file (required)
 !MATERIALFILE = "./rauhigkeiten.man"
+# relative path to the observation point file (optional)
+# !OBSPOINTFILE = "./PATH2FILE/FILE_NAME.txt"
+
+
+
+#define the output settings
+#!OUTPUT = <STANDARD>  #active this for standard setting which you can see below (following part can be deleted)
+!OUTPUT = <SET> #change the settings here if required
+    $TECPLOT_1D = false
+    $TECPLOT_2D = false
+    $BLUEKENUE_2D = false
+    $PARAVIEW_2D = true
+    $PARAVIEW_EXCEL_1D = true
+    $OUTPUT_FOLDER =   ./    #relative path to .ilmfile
+    $DATBASE_INSTAT = true
+</SET>
+
 
 !$ENDGLOBAL
 
