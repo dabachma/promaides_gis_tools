@@ -491,6 +491,10 @@ class PluginDialog(QDialog):
     def play2(self):
         global count
         if self.ExportVideoState==True:
+            self.iface.messageBar().pushInfo(
+                'Time Viewer',
+                'Exporting Video, Please Wait !'
+            )
             iface.mapCanvas().saveAsImage(str(self.VideoTempFolder) + "/" + "TimeViewer" + str(self.count + 1) + ".png")
             os.remove(str(self.VideoTempFolder) + "/" + "TimeViewer" + str(self.count + 1) + ".pgw")
         if self.SaveFrameBox.isChecked():
@@ -548,18 +552,29 @@ class PluginDialog(QDialog):
                 self.play1()
                 return
             if self.ExportVideoState==True:
-                if os.path.isfile(self.VideoTempFolder + "TimeViewerOutput.mp4"):
-                    os.remove(self.VideoTempFolder + "TimeViewerOutput.mp4")
-                os.chdir(self.VideoTempFolder)
-                Executable = os.path.normpath(self.ffmpegaddress)
-                myCommand = "\""+ "\""+ Executable + "\"" + " -r 15 -f image2 -s 1920x1080" + " -i " + " TimeViewer%d.png"  +  " -vcodec libx264 -crf 25  -pix_fmt yuv420p -vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\"" + " TimeViewerOutput.mp4"+"\""
-                os.system(myCommand)
-                if os.path.isfile(str(self.outFolder()) + "/TimeViewerOutput.mp4"):
-                    os.remove(str(self.outFolder()) + "/TimeViewerOutput.mp4")
-                os.rename(self.VideoTempFolder + "TimeViewerOutput.mp4" , str(self.outFolder()) + "/TimeViewerOutput.mp4")
-                files = glob.glob(self.VideoTempFolder+"*")
-                for f in files:
-                    os.remove(f)
+                try:
+                    if os.path.isfile(self.VideoTempFolder + "TimeViewerOutput.mp4"):
+                        os.remove(self.VideoTempFolder + "TimeViewerOutput.mp4")
+                    os.chdir(self.VideoTempFolder)
+                    Executable = os.path.normpath(self.ffmpegaddress)
+                    myCommand = "\""+ "\""+ Executable + "\"" + " -r 15 -f image2 -s 1920x1080" + " -i " + " TimeViewer%d.png"  +  " -vcodec libx264 -crf 25  -pix_fmt yuv420p -vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\"" + " TimeViewerOutput.mp4"+"\""
+                    os.system(myCommand)
+                    if os.path.isfile(str(self.outFolder()) + "/TimeViewerOutput.mp4"):
+                        os.remove(str(self.outFolder()) + "/TimeViewerOutput.mp4")
+                    os.rename(self.VideoTempFolder + "TimeViewerOutput.mp4" , str(self.outFolder()) + "/TimeViewerOutput.mp4")
+                    files = glob.glob(self.VideoTempFolder+"*")
+                    for f in files:
+                        os.remove(f)
+                    self.iface.messageBar().pushSuccess(
+                        'Time Viewer',
+                        'Video Export Successful !'
+                    )
+                except:
+                    self.iface.messageBar().pushCritical(
+                        'Time Viewer',
+                        'Failed to Export Video !'
+                    )
+
                 self.ExportVideoState=False
                 self.groupBox.setEnabled(True)
 
