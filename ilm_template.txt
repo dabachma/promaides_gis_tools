@@ -52,8 +52,6 @@
 # relative path to the observation point file (optional)
 # !OBSPOINTFILE = "./PATH2FILE/FILE_NAME.txt"
 
-
-
 #define the output settings
 #!OUTPUT = <STANDARD>  #active this for standard setting which you can see below (following part can be deleted)
 !OUTPUT = <SET> #change the settings here if required
