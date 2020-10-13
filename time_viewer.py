@@ -115,14 +115,13 @@ class PluginDialog(QDialog):
         proj.writeEntry("TimeViewer", "Nlayers", len(self.layers))
         proj.writeEntry("TimeViewer", "FPS", self.FPSBox.value())
         proj.writeEntry("TimeViewer", "ffmpegaddress", self.ffmpegaddress)
+        proj.writeEntry("TimeViewer", "Output", self.folderEdit.text())
 
         self.iface.messageBar().pushSuccess(
             'Time Viewer',
             'Session Saved Successfully  !'
         )
         return
-
-        pushSuccess
 
 
     def ReadSettings(self):
@@ -136,6 +135,8 @@ class PluginDialog(QDialog):
             Nframeids, type_conversion_ok = proj.readNumEntry("TimeViewer", "NFrameIDs")
             fps, type_conversion_ok = proj.readNumEntry("TimeViewer", "FPS")
             self.FPSBox.setValue(fps)
+            outputlocation, type_conversion_ok = proj.readEntry("TimeViewer", "Output")
+            self.folderEdit.setText(outputlocation)
             self.layers=[]
             self.layerlist2=[]
             self.FrameIDs=[]
@@ -327,7 +328,6 @@ class PluginDialog(QDialog):
         self.TimeSlider.setMaximum(len(self.FrameIDs))
         self.TimeSlider.setSingleStep(1)
         self.TimeSlider.setValue(1)
-        #self.TimeSlider.setTickInterval(len(self.FrameIDs)/5)
 
 
     def SliderUpdated(self):
@@ -541,7 +541,7 @@ class PluginDialog(QDialog):
                 layer.setSubsetString(self.InitialFilters[n])
                 self.Displayer.setText("Ready!")
                 return
-            layer.setSubsetString(self.InitialFilters[n])
+            #layer.setSubsetString(self.InitialFilters[n])
 
         if self.count <= len(self.FrameIDs)-2:
             QTimer.singleShot(1, self.play1) # Wait a second (1000) and prepare next map
@@ -577,6 +577,7 @@ class PluginDialog(QDialog):
 
                 self.ExportVideoState=False
                 self.groupBox.setEnabled(True)
+                self.FPSBox.setValue(15)
 
             self.Playing = False
             self.PlayButton.setEnabled(True)
@@ -636,7 +637,7 @@ class PluginDialog(QDialog):
             os.mkdir(self.VideoTempFolder)
         self.count=0
         self.ExportVideoState=True
-        self.FPSBox.setValue(30)
+        self.FPSBox.setValue(60)
         self.Displayer.setText("Exporting Video... Please Wait")
         self.groupBox.setEnabled(False)
         self.play1()
