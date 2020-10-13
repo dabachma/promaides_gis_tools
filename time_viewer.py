@@ -551,8 +551,8 @@ class PluginDialog(QDialog):
                 if os.path.isfile(self.VideoTempFolder + "TimeViewerOutput.mp4"):
                     os.remove(self.VideoTempFolder + "TimeViewerOutput.mp4")
                 os.chdir(self.VideoTempFolder)
-                Executable = self.ffmpegaddress
-                myCommand = Executable + " -r 15 -f image2 -s 1920x1080" + " -i " + " TimeViewer%d.png"  +  " -vcodec libx264 -crf 25  -pix_fmt yuv420p -vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\"" + " TimeViewerOutput.mp4"
+                Executable = os.path.normpath(self.ffmpegaddress)
+                myCommand = "\""+ "\""+ Executable + "\"" + " -r 15 -f image2 -s 1920x1080" + " -i " + " TimeViewer%d.png"  +  " -vcodec libx264 -crf 25  -pix_fmt yuv420p -vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\"" + " TimeViewerOutput.mp4"+"\""
                 os.system(myCommand)
                 if os.path.isfile(str(self.outFolder()) + "/TimeViewerOutput.mp4"):
                     os.remove(str(self.outFolder()) + "/TimeViewerOutput.mp4")
@@ -621,7 +621,7 @@ class PluginDialog(QDialog):
             os.mkdir(self.VideoTempFolder)
         self.count=0
         self.ExportVideoState=True
-        self.FPSBox.setValue(1)
+        self.FPSBox.setValue(30)
         self.Displayer.setText("Exporting Video... Please Wait")
         self.groupBox.setEnabled(False)
         self.play1()
