@@ -185,6 +185,12 @@ class PluginDialog(QDialog):
             self.TimeSlider.setMinimum(1)
             self.TimeSlider.setMaximum(len(self.FrameIDs))
             self.TimeSlider.setSingleStep(1)
+
+            self.iface.messageBar().pushSuccess(
+                'Time Viewer',
+                'Session Restored Successfully  !'
+            )
+            return
         except:
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
@@ -605,10 +611,25 @@ class PluginDialog(QDialog):
                 'No Output Location Set !'
             )
             return
+        if self.ffmpegaddress == "":
+            try:
+                if os.path.isfile(os.path.dirname(os.path.realpath(__file__)) + "/ffmpegpath.ini"):
+                    settingsfile = open(os.path.dirname(os.path.realpath(__file__)) + "/ffmpegpath.ini", 'r')
+                    tempaddress = settingsfile.read()
+                    if os.path.isfile(tempaddress):
+                        self.ffmpegaddress=tempaddress
+            except:
+                print("")
         if self.ffmpegaddress=="":
             new_filename, __ = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Please select ffmpeg.exe', "*ffmpeg.exe")
             if new_filename != '':
                 self.ffmpegaddress=new_filename
+                try:
+                    settingsfile = os.path.dirname(os.path.realpath(__file__)) + "/ffmpegpath.ini"
+                    with open(settingsfile, 'w') as file:
+                        file.write(new_filename)
+                except:
+                    print("")
             else:
                 self.iface.messageBar().pushCritical(
                     'Time Viewer',
