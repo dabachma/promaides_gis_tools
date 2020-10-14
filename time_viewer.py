@@ -40,15 +40,11 @@ class PluginDialog(QDialog):
         self.FieldIDBox.fieldChanged.connect(self.UpdateProcessButton)
         self.TimeSlider.valueChanged.connect(self.SliderUpdated)
 
-        try:
-            path = tempfile.gettempdir()
-            title = "TimeViewerStatus"
-            statusfile = path + "\\" + str(title) + ".txt"
-            with open(statusfile, 'w') as file:
-                file.write("open")
-        except:
-            pass
-
+        s = QgsSettings()
+        pluginstatus = s.value("TimeViewer", "default text")
+        if pluginstatus=="open":
+            QTimer.singleShot(8000, self.ReadSettings)
+        s.setValue("TimeViewer", "open")
 
         self.SaveBox.addItem('PNG')
         self.SaveBox.addItem('JPEG')
@@ -683,17 +679,10 @@ class TimeViewer(object):
         self.act = QAction('Time Viewer', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
 
-        try:
-            path = tempfile.gettempdir()
-            title = "TimeViewerStatus"
-            statusfile = path + "\\" + str(title) + ".txt"
-            if os.path.isfile(statusfile):
-                settingsfile = open(statusfile, 'r')
-                status = settingsfile.read()
-                if status=="open":
-                    self.execDialog()
-        except:
-            pass
+        s = QgsSettings()
+        pluginstatus=s.value("TimeViewer", "default text")
+        if pluginstatus=="open":
+            self.execDialog()
 
 
     def initGui(self, menu=None):
@@ -723,14 +712,9 @@ class TimeViewer(object):
         self.cancel = True
 
     def quitDialog(self):
-        try:
-            path = tempfile.gettempdir()
-            title = "TimeViewerStatus"
-            statusfile = path + "\\" + str(title) + ".txt"
-            with open(statusfile, 'w') as file:
-                file.write("closed")
-        except:
-            pass
+
+        s = QgsSettings()
+        s.setValue("TimeViewer", "closed")
 
         #self.dialog = None
         self.act.setEnabled(True)
