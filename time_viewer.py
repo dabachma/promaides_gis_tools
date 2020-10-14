@@ -40,10 +40,19 @@ class PluginDialog(QDialog):
         self.FieldIDBox.fieldChanged.connect(self.UpdateProcessButton)
         self.TimeSlider.valueChanged.connect(self.SliderUpdated)
 
+        try:
+            path = tempfile.gettempdir()
+            title = "TimeViewerStatus"
+            statusfile = path + "\\" + str(title) + ".txt"
+            with open(statusfile, 'w') as file:
+                file.write("open")
+        except:
+            pass
+
 
         self.SaveBox.addItem('PNG')
         self.SaveBox.addItem('JPEG')
-        self.FPSBox.setValue(1)
+        #self.FPSBox.setValue(1)
 
         self.Displayer.setText("Hello!")
         self.LayerDisplayer.setText("No Layer Selected")
@@ -619,7 +628,7 @@ class PluginDialog(QDialog):
                     if os.path.isfile(tempaddress):
                         self.ffmpegaddress=tempaddress
             except:
-                print("")
+                pass
         if self.ffmpegaddress=="":
             new_filename, __ = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Please select ffmpeg.exe', "*ffmpeg.exe")
             if new_filename != '':
@@ -629,7 +638,7 @@ class PluginDialog(QDialog):
                     with open(settingsfile, 'w') as file:
                         file.write(new_filename)
                 except:
-                    print("")
+                    pass
             else:
                 self.iface.messageBar().pushCritical(
                     'Time Viewer',
@@ -674,6 +683,18 @@ class TimeViewer(object):
         self.act = QAction('Time Viewer', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
 
+        try:
+            path = tempfile.gettempdir()
+            title = "TimeViewerStatus"
+            statusfile = path + "\\" + str(title) + ".txt"
+            if os.path.isfile(statusfile):
+                settingsfile = open(statusfile, 'r')
+                status = settingsfile.read()
+                if status=="open":
+                    self.execDialog()
+        except:
+            pass
+
 
     def initGui(self, menu=None):
         if menu is not None:
@@ -702,6 +723,15 @@ class TimeViewer(object):
         self.cancel = True
 
     def quitDialog(self):
+        try:
+            path = tempfile.gettempdir()
+            title = "TimeViewerStatus"
+            statusfile = path + "\\" + str(title) + ".txt"
+            with open(statusfile, 'w') as file:
+                file.write("closed")
+        except:
+            pass
+
         #self.dialog = None
         self.act.setEnabled(True)
         self.cancel = False
