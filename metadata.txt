@@ -1,12 +1,12 @@
 [general]
 name=ProMaIDes GIS Tools
-email=tobias.schruff@gmail.com
-author=Tobias Schruff
+email=daniel.bachmann@h2.de
+author=AG FRM Hochschule Magdeburg-Stendal and others
 qgisMinimumVersion=3.0
 qgisMaximumVersion=3.99
 description=Exports spatial data (vector and raster) to ProMaIDes input files
 about=This plugin allows you to export files in the formats requested by ProMaIDes, an integrated flood risk decision support system.
-version=version 0.4.0
+version=version 0.6.0
 
 ; optional stuff
 category=Vector
@@ -26,8 +26,10 @@ changelog=
   * Added about dialog
   Version 0.4.0
   * QGIS 3 compatibility
+  Version 0.6.0
+  * Added several new export functions and timeviewer for the hydrodynamic results
 icon=icon.png
 experimental=False
-homepage=https://dev.iww.rwth-aachen.de/sch/promaides_gis_tools
-tracker=https://dev.iww.rwth-aachen.de/sch/promaides_gis_tools/issues
-repository=https://dev.iww.rwth-aachen.de/sch/promaides_gis_tools
+homepage=https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-5/QGIS
+tracker=https://github.com/dabachma/promaides_gis_tools
+repository=https://github.com/dabachma/promaides_gis_tools
