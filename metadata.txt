@@ -30,6 +30,6 @@ changelog=
   * Added several new export functions and timeviewer for the hydrodynamic results
 icon=icon.png
 experimental=False
-homepage=https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-5/QGIS
-tracker=https://github.com/dabachma/promaides_gis_tools
+homepage=https://github.com/dabachma/promaides_gis_tools
+tracker=https://github.com/dabachma/promaides_gis_tools/issues
 repository=https://github.com/dabachma/promaides_gis_tools
