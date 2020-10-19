@@ -40,10 +40,13 @@ class PluginDialog(QDialog):
         self.FieldIDBox.fieldChanged.connect(self.UpdateProcessButton)
         self.TimeSlider.valueChanged.connect(self.SliderUpdated)
 
+        #reads if the plugin was open or not
         s = QgsSettings()
         pluginstatus = s.value("TimeViewer", "default text")
         if pluginstatus=="open":
             QTimer.singleShot(8000, self.ReadSettings)
+
+        #sets the plugin status to open
         s.setValue("TimeViewer", "open")
 
         self.SaveBox.addItem('PNG')
@@ -162,7 +165,7 @@ class PluginDialog(QDialog):
                 layer = QgsProject.instance().mapLayersByName(layername)[0]
                 self.layers.append(layer)
                 self.InputLayerBox.setLayer(layer)
-                self.InitialFilters.append(layer.subsetString())
+                self.InitialFilters.append("")
                 newlayername = layer.name() + "\n"
                 self.layerlist = self.layerlist + newlayername
             self.LayerDisplayer.setText(self.layerlist)
@@ -413,8 +416,9 @@ class PluginDialog(QDialog):
                 layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
 
     def StopPlay(self):
-        self.TimeSlider.setValue(1)
-        self.StopPressed=True
+        if self.Playing == True:
+            self.TimeSlider.setValue(1)
+            self.StopPressed=True
 
     def onBrowseButtonClicked(self):
         currentFolder = self.folderEdit.text()
