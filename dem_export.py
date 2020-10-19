@@ -568,8 +568,8 @@ class DEMExport(object):
             item.setData(PluginDialog.dcRole, self.dialog.dcBox.value())
             item.setData(PluginDialog.angleRole, angle)
 
-        if True:
-            self.dialog.rasterUpdated.emit(int(self.dialog.listWidget.row(item) + 1),
+            if True:
+                self.dialog.rasterUpdated.emit(int(self.dialog.listWidget.row(item) + 1),
                                     self.polygon(xll, yll, dx, dy, angle / 180.0 * math.pi))
 
     def quitDialog(self):
