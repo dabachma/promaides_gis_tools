@@ -6,7 +6,7 @@ qgisMinimumVersion=3.0
 qgisMaximumVersion=3.99
 description=Exports spatial data (vector and raster) to ProMaIDes input files
 about=This plugin allows you to export files in the formats requested by ProMaIDes, an integrated flood risk decision support system.
-version=version 0.6.0
+version=version 0.6.1
 
 ; optional stuff
 category=Vector
