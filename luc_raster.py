@@ -36,7 +36,7 @@ class PluginDialog(QDialog):
     rasterRemoved = pyqtSignal(int)
     ClosingSignal = pyqtSignal()
 
-    xllRole = 111
+    xllRole = 111  # Those numbers only describe an ID but not the actual values
     yllRole = 112
     nrRole = 113
     ncRole = 114
@@ -60,46 +60,19 @@ class PluginDialog(QDialog):
         self.removeButton.setEnabled(False)
         self.ExportButton.setEnabled(False)
         self.groupBox.setEnabled(False)
-        # self.ImportButton.setEnabled(False)
-   #     self.AreaLayerBox.setLayer(None)
         self.lucLayerBox.setLayer(None)
 
         self.removeButton.clicked.connect(self.removeRasterItems)
         self.removeButton.setAutoDefault(False)
         self.listWidget.currentRowChanged.connect(self.updateRasterPropertiesGroup)
         self.lucLayerBox.layerChanged.connect(self.updateLUCBox)
-        # self.AreaLayerBox.layerChanged.connect(self.UpdateImportButtons)
         self.pickButton.clicked.connect(self.enableMapPicker)
         self.pickButton.setAutoDefault(False)
-        self.zoomButton.clicked.connect(self.zoomToRaster)
-        self.zoomButton.setAutoDefault(False)
-
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
         self.browseButton.setAutoDefault(False)
 
     def closeEvent(self, event):
         self.ClosingSignal.emit()
-
-#    def UpdateImportButtons(self):
-#        if self.AreaLayerBox.currentLayer():
-#            self.ImportButton.setEnabled(True)
-#        else:
-#            self.ImportButton.setEnabled(False)
-
-
-    def zoomToRaster(self):
-        #  RS: Reacts when zoomButton is pressed and changes bounding box to the raster settings entered in raster settings.
-        item = self.listWidget.currentItem()
-
-        xll = item.data(PluginDialog.xllRole)   # RS only rectangular grids
-        yll = item.data(PluginDialog.yllRole)
-        nr = item.data(PluginDialog.nrRole)  # RS raster number of cells per row and column
-        nc = item.data(PluginDialog.ncRole)  # RS raster number of cells per row and column
-        drc = item.data(PluginDialog.drcRole)   # RS delta row and column cell
-
-        bb = self.polygon(xll, yll, nr * drc, nc * drc).boundingBox()
-        self.iface.mapCanvas().setExtent(bb)
-        self.iface.mapCanvas().refresh()
 
     def enableMapPicker(self, clicked):
         #  Triggered after 'pick coordinates from Map ...' and will link to QG functino to read coordinates from a map click.
@@ -238,7 +211,9 @@ class LandUseCatExport(object):
         self.dialog.ExportButton.clicked.connect(self.SaveasPolygon)
         self.dialog.addButton.clicked.connect(self.addNewRasterItem)
         self.dialog.addButton.setAutoDefault(False)
-#        self.dialog.ImportButton.clicked.connect(self.ImportAreaFromPolygon)
+
+        self.dialog.zoomButton.clicked.connect(self.zoomToRaster)
+        self.dialog.zoomButton.setAutoDefault(False)
 
         self.dialog.ClosingSignal.connect(self.quitDialog)
 
@@ -266,6 +241,22 @@ class LandUseCatExport(object):
     def scheduleAbort(self):
         self.cancel = True
     ImportFromPolygon = False
+
+    def zoomToRaster(self):
+        #  RS: Reacts when zoomButton is pressed and changes bounding box to the raster settings entered in raster settings.
+        #  item = self.listWidget.currentItem()
+        item = self.dialog.listWidget.currentItem()
+
+        xll = item.data(PluginDialog.xllRole)  # RS only rectangular grids
+        yll = item.data(PluginDialog.yllRole)
+        nr = item.data(PluginDialog.nrRole)  # RS raster number of cells per row and column
+        nc = item.data(PluginDialog.ncRole)  # RS raster number of cells per row and column
+        drc = item.data(PluginDialog.drcRole)  # RS delta row and column cell
+
+        bb = self.polygon(xll, yll, (nr * drc), (nc * drc)).boundingBox()
+
+        self.dialog.iface.mapCanvas().setExtent(bb)
+        self.dialog.iface.mapCanvas().refresh()
 
     def addNewRasterItem(self):
         #  activated once a new raster is added. default values defined below are filled in
@@ -306,7 +297,13 @@ class LandUseCatExport(object):
 
     def polygon(self, xll, yll, dx, dy):
         #  Function for polygon in format that QG can pick up
-        poly = [QgsPointXY(xll, yll), QgsPointXY(xll + dx, yll),
+        print(dx, "dx")
+        print(dy, "dy")
+        print(xll, "xll")
+        print(yll, "yll")
+
+        poly = [QgsPointXY(xll, yll),
+                QgsPointXY(xll + dx, yll),
                 QgsPointXY(xll + dx, yll + dy),
                 QgsPointXY(xll, yll + dy)]
         return QgsGeometry.fromPolygonXY([poly])
