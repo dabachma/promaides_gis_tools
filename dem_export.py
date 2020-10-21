@@ -91,8 +91,7 @@ class PluginDialog(QDialog):
         self.initLayerBox.layerChanged.connect(self.updateInitBandBox)
         self.pickButton.clicked.connect(self.enableMapPicker)
         self.pickButton.setAutoDefault(False)
-        self.zoomButton.clicked.connect(self.zoomToRaster)
-        self.zoomButton.setAutoDefault(False)
+
 
 
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
@@ -114,21 +113,6 @@ class PluginDialog(QDialog):
             self.ImportButton.setEnabled(False)
 
 
-    def zoomToRaster(self):
-
-        item = self.listWidget.currentItem()
-
-        xll = item.data(PluginDialog.xllRole)
-        yll = item.data(PluginDialog.yllRole)
-        nr = item.data(PluginDialog.nrRole)
-        nc = item.data(PluginDialog.ncRole)
-        dr = item.data(PluginDialog.drRole)
-        dc = item.data(PluginDialog.dcRole)
-        angle = item.data(PluginDialog.angleRole)
-
-        bb = self.polygon(xll, yll, nc * dc, nr * dr, angle / 180.0 * math.pi).boundingBox()
-        self.iface.mapCanvas().setExtent(bb)
-        self.iface.mapCanvas().refresh()
 
     def enableMapPicker(self, clicked):
         if clicked:
@@ -327,6 +311,9 @@ class DEMExport(object):
         self.dialog.addButton.setAutoDefault(False)
         self.dialog.ImportButton.clicked.connect(self.ImportAreaFromPolygon)
 
+        self.dialog.zoomButton.clicked.connect(self.zoomToRaster)
+        self.dialog.zoomButton.setAutoDefault(False)
+
         self.dialog.ClosingSignal.connect(self.quitDialog)
 
 
@@ -367,6 +354,24 @@ class DEMExport(object):
     def ImportAreaFromPolygon(self):
         self.ImportFromPolygon = True
         self.addNewRasterItem()
+
+
+    def zoomToRaster(self):
+
+        item = self.dialog.listWidget.currentItem()
+
+        xll = item.data(PluginDialog.xllRole)
+        yll = item.data(PluginDialog.yllRole)
+        nr = item.data(PluginDialog.nrRole)
+        nc = item.data(PluginDialog.ncRole)
+        dr = item.data(PluginDialog.drRole)
+        dc = item.data(PluginDialog.dcRole)
+        angle = item.data(PluginDialog.angleRole)
+
+        bb = self.polygon(xll, yll, nc * dc, nr * dr, angle / 180.0 * math.pi).boundingBox()
+        self.dialog.iface.mapCanvas().setExtent(bb)
+        self.dialog.iface.mapCanvas().refresh()
+
 
     def addNewRasterItem(self):
 
