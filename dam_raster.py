@@ -47,11 +47,16 @@ class PluginDialog(QDialog):
         uic.loadUi(UI_PATH, self)
         self.iface = iface
 
-        self.lucLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
+        self.ecnLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
+        self.popLayerBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
+        self.AreaLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
 
-        self.interpolationBox.addItem('nearest neighbor')
-        self.interpolationBox.addItem('bi-linear')
-        self.interpolationBox.addItem('bi-cubic')
+        # The module consists of two input options ecn/ pop. The lines below set the default that none of them are chosen in the beginning.
+        # The user has to choose one of them. The two bottom functions will make sure that only one of the options can be chosen.
+        self.mGroupBox_ecn.setChecked(False)
+        self.mGroupBox_pop.setChecked(False)
+        self.mGroupBox_ecn.clicked.connect(self.check_mGroupBox_ecn)
+        self.mGroupBox_pop.clicked.connect(self.check_mGroupBox_pop)
 
         self.picker = QgsMapToolEmitPoint(self.iface.mapCanvas())
 
@@ -60,12 +65,17 @@ class PluginDialog(QDialog):
         self.removeButton.setEnabled(False)
         self.ExportButton.setEnabled(False)
         self.groupBox.setEnabled(False)
-        self.lucLayerBox.setLayer(None)
+        self.ImportButton.setEnabled(False)
+        self.AreaLayerBox.setLayer(None)
+        self.ecnLayerBox.setLayer(None)
+        self.popLayerBox.setLayer(None)
 
         self.removeButton.clicked.connect(self.removeRasterItems)
         self.removeButton.setAutoDefault(False)
         self.listWidget.currentRowChanged.connect(self.updateRasterPropertiesGroup)
-        self.lucLayerBox.layerChanged.connect(self.updateLUCBox)
+        self.ecnLayerBox.layerChanged.connect(self.updateECNBox)
+        self.popLayerBox.layerChanged.connect(self.updatePOPBox)
+        self.AreaLayerBox.layerChanged.connect(self.UpdateImportButtons)
         self.pickButton.clicked.connect(self.enableMapPicker)
         self.pickButton.setAutoDefault(False)
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
@@ -73,6 +83,23 @@ class PluginDialog(QDialog):
 
     def closeEvent(self, event):
         self.ClosingSignal.emit()
+
+    def UpdateImportButtons(self):
+        if self.AreaLayerBox.currentLayer():
+            self.ImportButton.setEnabled(True)
+        else:
+            self.ImportButton.setEnabled(False)
+
+    def check_mGroupBox_ecn(self):
+        self.mGroupBox_pop.setChecked(False)
+        self.ecnNaNBox.setEnabled(True)
+        self.ecndeltaBox.setEnabled(True)
+
+    def check_mGroupBox_pop(self):
+
+        self.mGroupBox_ecn.setChecked(False)
+        self.popNaNBox.setEnabled(True)
+        self.popTypeBox.setEnabled(True)
 
     def enableMapPicker(self, clicked):
         #  Triggered after 'pick coordinates from Map ...' and will link to QG functino to read coordinates from a map click.
@@ -89,24 +116,36 @@ class PluginDialog(QDialog):
             self.yllBox.setValue(point.y())
             self.xllBox.editingFinished.emit()
 
-    def lucLayer(self):
+    def ecnLayer(self):
         #  RS: This command will make the currently chosen layer in qgis the layer now defined as lucLayer
-        return self.lucLayerBox.currentLayer()
+        return self.ecnLayerBox.currentLayer()
 
-    def lucInterpolationMode(self):
-        # This will return the text  in the interpolation box in theQGIS GUI
-        return self.interpolationBox.currentText()
+    def ecnNaN(self):
+        # This will define the number in the nanBox in theQGIS GUI as ecnNaN
+        return self.ecnNaNBox.value()
 
-    def lucNaN(self):
-        # This will define the number in the nanBox in theQGIS GUI as lucNaN
-        return self.lucNaNBox.value()
+    def ecnDelta(self):
+        # This defines the number in the deltaMobImmobBox as the difference between values for mobile and immobile
+        return self.ecndeltaBox.value()
+
+    def popLayer(self):
+        #  RS: This command will make the currently chosen layer in qgis the layer now defined as lucLayer
+        return self.popLayerBox.currentLayer()
+
+    def popNaN(self):
+        # This will define the number in the nanBox in theQGIS GUI as popnNaN (*) maybe useless, question asked to root
+        return self.popNaNBox.value()
+
+    def popType(self):
+        # This will define the number in the nanBox in theQGIS GUI as popnNaN (*) maybe useless, question asked to root
+        return self.popTypeBox.value()
 
     def onBrowseButtonClicked(self):
         #  Definition of the directory you will be lead to when choosing the output folder.
         #  Naming the heading of the window opening
         #  Covering the case of no file/folder chosen
         currentFolder = self.folderEdit.text()
-        folder = QFileDialog.getExistingDirectory(self.iface.mainWindow(), 'Land-Use-Categories Raster Export', currentFolder)
+        folder = QFileDialog.getExistingDirectory(self.iface.mainWindow(), 'DAM Exposure Raster Export', currentFolder)
         if folder != '':
             self.folderEdit.setText(folder)
             self.folderEdit.editingFinished.emit()
@@ -114,7 +153,7 @@ class PluginDialog(QDialog):
     def outFolder(self):
         return self.folderEdit.text()
 
-    def updateLUCBox(self, layer):
+    def updateECNBox(self, layer):
         #  Enables the option for user to change the layer which is basis for raster input
         if not layer:
             self.addButton.setEnabled(False)
@@ -132,7 +171,34 @@ class PluginDialog(QDialog):
         self.ncBox.setEnabled(False)
         self.drcBox.setEnabled(False)
         self.ExportButton.setEnabled(False)
+        # ecn specific settings
+        self.ecnNaNBox.setEnabled(False)
+        self.ecndeltaBox.setEnabled(False)
         #############################################
+
+    def updatePOPBox(self, layer):
+        #  Enables the option for user to change the layer which is basis for raster input
+        if not layer:
+            self.addButton.setEnabled(False)
+            return
+
+        self.addButton.setEnabled(True)
+        self.groupBox.setEnabled(True)
+
+        ############################################
+        # raster settings
+        self.xllBox.setEnabled(False)
+        self.yllBox.setEnabled(False)
+        self.pickButton.setEnabled(False)
+        self.nrBox.setEnabled(False)
+        self.ncBox.setEnabled(False)
+        self.drcBox.setEnabled(False)
+        self.ExportButton.setEnabled(False)
+        # ecn specific settings
+        self.popNaNBox.setEnabled(False)
+        self.popTypeBox.setEnabled(False)
+        #############################################
+
 
     def removeRasterItems(self):
         #  removes raster item from listWidget and the corresponding values from groupBox
@@ -171,7 +237,7 @@ class PluginDialog(QDialog):
         self.drcBox.setValue(item.data(PluginDialog.drcRole))
 
 
-class LandUseCatExport(object):
+class DAMRasterExport(object):
 
     def __init__(self, iface):
         self.iface = iface
@@ -193,7 +259,6 @@ class LandUseCatExport(object):
         else:
             self.iface.removeToolBarIcon(self.act)
 
-    # RSWITF?
     def execDialog(self):
         #  the function execDialog builds the backbone for the possible options to click in the plugin GUI
         #  for every button pressed it connects to a specific other function.
@@ -211,7 +276,7 @@ class LandUseCatExport(object):
         self.dialog.ExportButton.clicked.connect(self.SaveasPolygon)
         self.dialog.addButton.clicked.connect(self.addNewRasterItem)
         self.dialog.addButton.setAutoDefault(False)
-
+        self.dialog.ImportButton.clicked.connect(self.ImportAreaFromPolygon)
         self.dialog.zoomButton.clicked.connect(self.zoomToRaster)
         self.dialog.zoomButton.setAutoDefault(False)
 
@@ -222,9 +287,15 @@ class LandUseCatExport(object):
         self.dialog.drcBox.editingFinished.connect(self.saveRasterProperties)
         self.dialog.nrBox.editingFinished.connect(self.saveRasterProperties)
         self.dialog.ncBox.editingFinished.connect(self.saveRasterProperties)
+
         self.previewLayer = QgsVectorLayer('Polygon', 'ProMaIDes LUC Raster', 'memory')
         self.previewLayer.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
-        self.previewLayer.dataProvider().addAttributes([QgsField("xll", QVariant.Double), QgsField("yll", QVariant.Double), QgsField("dy", QVariant.Double),QgsField("dx", QVariant.Double),QgsField("nr", QVariant.Double),QgsField("nc", QVariant.Double)])
+        self.previewLayer.dataProvider().addAttributes([QgsField("xll", QVariant.Double),
+                                                        QgsField("yll", QVariant.Double),
+                                                        QgsField("dy", QVariant.Double),
+                                                        QgsField("dx", QVariant.Double),
+                                                        QgsField("nr", QVariant.Double),
+                                                        QgsField("nc", QVariant.Double)])
         self.previewLayer.updateFields()
 
 
@@ -241,6 +312,10 @@ class LandUseCatExport(object):
     def scheduleAbort(self):
         self.cancel = True
     ImportFromPolygon = False
+
+    def ImportAreaFromPolygon(self):
+        self.ImportFromPolygon = True
+        self.addNewRasterItem()
 
     def zoomToRaster(self):
         #  RS: Reacts when zoomButton is pressed and changes bounding box to the raster settings entered in raster settings.
@@ -260,14 +335,61 @@ class LandUseCatExport(object):
 
     def addNewRasterItem(self):
         #  activated once a new raster is added. default values defined below are filled in
-        #
+
+        if self.ImportFromPolygon == True:
+            try:
+                layer = self.dialog.AreaLayerBox.currentLayer()
+                features = layer.getFeatures()
+
+                for i, f in enumerate(features):
+                    num = self.dialog.listWidget.count() + 1
+                    item = QListWidgetItem('raster_{:d}'.format(num))
+                    item.setData(PluginDialog.xllRole, f.attribute("xll"))
+                    item.setData(PluginDialog.yllRole, f.attribute("yll"))
+                    item.setData(PluginDialog.nrRole, f.attribute("nr"))
+                    item.setData(PluginDialog.ncRole, f.attribute("nc"))
+                    item.setData(PluginDialog.drcRole, f.attribute("dy"))
+
+                    item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled)
+
+                    self.dialog.removeButton.setEnabled(True)
+                    self.dialog.ExportButton.setEnabled(True)
+                    self.dialog.zoomButton.setEnabled(True)
+                    self.dialog.groupBox.setEnabled(True)
+                    ############################################
+                    # raster settings
+                    self.dialog.xllBox.setEnabled(True)
+                    self.dialog.yllBox.setEnabled(True)
+                    self.dialog.pickButton.setEnabled(True)
+                    self.dialog.drcBox.setEnabled(True)
+                    self.dialog.nrBox.setEnabled(True)
+                    self.dialog.ncBox.setEnabled(True)
+                    self.dialog.ExportButton.setEnabled(True)
+                    #############################################
+                    polygon = self.polygon(0.0, 0.0, 100.0, 100.0)
+                    self.dialog.rasterAdded.emit(int(self.dialog.listWidget.count() + 1), polygon)
+
+                    self.dialog.listWidget.addItem(item)
+                    self.dialog.listWidget.setCurrentItem(item)
+                    self.saveRasterProperties()
+                    if i == layer.featureCount() - 1:
+                        self.ImportFromPolygon = False
+                        return
+            except:
+                self.iface.messageBar().pushCritical(
+                    '2D-Floodplain Export',
+                    'Area Cannot be Imported from Polygon !'
+                )
+                self.ImportFromPolygon = False
+                return
+
         num = self.dialog.listWidget.count() + 1
         item = QListWidgetItem('raster_{:d}'.format(num))
-        item.setData(PluginDialog.xllRole, 0.0)  # The first argument refers back to an id, the second one to the actual value
-        item.setData(PluginDialog.yllRole, 0.0)
-        item.setData(PluginDialog.drcRole, 300.0)
-        item.setData(PluginDialog.nrRole, 4)
-        item.setData(PluginDialog.ncRole, 6)
+        item.setData(PluginDialog.xllRole, -157230)  # The first argument refers back to an id, the second one to the actual value
+        item.setData(PluginDialog.yllRole, 1066410)
+        item.setData(PluginDialog.drcRole, 310.0)  # 25
+        item.setData(PluginDialog.nrRole, 3)  # 100
+        item.setData(PluginDialog.ncRole, 2)  # 120
 
         item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled)
 
@@ -297,11 +419,6 @@ class LandUseCatExport(object):
 
     def polygon(self, xll, yll, dx, dy):
         #  Function for polygon in format that QG can pick up
-        print(dx, "dx")
-        print(dy, "dy")
-        print(xll, "xll")
-        print(yll, "yll")
-
         poly = [QgsPointXY(xll, yll),
                 QgsPointXY(xll + dx, yll),
                 QgsPointXY(xll + dx, yll + dy),
@@ -311,9 +428,14 @@ class LandUseCatExport(object):
     def SaveasPolygon(self):
         try:
             original = self.previewLayer
-            originalpath=QgsProject.instance().homePath()
-            if not originalpath:
-                originalpath = tempfile.gettempdir()
+            currentFolder = QgsProject.instance().homePath()
+            originalpath = QFileDialog.getExistingDirectory(self.iface.mainWindow(), '2D-Floodplain Export TestyMcTest', currentFolder)
+            if originalpath == '':
+                self.iface.messageBar().pushCritical(
+                    '2D-Floodplain Export',
+                    'New layer cannot be created!'
+                )
+                return
             originalname = original.name()
             writingpath = originalpath + "/" + originalname + "_exported.shp"
             _writer = QgsVectorFileWriter.writeAsVectorFormat(original, writingpath, 'utf-8',
@@ -324,7 +446,7 @@ class LandUseCatExport(object):
 
         except:
             self.iface.messageBar().pushCritical(
-                'LUC Raster Export',
+                '2D-Floodplain Export',
                 'New layer cannot be created!'
             )
             self.quitDialog()
@@ -343,11 +465,12 @@ class LandUseCatExport(object):
             drc = item.data(PluginDialog.drcRole)
 
             nodata = {
-                'luc': self.dialog.lucNaNBox.value(),
+                'ecn': self.dialog.ecnNaNBox.value(),
+                'pop': self.dialog.popNaNBox.value(),
             }
+            filename = os.path.join(self.dialog.folderEdit.text(), item.text())
+            raster = SimpleRasterWriter(xll, yll, nr, nc, drc, item, nodata)
 
-            raster = SimpleRasterWriter(xll, yll, nr, nc, drc, nodata)
-            filename = os.path.join(self.dialog.folderEdit.text(), item.text() + '.txt')
             result.append((raster, filename))
 
         return result
@@ -398,7 +521,6 @@ class LandUseCatExport(object):
                 self.dialog.rasterUpdated.emit(int(self.dialog.listWidget.row(item) + 1), self.polygon(xll, yll, dx, dy))
 
     def quitDialog(self):
-        #self.dialog = None
         if type(self.previewLayer) != type(None):
             QgsProject.instance().removeMapLayer(self.previewLayer)
         self.previewLayer = None
@@ -409,11 +531,18 @@ class LandUseCatExport(object):
     def execTool(self):
         """Performs the Land Use Category export."""
         input_layers = {
-            'luc': {
-                'layer': self.dialog.lucLayer(),
-                'interpol_mode': self.dialog.lucInterpolationMode(),
-                'nan': self.dialog.lucNaN()
-            }
+            'ecn': {
+                'layer': self.dialog.ecnLayer(),
+                'interpol_mode': "nearest neighbor",  #  Previously dialog box lucInterpolationMode
+                'nan': self.dialog.ecnNaN(),
+                'deltaecn': self.dialog.ecnDelta()
+                },
+            'pop': {
+                'layer': self.dialog.popLayer(),
+                'interpol_mode': "nearest neighbor",  # Previously dialog box lucInterpolationMode
+                'nan': self.dialog.popNaN(),
+                'pop_type': self.dialog.popType()
+                }
         }
 
         rasters = self.rasters()  # list of tuples (raster, filename)
@@ -429,7 +558,7 @@ class LandUseCatExport(object):
             text = 'Interpolating and exporting raster ...'
 
         progress = QProgressDialog(text, 'Abort', 0, num_cells, self.iface.mainWindow())
-        progress.setWindowTitle('LUC Raster Export')
+        progress.setWindowTitle('DAM Exposure Raster Export')
         progress.canceled.connect(self.scheduleAbort)
         progress.show()
 
@@ -447,30 +576,83 @@ class LandUseCatExport(object):
                 self.quitDialog()
                 return
 
+        progress.close()
+        self.quitDialog()
+        return
+
     def export_raster(self, input_layers, out_raster, filename, progress=None):
-        trans, interpol = dict(), dict()
+        trans, interpol, mob_values, pop_type_values = dict(), dict(), dict(), dict()
         for data_name, items in list(input_layers.items()):
             if items['layer']:
                 trans[data_name] = QgsCoordinateTransform(self.previewLayer.crs(), items['layer'].crs(), QgsProject.instance()).transform
             else:
                 trans[data_name] = lambda p: p
-
             interpol[data_name] = RasterInterpolator(items['layer'], 1, items['interpol_mode'],
                                                      items['nan']).interpolate
-        out_raster.open(filename, input_layers)
+            # if the dataayer is named ecn and the tick box in the user interface is checked the ecn export will be done.
+            if data_name == 'ecn' and self.dialog.mGroupBox_ecn.isChecked():
+                rastertype_0 = 'ecn'
+                rastertype_1 = 'ecn_immob'
+                rastertype_2 = 'ecn_mob'
+                # Writing the standard raster file for economic immobile damages
+                out_raster.open(filename, input_layers, rastertype_1)
+                for i in range(int(out_raster.num_cells())):
+                    point = out_raster.cell_center(i)
+
+                    values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
+                    out_raster.write_cell(values, rastertype_0)
+                    if progress:
+                        progress.setValue(progress.value() + 1)
+                out_raster.close()
+
+                # writing a raster file as input for the mobile economic impacts.
+                # for that a user-chosen number is added to the land use id - by default this is 1000
+                out_raster.open(filename, input_layers, rastertype_2)
+                for i in range(int(out_raster.num_cells())):
+                    point = out_raster.cell_center(i)
+
+                    values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
+                    mob_values[rastertype_0] = values[rastertype_0]+input_layers[rastertype_0]['deltaecn']  # adding the user chosen value to initial immob value
+
+                    out_raster.write_cell(mob_values, rastertype_0)
+                    if progress:
+                        progress.setValue(progress.value() + 1)
+                out_raster.close()
+
+            elif data_name == 'pop' and self.dialog.mGroupBox_pop.isChecked():
+                rastertype_0 = 'pop'
+                rastertype_1 = 'pop_dens'
+                rastertype_2 = 'pop_type'
+                # Writing the standard raster file for economic immobile damages
+                out_raster.open(filename, input_layers, rastertype_1)
+                for i in range(int(out_raster.num_cells())):
+                    point = out_raster.cell_center(i)
+                    values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
+                    out_raster.write_cell(values, rastertype_0)
+                    if progress:
+                        progress.setValue(progress.value() + 1)
+                out_raster.close()
+
+                # writing a raster file as input for the mobile economic impacts.
+                # for that a user-chosen number is added to the land use id - by default this is 1000
+                out_raster.open(filename, input_layers, rastertype_2)
+                for i in range(int(out_raster.num_cells())):
+                    point = out_raster.cell_center(i)
+                    values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
+
+                    if values[rastertype_0] == 0:
+                        pop_type_values[rastertype_0] = 0
+                    else:
+                        pop_type_values[rastertype_0] = input_layers[rastertype_0][rastertype_2]
+
+                    out_raster.write_cell(pop_type_values, rastertype_0)
+                    if progress:
+                        progress.setValue(progress.value() + 1)
+                out_raster.close()
+            else:
+                continue
+
         #######################################################################
-
-        for i in range(int(out_raster.num_cells())):
-            point = out_raster.cell_center(i)
-
-            values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point))) for data_name in
-                      list(input_layers.keys())}
-            out_raster.write_cell(values)
-
-            if progress:
-                progress.setValue(progress.value() + 1)
-        out_raster.close()
-        progress.close()
 
     def addRasterBounds(self, id, polygon):
         if type(self.previewLayer) != type(None):

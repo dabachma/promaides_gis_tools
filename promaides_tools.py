@@ -19,7 +19,7 @@ from .database_export import DatabaseExport
 from .hello_world import HelloWorld
 from .time_viewer import TimeViewer
 from .rain_generator import RainGenerator
-from .luc_raster import LandUseCatExport
+from .dam_raster import DAMRasterExport
 
 import os
 
@@ -45,7 +45,7 @@ class PromaidesToolbox(object):
         #HAZ
         self.rain = RainGenerator(self.iface)
         #DAM
-        self.luc_raster = LandUseCatExport(self.iface) #luc_raster == .py file , LandUseCatExport == class in .py file
+        self.dam_raster = DAMRasterExport(self.iface) #luc_raster == .py file , LandUseCatExport == class in .py file
 
         #General
         self.db_exprt = DatabaseExport(self.iface)
@@ -83,7 +83,7 @@ class PromaidesToolbox(object):
         self.rain.initGui(self.submenu_haz)
 
         #DAM
-        self.luc_raster.initGui(self.submenu_dam)
+        self.dam_raster.initGui(self.submenu_dam)
 
         #General
         self.db_exprt.initGui(self.submenu_general)
@@ -111,7 +111,7 @@ class PromaidesToolbox(object):
         self.rain.unload(self.submenu_haz)
 
         #DAM
-        self.luc_raster.unload(self.submenu_dam)
+        self.dam_raster.unload(self.submenu_dam)
 
         #General
         self.db_exprt.unload(self.submenu_general)
