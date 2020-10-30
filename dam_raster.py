@@ -387,9 +387,9 @@ class DAMRasterExport(object):
         item = QListWidgetItem('raster_{:d}'.format(num))
         item.setData(PluginDialog.xllRole, -157230)  # The first argument refers back to an id, the second one to the actual value
         item.setData(PluginDialog.yllRole, 1066410)
-        item.setData(PluginDialog.drcRole, 310.0)  # 25
-        item.setData(PluginDialog.nrRole, 3)  # 100
-        item.setData(PluginDialog.ncRole, 2)  # 120
+        item.setData(PluginDialog.drcRole, 100.0)  # 25
+        item.setData(PluginDialog.nrRole, 75)  # 100
+        item.setData(PluginDialog.ncRole, 100)  # 120
 
         item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled)
 
@@ -596,11 +596,17 @@ class DAMRasterExport(object):
                 rastertype_2 = 'ecn_mob'
                 # Writing the standard raster file for economic immobile damages
                 out_raster.open(filename, input_layers, rastertype_1)
+                counter = 0
+                multiplier = 0
                 for i in range(int(out_raster.num_cells())):
-                    point = out_raster.cell_center(i)
+                    if i == multiplier*out_raster.nc:
+                        multiplier = multiplier + 1
+                        counter = out_raster.num_cells()- multiplier*out_raster.nc
+                    point = out_raster.cell_center(counter)
 
                     values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
                     out_raster.write_cell(values, rastertype_0)
+                    counter=  counter + 1
                     if progress:
                         progress.setValue(progress.value() + 1)
                 out_raster.close()
@@ -608,13 +614,20 @@ class DAMRasterExport(object):
                 # writing a raster file as input for the mobile economic impacts.
                 # for that a user-chosen number is added to the land use id - by default this is 1000
                 out_raster.open(filename, input_layers, rastertype_2)
+                counter = 0
+                multiplier = 0
                 for i in range(int(out_raster.num_cells())):
-                    point = out_raster.cell_center(i)
+                    if i == multiplier * out_raster.nc:
+                        multiplier = multiplier + 1
+                        counter = out_raster.num_cells()-multiplier * out_raster.nc
+
+                    point = out_raster.cell_center(counter)
 
                     values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
                     mob_values[rastertype_0] = values[rastertype_0]+input_layers[rastertype_0]['deltaecn']  # adding the user chosen value to initial immob value
 
                     out_raster.write_cell(mob_values, rastertype_0)
+                    counter = counter + 1
                     if progress:
                         progress.setValue(progress.value() + 1)
                 out_raster.close()
@@ -625,10 +638,16 @@ class DAMRasterExport(object):
                 rastertype_2 = 'pop_type'
                 # Writing the standard raster file for population density damages; pop dens
                 out_raster.open(filename, input_layers, rastertype_1)
+                counter = 0
+                multiplier = 0
                 for i in range(int(out_raster.num_cells())):
-                    point = out_raster.cell_center(i)
+                    if i == multiplier * out_raster.nc:
+                        multiplier = multiplier + 1
+                        counter = out_raster.num_cells()-multiplier * out_raster.nc
+                    point = out_raster.cell_center(counter)
                     values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
                     out_raster.write_cell_float(values, rastertype_0)
+                    counter = counter + 1
                     if progress:
                         progress.setValue(progress.value() + 1)
                 out_raster.close()
@@ -636,8 +655,13 @@ class DAMRasterExport(object):
                 # Writing the standard raster file for population density damages; pop category
                 # for that a user-chosen number is added to the land use id - by default this is 1000
                 out_raster.open(filename, input_layers, rastertype_2)
+                counter = 0
+                multiplier = 0
                 for i in range(int(out_raster.num_cells())):
-                    point = out_raster.cell_center(i)
+                    if i == multiplier * out_raster.nc:
+                        multiplier = multiplier + 1
+                        counter = out_raster.num_cells()-multiplier * out_raster.nc
+                    point = out_raster.cell_center(counter)
                     values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
 
                     if values[rastertype_0] == 0:
@@ -646,6 +670,7 @@ class DAMRasterExport(object):
                         pop_type_values[rastertype_0] = input_layers[rastertype_0][rastertype_2]
 
                     out_raster.write_cell(pop_type_values, rastertype_0)
+                    counter = counter + 1
                     if progress:
                         progress.setValue(progress.value() + 1)
                 out_raster.close()

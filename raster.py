@@ -273,30 +273,30 @@ class SimpleRasterWriter(object):
         self.prm.write('# Comments are marked with #\n')
         self.prm.write('#\n')
         self.prm.write('# Explanation of data (in one line):\n')
-        self.prm.write('#  !name           : Name of this file\n')
-        self.prm.write('#  !type           : Type of land use (e.g. pop_density, agriculture, etc.)\n')
-        self.prm.write('#  !ncols          : Number of columns in raster (X-axis)\n')
-        self.prm.write('#  !nrows          : Number of rows in raster (Y-axis)\n')
-        self.prm.write('#  !xllcorner      : x-value of lower left corner of raster\n')
-        self.prm.write('#  !yllcorner      : y-value of lower left corner of raster\n')
-        self.prm.write('#  !cellsize       : Squared edge side length [m]\n')
-        self.prm.write('#  !NODATA_value   : Value for an element with no information \n')
+        self.prm.write('#  !name            Name of this file\n')
+        self.prm.write('#  !type            Type of land use (e.g. pop_density, agriculture, etc.)\n')
+        self.prm.write('#  !ncols           Number of columns in raster (X-axis)\n')
+        self.prm.write('#  !nrows           Number of rows in raster (Y-axis)\n')
+        self.prm.write('#  !xllcorner       x-value of lower left corner of raster\n')
+        self.prm.write('#  !yllcorner       y-value of lower left corner of raster\n')
+        self.prm.write('#  !cellsize        Squared edge side length [m]\n')
+        self.prm.write('#  !NODATA_value    Value for an element with no information \n')
         self.prm.write('#\n')
         self.prm.write('#_____________________________\n')
 
         self.prm.write('   !$BEGIN_RASTERINFO\n')
-        self.prm.write('   \t!name        = %s\n' % self.item.text())
-        self.prm.write('   \t!type        = %s\n' % data_name)
-        self.prm.write('   \t!ncols       = %d\n' % self.nc)
-        self.prm.write('   \t!nrows       = %d\n' % self.nr)
-        self.prm.write('   \t!xllcorner   = %f\n' % self.xll)
-        self.prm.write('   \t!yllcorner   = %f\n' % self.yll)
-        self.prm.write('   \t!cellsize    = %f\n' % self.drc)
-        self.prm.write('   \t!NODATA_value= %f\n' % self.nodata['ecn'])
+        self.prm.write('   \t!name        %s\n' % self.item.text())
+        self.prm.write('   \t!type        %s\n' % data_name)
+        self.prm.write('   \t!ncols       %d\n' % self.nc)
+        self.prm.write('   \t!nrows        %d\n' % self.nr)
+        self.prm.write('   \t!xllcorner    %f\n' % self.xll)
+        self.prm.write('   \t!yllcorner    %f\n' % self.yll)
+        self.prm.write('   \t!cellsize     %f\n' % self.drc)
+        self.prm.write('   \t!NODATA_value %f\n' % self.nodata['ecn'])
         self.prm.write('  !$END_RASTERINFO\n')
 
         self.prm.write('\n')
-        self.prm.write('!BEGIN_CHARAC\n')
+        self.prm.write('!$BEGIN_CHARAC\n')
 
 
     #write element with integers
@@ -307,6 +307,7 @@ class SimpleRasterWriter(object):
             if key == raster_type:
                 if key not in data:
                     data[key] = value
+
                 if (self.index+1) % self.nc == 0:  # jump to next row once every value per column is written
                     self.prm.write(('{' + raster_type + ':.0f}\n').format(**data))
                 else:
@@ -330,7 +331,7 @@ class SimpleRasterWriter(object):
         if self.prm is None:
             raise OSError('raster file not open')
 
-        self.prm.write('!END\n')
+        self.prm.write('!$END_CHARAC\n')
         self.prm.close()
         self.prm = None
         self.index = 0
