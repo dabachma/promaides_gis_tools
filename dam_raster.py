@@ -145,7 +145,7 @@ class PluginDialog(QDialog):
         #  Naming the heading of the window opening
         #  Covering the case of no file/folder chosen
         currentFolder = self.folderEdit.text()
-        folder = QFileDialog.getExistingDirectory(self.iface.mainWindow(), 'DAM Exposure Raster Export', currentFolder)
+        folder = QFileDialog.getExistingDirectory(self.iface.mainWindow(), 'DAM Raster Export', currentFolder)
         if folder != '':
             self.folderEdit.setText(folder)
             self.folderEdit.editingFinished.emit()
@@ -244,7 +244,7 @@ class DAMRasterExport(object):
         self.dialog = None
         self.cancel = False
         self.previewLayer = None
-        self.act = QAction('Land-Use-Category Raster Export', iface.mainWindow())
+        self.act = QAction('DAM Raster Export', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
 
     def initGui(self, menu=None):
@@ -377,7 +377,7 @@ class DAMRasterExport(object):
                         return
             except:
                 self.iface.messageBar().pushCritical(
-                    '2D-Floodplain Export',
+                    'DAM raster Export',
                     'Area Cannot be Imported from Polygon !'
                 )
                 self.ImportFromPolygon = False
@@ -429,10 +429,10 @@ class DAMRasterExport(object):
         try:
             original = self.previewLayer
             currentFolder = QgsProject.instance().homePath()
-            originalpath = QFileDialog.getExistingDirectory(self.iface.mainWindow(), '2D-Floodplain Export TestyMcTest', currentFolder)
+            originalpath = QFileDialog.getExistingDirectory(self.iface.mainWindow(), 'DAM raster Export', currentFolder)
             if originalpath == '':
                 self.iface.messageBar().pushCritical(
-                    '2D-Floodplain Export',
+                    'DAM raster Export',
                     'New layer cannot be created!'
                 )
                 return
@@ -446,7 +446,7 @@ class DAMRasterExport(object):
 
         except:
             self.iface.messageBar().pushCritical(
-                '2D-Floodplain Export',
+                'DAM raster Export',
                 'New layer cannot be created!'
             )
             self.quitDialog()
@@ -623,17 +623,17 @@ class DAMRasterExport(object):
                 rastertype_0 = 'pop'
                 rastertype_1 = 'pop_dens'
                 rastertype_2 = 'pop_type'
-                # Writing the standard raster file for economic immobile damages
+                # Writing the standard raster file for population density damages; pop dens
                 out_raster.open(filename, input_layers, rastertype_1)
                 for i in range(int(out_raster.num_cells())):
                     point = out_raster.cell_center(i)
                     values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
-                    out_raster.write_cell(values, rastertype_0)
+                    out_raster.write_cell_float(values, rastertype_0)
                     if progress:
                         progress.setValue(progress.value() + 1)
                 out_raster.close()
 
-                # writing a raster file as input for the mobile economic impacts.
+                # Writing the standard raster file for population density damages; pop category
                 # for that a user-chosen number is added to the land use id - by default this is 1000
                 out_raster.open(filename, input_layers, rastertype_2)
                 for i in range(int(out_raster.num_cells())):

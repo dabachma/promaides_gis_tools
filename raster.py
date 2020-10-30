@@ -282,21 +282,24 @@ class SimpleRasterWriter(object):
         self.prm.write('#  !cellsize       : Squared edge side length [m]\n')
         self.prm.write('#  !NODATA_value   : Value for an element with no information \n')
         self.prm.write('#\n')
-
-        self.prm.write('#   !$BEGIN_RASTERINFO\n')
-        self.prm.write('#   \t!name        = %s\n' % self.item.text())
-        self.prm.write('#   \t!type        = %s\n' % data_name)
-        self.prm.write('#   \t!ncols       = %d\n' % self.nc)
-        self.prm.write('#   \t!nrows       = %d\n' % self.nr)
-        self.prm.write('#   \t!xllcorner   = %f\n' % self.xll)
-        self.prm.write('#   \t!yllcorner   = %f\n' % self.yll)
-        self.prm.write('#   \t!cellsize    = %f\n' % self.drc)
-        self.prm.write('#   \t!NODATA_value= %f\n' % self.nodata['ecn'])
-        self.prm.write('#  !$END_RASTERINFO\n')
         self.prm.write('#_____________________________\n')
+
+        self.prm.write('   !$BEGIN_RASTERINFO\n')
+        self.prm.write('   \t!name        = %s\n' % self.item.text())
+        self.prm.write('   \t!type        = %s\n' % data_name)
+        self.prm.write('   \t!ncols       = %d\n' % self.nc)
+        self.prm.write('   \t!nrows       = %d\n' % self.nr)
+        self.prm.write('   \t!xllcorner   = %f\n' % self.xll)
+        self.prm.write('   \t!yllcorner   = %f\n' % self.yll)
+        self.prm.write('   \t!cellsize    = %f\n' % self.drc)
+        self.prm.write('   \t!NODATA_value= %f\n' % self.nodata['ecn'])
+        self.prm.write('  !$END_RASTERINFO\n')
+
         self.prm.write('\n')
         self.prm.write('!BEGIN_CHARAC\n')
 
+
+    #write element with integers
     def write_cell(self, data, raster_type):
         # The raster is written beginning with the lower left corner
         # fill empty slots with NaN values
@@ -305,9 +308,22 @@ class SimpleRasterWriter(object):
                 if key not in data:
                     data[key] = value
                 if (self.index+1) % self.nc == 0:  # jump to next row once every value per column is written
-                    self.prm.write(('{' + raster_type + ':f}\n').format(**data))
+                    self.prm.write(('{' + raster_type + ':.0f}\n').format(**data))
                 else:
-                    self.prm.write(('{' + raster_type + ':f}\t').format(**data))
+                    self.prm.write(('{' + raster_type + ':.0f}\t').format(**data))
+        self.index += 1
+    #write element data with float
+    def write_cell_float(self, data, raster_type):
+        # The raster is written beginning with the lower left corner
+        # fill empty slots with NaN values
+        for key, value in list(self.nodata.items()):
+            if key == raster_type:
+                if key not in data:
+                    data[key] = value
+                if (self.index+1) % self.nc == 0:  # jump to next row once every value per column is written
+                    self.prm.write(('{' + raster_type + ':.f}\n').format(**data))
+                else:
+                    self.prm.write(('{' + raster_type + ':.f}\t').format(**data))
         self.index += 1
 
     def close(self):
