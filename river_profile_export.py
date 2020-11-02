@@ -1042,7 +1042,7 @@ class RiverProfileExport(object):
             profile_file.write('#  The station value is from upstream to downstream decreasing\n')
             profile_file.write(
                 '#  Finally the point data is given (always from left to right over profile in flow direction):\n '
-                '    x-coordinate y-coordinate z-coordinate material_id local_distance Lbank(1)_Main(2)_Rbank(3)\n'
+                '#   x-coordinate y-coordinate z-coordinate material_id local_distance Lbank(1)_Main(2)_Rbank(3)\n'
                 '#  Further remarks: \n#    Mterial_id and Lbank(1)_Main(2)_Rbank(3) are valid to '
                 'the distance before the point\n#    First point has always Lbank(1) \n#    '
                 'First point must be higher than point after; last point must be higher than point before\n#    '
