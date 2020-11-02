@@ -1055,21 +1055,19 @@ class RiverProfileExport(object):
             profile_file.write('#   !$BEGINRVMODEL =  Index_(starts by 0) "NAME" \n')
             profile_file.write('#    !NOFPROF = 369 #Number of profiles in file (see below)\n')
             profile_file.write('#    !GEOMETRYFILE = "./PATH2FILE/FILE_NAME.txt"\n')
-            profile_file.write('#    !1DOUTPUT = "../../PATH/PREFIX_" #1d-output by calculation with file	\n')
-            profile_file.write('#    !2DOUTPUT = "../../PATH/PREFIX_" #2d-output by calculation with file	\n')
             profile_file.write('#    !INSTATBOUNDFILE = <SET>	\n')
             profile_file.write('#       $FILENAME="./PATH2FILE/FILE_NAME.txt" #Instationary boundary file of river\n')
             profile_file.write('#       $NUMBER_CURVE = 1 #number of curves in instationary boundary file\n')
             profile_file.write('#     </SET>	\n')
             profile_file.write('#    !LIMITS = <SET>	\n')
             profile_file.write('#       $RTOL = 1e-7 '
-                               '#$RTOL = Defines relative tolerances [optional, standard value = 1.0e-7]\n')
-            profile_file.write('#       $ATOL = 1e-6 # $ATOL = defines absolute tolerances '
-                               '[optional, standard value = 1.0e-6]\n')
-            profile_file.write('#       $PROF_INTERFACE = false # false:= no interface is taken between '
+                               '#$RTOL = Defines relative tolerances [optional, standard value = 5.0e-7]\n')
+            profile_file.write('#       $ATOL = 1e-6 #$ATOL = defines absolute tolerances '
+                               '[optional, standard value = 5.0e-7]\n')
+            profile_file.write('#$PROF_INTERFACE = false # false:= no interface is taken between '
                                'right/left bank and main channel; true:=interface is taken from the main channel '
                                '[optional, standard value = false]\n')
-            profile_file.write('#       $V_EXPLICIT = false # false:= velocity head is not taken into account for '
+            profile_file.write('#$V_EXPLICIT = false # false:= velocity head is not taken into account for '
                                'calculation of the gradient; true:= it is taken into account'
                                ' [optional, standard value = false]	\n')
             profile_file.write('#     </SET>	\n')
