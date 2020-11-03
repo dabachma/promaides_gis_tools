@@ -541,7 +541,7 @@ class DAMRasterExport(object):
                 'layer': self.dialog.popLayer(),
                 'interpol_mode': "nearest neighbor",  # Previously dialog box lucInterpolationMode
                 'nan': self.dialog.popNaN(),
-                'pop_type': self.dialog.popType()
+                'pop_dam_category': self.dialog.popType()
                 }
         }
 
@@ -634,8 +634,8 @@ class DAMRasterExport(object):
 
             elif data_name == 'pop' and self.dialog.mGroupBox_pop.isChecked():
                 rastertype_0 = 'pop'
-                rastertype_1 = 'pop_dens'
-                rastertype_2 = 'pop_type'
+                rastertype_1 = 'pop_density'
+                rastertype_2 = 'pop_dam_category'
                 # Writing the standard raster file for population density damages; pop dens
                 out_raster.open(filename, input_layers, rastertype_1)
                 counter = 0

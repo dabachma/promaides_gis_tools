@@ -322,9 +322,9 @@ class SimpleRasterWriter(object):
                 if key not in data:
                     data[key] = value
                 if (self.index+1) % self.nc == 0:  # jump to next row once every value per column is written
-                    self.prm.write(('{' + raster_type + ':.f}\n').format(**data))
+                    self.prm.write(('{' + raster_type + ':f}\n').format(**data))
                 else:
-                    self.prm.write(('{' + raster_type + ':.f}\t').format(**data))
+                    self.prm.write(('{' + raster_type + ':f}\t').format(**data))
         self.index += 1
 
     def close(self):
