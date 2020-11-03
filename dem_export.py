@@ -330,7 +330,7 @@ class DEMExport(object):
         self.dialog.boundaryvalue_box.setFilters(QgsFieldProxyModel.Numeric)
         self.dialog.boundarytype_box.setFilters(QgsFieldProxyModel.String)
 
-        self.previewLayer = QgsVectorLayer('Polygon', 'ProMaIDes DEM Raster', 'memory')
+        self.previewLayer = QgsVectorLayer('Polygon', 'ProMaIDes_HYD_Raster', 'memory')
         self.previewLayer.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
         self.previewLayer.dataProvider().addAttributes([QgsField("xll", QVariant.Double), QgsField("yll", QVariant.Double), QgsField("dy", QVariant.Double),QgsField("dx", QVariant.Double),QgsField("nr", QVariant.Double),QgsField("nc", QVariant.Double), QgsField("angle", QVariant.Double)])
         self.previewLayer.updateFields()

@@ -288,7 +288,7 @@ class DAMRasterExport(object):
         self.dialog.nrBox.editingFinished.connect(self.saveRasterProperties)
         self.dialog.ncBox.editingFinished.connect(self.saveRasterProperties)
 
-        self.previewLayer = QgsVectorLayer('Polygon', 'ProMaIDes LUC Raster', 'memory')
+        self.previewLayer = QgsVectorLayer('Polygon', 'ProMaIDes_DAM_Raster', 'memory')
         self.previewLayer.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
         self.previewLayer.dataProvider().addAttributes([QgsField("xll", QVariant.Double),
                                                         QgsField("yll", QVariant.Double),
