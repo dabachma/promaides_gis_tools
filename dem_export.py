@@ -433,8 +433,8 @@ class DEMExport(object):
         item.setData(PluginDialog.yllRole, 0.0)
         item.setData(PluginDialog.nrRole, 100)
         item.setData(PluginDialog.ncRole, 100)
-        item.setData(PluginDialog.drRole, 1.0)
-        item.setData(PluginDialog.dcRole, 1.0)
+        item.setData(PluginDialog.drRole, 10.0)
+        item.setData(PluginDialog.dcRole, 20.0)
         item.setData(PluginDialog.angleRole, 0.0)
 
 
@@ -859,7 +859,7 @@ class DEMExport(object):
                 ilm.write('  $RTOL = 1e-9   # Relative tolerances [optional, standard value = 1e-6] '
                           '(recommendation 1e-9)\n')
                 ilm.write('  $ATOL = 1e-5   # Absolute tolerances   [optional, standard value = 1e-5]\n')
-                ilm.write('  $WET  = 0.01   # Water depth [m], when the element is defined as wet [optional, '
+                ilm.write('  $WET  = 0.01   # Water depth [m], when the element is defined as wet [optional,' 
                           'standard value = 1e-3]\n')
                 ilm.write('</SET>\n')
                 ilm.write('!$ENDFPMODEL\n\n')
