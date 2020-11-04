@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>522</width>
-    <height>705</height>
+    <height>796</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -48,7 +48,7 @@
       <string>Set here the height raster for interpolation the z-coordinates of the elements</string>
      </property>
      <property name="title">
-      <string>Economic Damage (Immobile and Mobile Damage)</string>
+      <string>Economic Damage ECN (Immobile and Mobile Damage)</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -63,7 +63,7 @@
          <string>Source layer for raster input (e.g. Global Land Cover)</string>
         </property>
         <property name="text">
-         <string>Layer</string>
+         <string>Layer land-use id</string>
         </property>
        </widget>
       </item>
@@ -115,7 +115,7 @@
          <string>Difference of Land Use Category Id ( e.g. ecn_mob: 120, egn_immob: 1120)</string>
         </property>
         <property name="text">
-         <string>&lt;p&gt;&amp;Delta; Immobile and Mobile&lt;/p&gt;</string>
+         <string>&lt;p&gt;&amp;Delta; Immobile-id to Mobile-id&lt;/p&gt;</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -153,7 +153,7 @@
       <string>Set here the height raster for interpolation the z-coordinates of the elements</string>
      </property>
      <property name="title">
-      <string>Population Density (Including Impact Category)</string>
+      <string>Affected / endangered person POP (Including Impact Category)</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -174,7 +174,7 @@
          <string>Source layer for raster input (e.g. Global Land Cover)</string>
         </property>
         <property name="text">
-         <string>Layer</string>
+         <string>Layer population density</string>
         </property>
        </widget>
       </item>
