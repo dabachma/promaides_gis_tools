@@ -464,7 +464,7 @@ class Raster(object):
 
         prm.write('# --- Value description --- #\n')
         prm.write('# element-nr. [-]\n')
-        prm.write('# geod. height [m]\n')
+        prm.write('# geodetic height [m]\n')
         prm.write('# material id [-] (must match one of the ids in the materials file)\n')
         prm.write('# initial waterlevel [m]\n')
         prm.write('# boundary condition [bool] (whether the cell is a boundary)\n')
