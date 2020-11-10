@@ -100,6 +100,7 @@ class PluginDialog(QDialog):
         self.mGroupBox_ecn.setChecked(False)
         self.popNaNBox.setEnabled(True)
         self.popTypeBox.setEnabled(True)
+        self.popUnitTransBox.setEnabled(True)
 
     def enableMapPicker(self, clicked):
         #  Triggered after 'pick coordinates from Map ...' and will link to QG functino to read coordinates from a map click.
@@ -140,6 +141,10 @@ class PluginDialog(QDialog):
         # This will define the number in the nanBox in theQGIS GUI as popnNaN (*) maybe useless, question asked to root
         return self.popTypeBox.value()
 
+    def popUnitTrans(self):
+        # This will define the number in the nanBox in theQGIS GUI as popnNaN (*) maybe useless, question asked to root
+        return self.popUnitTransBox.value()
+
     def onBrowseButtonClicked(self):
         #  Definition of the directory you will be lead to when choosing the output folder.
         #  Naming the heading of the window opening
@@ -172,8 +177,8 @@ class PluginDialog(QDialog):
         self.drcBox.setEnabled(False)
         self.ExportButton.setEnabled(False)
         # ecn specific settings
-        self.ecnNaNBox.setEnabled(False)
-        self.ecndeltaBox.setEnabled(False)
+        self.ecnNaNBox.setEnabled(True)
+        self.ecndeltaBox.setEnabled(True)
         #############################################
 
     def updatePOPBox(self, layer):
@@ -195,8 +200,9 @@ class PluginDialog(QDialog):
         self.drcBox.setEnabled(False)
         self.ExportButton.setEnabled(False)
         # ecn specific settings
-        self.popNaNBox.setEnabled(False)
-        self.popTypeBox.setEnabled(False)
+        self.popNaNBox.setEnabled(True)
+        self.popTypeBox.setEnabled(True)
+        self.popUnitTransBox.setEnabled(True)
         #############################################
 
 
@@ -541,7 +547,8 @@ class DAMRasterExport(object):
                 'layer': self.dialog.popLayer(),
                 'interpol_mode': "nearest neighbor",  # Previously dialog box lucInterpolationMode
                 'nan': self.dialog.popNaN(),
-                'pop_dam_category': self.dialog.popType()
+                'pop_dam_category': self.dialog.popType(),
+                'pop_unittrans': self.dialog.popUnitTrans()
                 }
         }
 
@@ -581,7 +588,7 @@ class DAMRasterExport(object):
         return
 
     def export_raster(self, input_layers, out_raster, filename, progress=None):
-        trans, interpol, mob_values, pop_type_values = dict(), dict(), dict(), dict()
+        trans, interpol, mob_values, pop_type_values, corrected_values = dict(), dict(), dict(), dict(), dict()
         for data_name, items in list(input_layers.items()):
             if items['layer']:
                 trans[data_name] = QgsCoordinateTransform(self.previewLayer.crs(), items['layer'].crs(), QgsProject.instance()).transform
@@ -606,7 +613,7 @@ class DAMRasterExport(object):
 
                     values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
                     out_raster.write_cell(values, rastertype_0)
-                    counter=  counter + 1
+                    counter = counter + 1
                     if progress:
                         progress.setValue(progress.value() + 1)
                 out_raster.close()
@@ -624,7 +631,7 @@ class DAMRasterExport(object):
                     point = out_raster.cell_center(counter)
 
                     values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
-                    mob_values[rastertype_0] = values[rastertype_0]+input_layers[rastertype_0]['deltaecn']  # adding the user chosen value to initial immob value
+                    mob_values[rastertype_0] = values[rastertype_0] + input_layers[rastertype_0]['deltaecn']  # adding the user chosen value to initial immob value
 
                     out_raster.write_cell(mob_values, rastertype_0)
                     counter = counter + 1
@@ -646,7 +653,9 @@ class DAMRasterExport(object):
                         counter = out_raster.num_cells()-multiplier * out_raster.nc
                     point = out_raster.cell_center(counter)
                     values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
-                    out_raster.write_cell_float(values, rastertype_0)
+                    # values multiplied with correction value entered from user. With this factor the input values are supposed to be transformed to people/m²
+                    corrected_values[rastertype_0] = values[rastertype_0] * input_layers[rastertype_0]['pop_unittrans']
+                    out_raster.write_cell_float(corrected_values, rastertype_0)
                     counter = counter + 1
                     if progress:
                         progress.setValue(progress.value() + 1)
