@@ -58,8 +58,9 @@ class PromaidesToolbox(object):
         self.plugin_menu = QMenu('ProMaIDes Toolbox', self.iface.mainWindow())
         #Add a submenu
         self.submenu_general = self.plugin_menu.addMenu('General')
-        self.submenu_hyd = self.plugin_menu.addMenu('HYD')
         self.submenu_haz = self.plugin_menu.addMenu('HAZ')
+        self.submenu_hyd = self.plugin_menu.addMenu('HYD')
+
         self.submenu_dam = self.plugin_menu.addMenu('DAM')
 
 

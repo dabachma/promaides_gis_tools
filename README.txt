@@ -1,4 +1,7 @@
-Store the unziped directory into your QGIS-plugin folder;
-e.g. c:\Users\"Username"\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins\
+Detailed information are provided in: https://tinyurl.com/promaides77
 
-Then it should be avaialble after a restart of QGIS
+Information about the plugins: https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-6/Plug-ins
+
+If you have any questions or remarks or did you find a bug please contact daniel.bachmann@h2.de
+
+Have fun!!

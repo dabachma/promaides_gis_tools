@@ -116,7 +116,7 @@
    <item row="8" column="0">
     <widget class="QgsCollapsibleGroupBox" name="mGroupBox_4">
      <property name="toolTip">
-      <string>Set here a polygon with boundary conditions of the elements</string>
+      <string>Set here  boundary conditions to the elements</string>
      </property>
      <property name="title">
       <string>Boundary Condition</string>
@@ -152,6 +152,9 @@
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_21">
+        <property name="toolTip">
+         <string>Set here a polygon layer for further specification of the area; if no layer is set, the whole area will get the below defined boundary condition</string>
+        </property>
         <property name="text">
          <string>Layer</string>
         </property>
