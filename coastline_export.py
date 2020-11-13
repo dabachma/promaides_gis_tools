@@ -123,7 +123,7 @@ class PluginDialog(QDialog):
             self.resistance.setEnabled(False)
 
         else:
-            self.abrupt_break.setEnabled(True)
+            self.abrupt_break.setEnabled(False)
             if self.abrupt_break.isChecked() == 0:
                 self.abrupt_opening_width.setEnabled(False)
                 self.resistance.setEnabled(True)
