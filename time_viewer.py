@@ -181,7 +181,7 @@ class PluginDialog(QDialog):
                     layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
                 self.Displayer.setText("{a}={b}".format(a=field, b=value))
 
-            self.ProcessButton.setEnabled(False)
+            self.ProcessButton.setEnabled(True)
             self.PlayButton.setEnabled(True)
             self.TimeSlider.setEnabled(True)
             self.PreviousButton.setEnabled(True)
@@ -304,6 +304,12 @@ class PluginDialog(QDialog):
 
     def WriteProcessing(self):
         self.Displayer.setText("Processing...")
+        self.StopPlay()
+        self.count = 0
+        if type(self.InputLayerBox.currentLayer()) != type(None) and len(self.FrameIDs)>0:
+            for n, layer in enumerate(self.layers):
+                layer.setSubsetString('')
+
         QTimer.singleShot(10, self.ReadFrameIDs)
 
 
@@ -329,7 +335,7 @@ class PluginDialog(QDialog):
                 self.FrameIDs.append(i)
         self.FrameIDs = list(dict.fromkeys(self.FrameIDs))
         self.FrameIDs.sort()
-        self.ProcessButton.setEnabled(False)
+        self.ProcessButton.setEnabled(True)
         self.PlayButton.setEnabled(True)
         self.TimeSlider.setEnabled(True)
         self.PreviousButton.setEnabled(True)
