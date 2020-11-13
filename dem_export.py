@@ -35,6 +35,7 @@ class PluginDialog(QDialog):
     rasterUpdated = pyqtSignal(int, QgsGeometry)
     rasterRemoved = pyqtSignal(int)
     ClosingSignal = pyqtSignal()
+    RejectSignal = pyqtSignal()
 
     xllRole = 111
     yllRole = 112
@@ -105,6 +106,10 @@ class PluginDialog(QDialog):
 
     def closeEvent(self, event):
         self.ClosingSignal.emit()
+
+    def reject(self):
+        self.RejectSignal.emit()
+
 
     def UpdateImportButtons(self):
         if self.AreaLayerBox.currentLayer():
@@ -315,6 +320,7 @@ class DEMExport(object):
         self.dialog.zoomButton.setAutoDefault(False)
 
         self.dialog.ClosingSignal.connect(self.quitDialog)
+        self.dialog.RejectSignal.connect(self.quitDialog)
 
 
         self.dialog.xllBox.editingFinished.connect(self.saveRasterProperties)
@@ -584,8 +590,7 @@ class DEMExport(object):
         self.previewLayer = None
         self.act.setEnabled(True)
         self.cancel = False
-        self.dialog.reject()
-
+        self.dialog.close()
 
     def execTool(self):
         """Performs actual DEM export."""
