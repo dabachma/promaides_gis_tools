@@ -24,12 +24,12 @@ from .environment import get_ui_path
 
 UI_PATH = get_ui_path('ui_time_viewer.ui')
 
-class PluginDialog(QDialog):
+class PluginDialog(QDockWidget):
     
     ClosingSignal = pyqtSignal()
 
     def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
-        QDialog.__init__(self, parent, flags)
+        QDockWidget.__init__(self, parent, flags)
         uic.loadUi(UI_PATH, self)
 
         self.iface = iface
@@ -44,7 +44,7 @@ class PluginDialog(QDialog):
         s = QgsSettings()
         pluginstatus = s.value("TimeViewer", "default text")
         if pluginstatus=="open":
-            QTimer.singleShot(8000, self.ReadSettings)
+            QTimer.singleShot(1000, self.ReadSettings)
 
         #sets the plugin status to open
         s.setValue("TimeViewer", "open")
@@ -692,7 +692,8 @@ class TimeViewer(object):
         s = QgsSettings()
         pluginstatus=s.value("TimeViewer", "default text")
         if pluginstatus=="open":
-            self.execDialog()
+            QTimer.singleShot(6000, self.execDialog)
+            #self.execDialog()
 
 
     def initGui(self, menu=None):
@@ -712,9 +713,9 @@ class TimeViewer(object):
         """
         """
         self.dialog = PluginDialog(self.iface, self.iface.mainWindow())
-        self.dialog.setModal(False)
-        self.act.setEnabled(False)
-        self.dialog.show()
+        #self.dialog.setModal(False)
+        #self.act.setEnabled(False)
+        iface.addDockWidget(Qt.BottomDockWidgetArea, self.dialog)
         self.dialog.ClosingSignal.connect(self.quitDialog)
 
 
@@ -729,6 +730,6 @@ class TimeViewer(object):
         #self.dialog = None
         self.act.setEnabled(True)
         self.cancel = False
-        self.dialog.reject()
+        self.dialog.hide()
 
 
