@@ -19,7 +19,7 @@
   <property name="minimumSize">
    <size>
     <width>220</width>
-    <height>144</height>
+    <height>147</height>
    </size>
   </property>
   <property name="autoFillBackground">
@@ -100,7 +100,7 @@
           <item row="0" column="3">
            <widget class="QPushButton" name="RemoveButton">
             <property name="toolTip">
-             <string/>
+             <string>Remove layer</string>
             </property>
             <property name="text">
              <string>Remove</string>
@@ -122,7 +122,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string/>
+             <string>Stop animation</string>
             </property>
             <property name="styleSheet">
              <string notr="true">QPushButton {
@@ -168,6 +168,9 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="toolTip">
+             <string>Play in loop</string>
+            </property>
             <property name="layoutDirection">
              <enum>Qt::LeftToRight</enum>
             </property>
@@ -202,7 +205,7 @@
              </sizepolicy>
             </property>
             <property name="toolTip">
-             <string/>
+             <string>Column of date/time data</string>
             </property>
            </widget>
           </item>
@@ -214,6 +217,9 @@
               <weight>75</weight>
               <bold>true</bold>
              </font>
+            </property>
+            <property name="toolTip">
+             <string>Current layer to animate</string>
             </property>
             <property name="autoFillBackground">
              <bool>true</bool>
@@ -267,6 +273,9 @@
               <width>50</width>
               <height>50</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>Ome step back</string>
             </property>
             <property name="styleSheet">
              <string notr="true">QPushButton {
@@ -342,7 +351,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string/>
+             <string>Pause animation</string>
             </property>
             <property name="styleSheet">
              <string notr="true">QPushButton {
@@ -378,6 +387,9 @@
               <height>50</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>One step forward</string>
+            </property>
             <property name="styleSheet">
              <string notr="true">QPushButton {
     color: #333;
@@ -408,7 +420,7 @@
           <item row="1" column="5">
            <widget class="QPushButton" name="ProcessButton">
             <property name="toolTip">
-             <string/>
+             <string>Process and reload</string>
             </property>
             <property name="text">
              <string>Process</string>
@@ -423,12 +435,15 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="toolTip">
+             <string>Layer to add</string>
+            </property>
            </widget>
           </item>
           <item row="0" column="2">
            <widget class="QPushButton" name="AddButton">
             <property name="toolTip">
-             <string/>
+             <string>Add layer</string>
             </property>
             <property name="text">
              <string>Add</string>
@@ -459,6 +474,9 @@
               <height>0</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>back and forward in time</string>
+            </property>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -473,7 +491,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string/>
+             <string>Export a video</string>
             </property>
             <property name="text">
              <string>Export Video</string>
@@ -494,6 +512,9 @@
               <width>50</width>
               <height>16777215</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>Number of frames per second</string>
             </property>
             <property name="minimum">
              <number>1</number>
@@ -521,7 +542,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string/>
+             <string>Start animation</string>
             </property>
             <property name="styleSheet">
              <string notr="true">QPushButton {
