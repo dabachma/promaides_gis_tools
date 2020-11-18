@@ -17,6 +17,8 @@ from qgis.PyQt.QtCore import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt import uic
 from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import *
+from PyQt5 import *
 from qgis.utils import iface
 
 from .environment import get_ui_path
@@ -48,6 +50,7 @@ class PluginDialog(QDockWidget):
 
         #sets the plugin status to open
         s.setValue("TimeViewer", "open")
+
 
         self.SaveBox.addItem('PNG')
         self.SaveBox.addItem('JPEG')
@@ -173,13 +176,13 @@ class PluginDialog(QDockWidget):
             for n, layer in enumerate(self.layers):
                 layer.setSubsetString('')
                 field = self.FieldIDBox.currentText()
-                value = self.FrameIDs[self.count]
-                self.Displayer.setText("{a}={b}".format(a=field, b=value))
+                self.value = self.FrameIDs[self.count]
+                self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
                 if str(self.InitialFilters[n]) == "":
-                    layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
+                    layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
                 else:
-                    layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
-                self.Displayer.setText("{a}={b}".format(a=field, b=value))
+                    layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
+                self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
 
             self.ProcessButton.setEnabled(True)
             self.PlayButton.setEnabled(True)
@@ -359,12 +362,12 @@ class PluginDialog(QDockWidget):
                 for n, layer in enumerate(self.layers):
                     layer.setSubsetString('')
                     field = self.FieldIDBox.currentText()
-                    value = self.FrameIDs[self.count]
-                    self.Displayer.setText("{a}={b}".format(a=field, b=value))
+                    self.value = self.FrameIDs[self.count]
+                    self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
                     if str(self.InitialFilters[n]) == "":
-                        layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
+                        layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
                     else:
-                        layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
+                        layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
 
     def UpdateProcessButton(self):
         if len(self.layers)>0:
@@ -394,12 +397,12 @@ class PluginDialog(QDockWidget):
         for n, layer in enumerate(self.layers):
             layer.setSubsetString(self.InitialFilters[n])
             field = self.FieldIDBox.currentText()
-            value = self.FrameIDs[self.count]
-            self.Displayer.setText("{a}={b}".format(a=field, b=value))
+            self.value = self.FrameIDs[self.count]
+            self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
             if str(self.InitialFilters[n]) == "":
-                layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
+                layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
             else:
-                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
+                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
 
 
     def Previous(self):
@@ -414,12 +417,12 @@ class PluginDialog(QDockWidget):
         for n, layer in enumerate(self.layers):
             layer.setSubsetString(self.InitialFilters[n])
             field = self.FieldIDBox.currentText()
-            value = self.FrameIDs[self.count]
-            self.Displayer.setText("{a}={b}".format(a=field, b=value))
+            self.value = self.FrameIDs[self.count]
+            self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
             if str(self.InitialFilters[n]) == "":
-                layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
+                layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
             else:
-                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
+                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
 
     def StopPlay(self):
         if self.Playing == True:
@@ -446,6 +449,7 @@ class PluginDialog(QDockWidget):
     StopPressed=False
     PausePressed=False
     Playing = False
+    value=0
     def play1(self):
         self.Playing=True
         self.TimeSlider.setValue(self.count+1)
@@ -495,18 +499,18 @@ class PluginDialog(QDockWidget):
                 self.Displayer.setText("Ready!")
                 return
             field = self.FieldIDBox.currentText()
-            value = self.FrameIDs[self.count]
-            self.Displayer.setText("{a}={b}".format(a=field, b=value))
+            self.value = self.FrameIDs[self.count]
+            self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
             if str(self.InitialFilters[n]) == "":
-                layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=value))
+                layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
             else:
-                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=value, c=self.InitialFilters[n]))
+                layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
 
         FPS = 1000 / self.FPSBox.value()
         canvas = iface.mapCanvas()
         canvas.waitWhileRendering()
+        self.iface.mapCanvas().renderComplete.connect(self.renderLabel)
         QTimer.singleShot(FPS, self.play2)
-
 
 
     def play2(self):
@@ -618,6 +622,47 @@ class PluginDialog(QDockWidget):
             self.Displayer.setText("Ready!")
             for n, layer in enumerate(self.layers):
                 layer.setSubsetString(self.InitialFilters[n])
+
+
+    def renderLabel(self, painter):
+        font = "Arial"
+        size = 25
+        color = 'black'
+        bgcolor = 'white'
+        flags = Qt.AlignRight | Qt.AlignBottom
+        pixelRatio = painter.device().devicePixelRatio()
+        width = painter.device().width() / pixelRatio
+        height = painter.device().height() / pixelRatio
+        labelString=str(self.value)
+
+        painter.setRenderHint(painter.Antialiasing, True)
+        txt = QTextDocument()
+        html = """<span style="background-color:%s; padding: 5px; font-size: %spx;">
+                       <font face="%s" color="%s">&nbsp;%s</font>
+                     </span> """ \
+               % (bgcolor, size, font,
+                  color, labelString)
+        txt.setHtml(html)
+        layout = txt.documentLayout()
+        size = layout.documentSize()
+
+        if flags & Qt.AlignRight:
+            x = width - 5 - size.width()
+        elif flags & Qt.AlignLeft:
+            x = 5
+        else:
+            x = width / 2 - size.width() / 2
+
+        if flags & Qt.AlignBottom:
+            y = height - 5 - size.height()
+        elif flags & Qt.AlignTop:
+            y = 5
+        else:
+            y = height / 2 - size.height() / 2
+
+        painter.translate(x, y)
+        layout.draw(painter, QAbstractTextDocumentLayout.PaintContext())
+        painter.translate(-x, -y)
 
     def OpenVideoExportDialog(self):
         if str(self.outFolder()) == "":
