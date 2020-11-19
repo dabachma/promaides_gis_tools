@@ -601,7 +601,7 @@ class PluginDialog(QDockWidget):
                     )
 
                 self.ExportVideoState=False
-                self.groupBox.setEnabled(True)
+                self.scrollArea.setEnabled(True)
                 self.FPSBox.setValue(15)
 
             self.Playing = False
@@ -720,7 +720,7 @@ class PluginDialog(QDockWidget):
         self.ExportVideoState=True
         self.FPSBox.setValue(60)
         self.Displayer.setText("Exporting Video... Please Wait")
-        self.groupBox.setEnabled(False)
+        self.scrollArea.setEnabled(False)
         self.play1()
 
 
