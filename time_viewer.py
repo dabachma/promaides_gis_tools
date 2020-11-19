@@ -106,7 +106,7 @@ class PluginDialog(QDockWidget):
         self.InitialFilters=[]
         self.StopPlay()
         self.ExportVideoState = False
-        self.groupBox.setEnabled(True)
+        self.scrollArea.setEnabled(True)
         self.ExportVideoButton.setEnabled(True)
         self.SavePreferenceButton.setEnabled(True)
         self.RestorePreferenceButton.setEnabled(True)
