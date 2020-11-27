@@ -121,6 +121,8 @@ class PluginDialog(QDockWidget):
             proj.writeEntry("TimeViewer", "LayersList" + str(n), layer.name())
         for n, frameid in enumerate(self.FrameIDs):
             proj.writeEntry("TimeViewer", "FrameIDs" + str(n), frameid)
+        for n, initialfilter in enumerate(self.InitialFilters):
+            proj.writeEntry("TimeViewer", "InitialFilters" + str(n), initialfilter)
 
         proj.writeEntry("TimeViewer", "NFrameIDs", len(self.FrameIDs))
         proj.writeEntry("TimeViewer", "Nlayers", len(self.layers))
@@ -151,10 +153,13 @@ class PluginDialog(QDockWidget):
             self.layers=[]
             self.layerlist2=[]
             self.FrameIDs=[]
+            #self.InitialFilters = []
             self.layerlist = ""
             for i in range(Nlayers):
                 layer, type_conversion_ok = proj.readEntry("TimeViewer","LayersList" + str(i))
+                initialfilter, type_conversion_ok = proj.readEntry("TimeViewer","InitialFilters" + str(i))
                 self.layerlist2.append(layer)
+                self.InitialFilters.append(initialfilter)
 
 
             for i in range(Nframeids):
@@ -168,7 +173,7 @@ class PluginDialog(QDockWidget):
                 layer = QgsProject.instance().mapLayersByName(layername)[0]
                 self.layers.append(layer)
                 self.InputLayerBox.setLayer(layer)
-                self.InitialFilters.append("")
+                #self.InitialFilters.append("")
                 newlayername = layer.name() + "\n"
                 self.layerlist = self.layerlist + newlayername
             self.LayerDisplayer.setText(self.layerlist)
@@ -601,7 +606,7 @@ class PluginDialog(QDockWidget):
                     )
 
                 self.ExportVideoState=False
-                self.groupBox.setEnabled(True)
+                self.scrollArea.setEnabled(True)
                 self.FPSBox.setValue(15)
 
             self.Playing = False
@@ -720,7 +725,7 @@ class PluginDialog(QDockWidget):
         self.ExportVideoState=True
         self.FPSBox.setValue(60)
         self.Displayer.setText("Exporting Video... Please Wait")
-        self.groupBox.setEnabled(False)
+        self.scrollArea.setEnabled(False)
         self.play1()
 
 
