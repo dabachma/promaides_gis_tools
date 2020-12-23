@@ -20,6 +20,8 @@ from .hello_world import HelloWorld
 from .time_viewer import TimeViewer
 from .rain_generator import RainGenerator
 from .dam_raster import DAMRasterExport
+from .cin_point import CINPointExport
+from .cin_polygon import CINPolygonExport
 
 import os
 
@@ -45,7 +47,10 @@ class PromaidesToolbox(object):
         #HAZ
         self.rain = RainGenerator(self.iface)
         #DAM
-        self.dam_raster = DAMRasterExport(self.iface) #luc_raster == .py file , LandUseCatExport == class in .py file
+        self.dam_raster = DAMRasterExport(self.iface)
+        #CIN
+        self.cin_point = CINPointExport(self.iface)
+        self.cin_polygon = CINPolygonExport(self.iface)
 
         #General
         self.db_exprt = DatabaseExport(self.iface)
@@ -58,10 +63,10 @@ class PromaidesToolbox(object):
         self.plugin_menu = QMenu('ProMaIDes Toolbox', self.iface.mainWindow())
         #Add a submenu
         self.submenu_general = self.plugin_menu.addMenu('General')
-        self.submenu_haz = self.plugin_menu.addMenu('HAZ')
         self.submenu_hyd = self.plugin_menu.addMenu('HYD')
-
+        self.submenu_haz = self.plugin_menu.addMenu('HAZ')
         self.submenu_dam = self.plugin_menu.addMenu('DAM')
+        self.submenu_cin = self.plugin_menu.addMenu('CIN')
 
 
         #Add and coonnect to funtions in other .py-files
@@ -85,6 +90,10 @@ class PromaidesToolbox(object):
 
         #DAM
         self.dam_raster.initGui(self.submenu_dam)
+        
+        #CIN
+        self.cin_point.initGui(self.submenu_cin)
+        self.cin_polygon.initGui(self.submenu_cin)
 
         #General
         self.db_exprt.initGui(self.submenu_general)
@@ -113,6 +122,10 @@ class PromaidesToolbox(object):
 
         #DAM
         self.dam_raster.unload(self.submenu_dam)
+        
+        #CIN
+        self.cin_point.unload(self.submenu_cin)
+        self.cin_polygon.unload(self.submenu_cin)
 
         #General
         self.db_exprt.unload(self.submenu_general)
