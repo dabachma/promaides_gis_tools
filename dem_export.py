@@ -56,9 +56,12 @@ class PluginDialog(QDialog):
         self.BCLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
         self.AreaLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
 
-        self.interpolationBox.addItem('nearest neighbor')
-        self.interpolationBox.addItem('bi-linear')
-        self.interpolationBox.addItem('bi-cubic')
+        self.interpolationBox.addItem('nearest neighbor (downscaling/upscaling)')
+        self.interpolationBox.addItem('bi-linear (downscaling)')
+        self.interpolationBox.addItem('bi-cubic (downscaling)')
+        self.interpolationBox.addItem('average (upscaling)')
+        self.interpolationBox.addItem('max (upscaling)')
+        self.interpolationBox.addItem('min (upscaling)')
 
         self.stationarytype_box.setExpression('true')
         self.boundaryvalue_box.setExpression('0')
@@ -661,7 +664,7 @@ class DEMExport(object):
                 trans[data_name] = QgsCoordinateTransform(self.previewLayer.crs(), items['layer'].crs(), QgsProject.instance()).transform
             else:
                 trans[data_name] = lambda p: p
-            interpol[data_name] = RasterInterpolator(items['layer'], items['band'], items['interpol_mode'], items['nan']).interpolate
+            interpol[data_name] = RasterInterpolator(items['layer'], items['band'], self.dialog.dcBox.value(), self.dialog.drBox.value(), items['interpol_mode'], items['nan']).interpolate
 
         out_raster.open(filename, input_layers)
 
