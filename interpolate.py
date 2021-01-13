@@ -1,6 +1,8 @@
 """
 
 """
+import math
+from qgis.core import *
 
 try:
     from scipy import interpolate
@@ -18,7 +20,7 @@ def isin(value, array2d):
 
 class RasterInterpolator(object):
 
-    def __init__(self, raster_layer, band, method, nan=None):
+    def __init__(self, raster_layer, band, requested_dx, requested_dy, method, nan=None):
         """
 
         Parameters
@@ -31,6 +33,8 @@ class RasterInterpolator(object):
         if raster_layer:
             self.dataProv = raster_layer.dataProvider()
             self.interpolMethod = method
+            self.outputdx = requested_dx
+            self.outputdy = requested_dy
             self.band = band
             self.raster_nan = self.dataProv.sourceNoDataValue(band)
 
@@ -46,12 +50,18 @@ class RasterInterpolator(object):
             self.theWidth = self.dataProv.xSize()
             self.theHeight = self.dataProv.ySize()
 
-            if method == 'nearest neighbor':
+            if method == 'nearest neighbor (downscaling/upscaling)':
                 self.interpolate = lambda point: self._nearest(point)
-            elif method == 'bi-linear':
+            elif method == 'bi-linear (downscaling)':
                 self.interpolate = lambda point: self._linear(point)
-            elif method == 'bi-cubic':
+            elif method == 'bi-cubic (downscaling)':
                 self.interpolate = lambda point : self._bicubic(point)
+            elif method == 'average (upscaling)':
+                self.interpolate = lambda point : self._average(point)
+            elif method == 'max (upscaling)':
+                self.interpolate = lambda point : self._max(point)
+            elif method == 'min (upscaling)':
+                self.interpolate = lambda point : self._min(point)
             else:
                 raise ValueError('unsupported interpolation method "{}"'.format(method))
         else:
@@ -129,4 +139,90 @@ class RasterInterpolator(object):
             return self.noDataValue
         fz = interpolate.interp2d(vx, vy, vz, kind='cubic')
         value = fz(x, y)[0].item()
+        return value
+
+    def _average(self, point):
+        x = point.x()
+        y = point.y()
+        xres = self.myExtent.width() / self.theWidth
+        yres = self.myExtent.height() / self.theHeight
+        col = round((x - self.myExtent.xMinimum()) / xres)
+        row = round((self.myExtent.yMaximum() - y) / yres)
+        nx= math.ceil(self.outputdx/xres) #number of cells in the x direction
+        ny = math.ceil(self.outputdy/yres) #number of cells in the y direction
+        xMin = self.myExtent.xMinimum() + (col-(nx/2)) * xres
+        xMax = xMin + nx*xres
+        yMax = self.myExtent.yMaximum() - (row-(ny/2)) * yres
+        yMin = yMax - ny*yres
+        pixelExtent = QgsRectangle(xMin, yMin, xMax, yMax)
+
+        values = []
+        y = yMax
+        for i in range(ny):
+            x = xMin
+            for j in range(nx):
+                ident = self.dataProv.identify(QgsPointXY(x, y), QgsRaster.IdentifyFormatValue)
+                values.append(ident.results()[1])
+                x += xres
+            y -= yres
+        total=0
+        for k in range(0, len(values)):
+            total = total + values[k]
+        value=total/len(values)
+        return value
+
+    def _max(self, point):
+        x = point.x()
+        y = point.y()
+        xres = self.myExtent.width() / self.theWidth
+        yres = self.myExtent.height() / self.theHeight
+        col = round((x - self.myExtent.xMinimum()) / xres)
+        row = round((self.myExtent.yMaximum() - y) / yres)
+        nx= math.ceil(self.outputdx/xres) #number of cells in the x direction
+        ny = math.ceil(self.outputdy/yres) #number of cells in the y direction
+        xMin = self.myExtent.xMinimum() + (col-(nx/2)) * xres
+        xMax = xMin + nx*xres
+        yMax = self.myExtent.yMaximum() - (row-(ny/2)) * yres
+        yMin = yMax - ny*yres
+        pixelExtent = QgsRectangle(xMin, yMin, xMax, yMax)
+
+        values = []
+        y = yMax
+        for i in range(ny):
+            x = xMin
+            for j in range(nx):
+                ident = self.dataProv.identify(QgsPointXY(x, y), QgsRaster.IdentifyFormatValue)
+                values.append(ident.results()[1])
+                x += xres
+            y -= yres
+        total=0
+        value=max(values)
+        return value
+
+    def _min(self, point):
+        x = point.x()
+        y = point.y()
+        xres = self.myExtent.width() / self.theWidth
+        yres = self.myExtent.height() / self.theHeight
+        col = round((x - self.myExtent.xMinimum()) / xres)
+        row = round((self.myExtent.yMaximum() - y) / yres)
+        nx= math.ceil(self.outputdx/xres) #number of cells in the x direction
+        ny = math.ceil(self.outputdy/yres) #number of cells in the y direction
+        xMin = self.myExtent.xMinimum() + (col-(nx/2)) * xres
+        xMax = xMin + nx*xres
+        yMax = self.myExtent.yMaximum() - (row-(ny/2)) * yres
+        yMin = yMax - ny*yres
+        pixelExtent = QgsRectangle(xMin, yMin, xMax, yMax)
+
+        values = []
+        y = yMax
+        for i in range(ny):
+            x = xMin
+            for j in range(nx):
+                ident = self.dataProv.identify(QgsPointXY(x, y), QgsRaster.IdentifyFormatValue)
+                values.append(ident.results()[1])
+                x += xres
+            y -= yres
+        total=0
+        value=min(values)
         return value

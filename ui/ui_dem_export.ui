@@ -367,7 +367,7 @@
          </size>
         </property>
         <property name="text">
-         <string>Interpolation Mode</string>
+         <string>Interpolation/Aggregation</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
