@@ -6,7 +6,7 @@ qgisMinimumVersion=3.0
 qgisMaximumVersion=3.99
 description=Collection of helper tools for the free ProMaIDes software package; 
 about=This is a collection of tools, which support the models set-up and the result visualization of ProMaIDes, a free and integrative software package for flood risk analysis (https://promaides.myjetbrains.com/youtrack/articles/PMID-A-7/General).  
-version=version 0.6.4
+version=version 0.6.5
 
 ; optional stuff
 category=Vector
@@ -35,6 +35,10 @@ changelog=
   Version 0.6.4
   * Add the documentation page
   * bug fixes
+  Version 0.6.5
+  * Add new aggregation method for 2d-floodplain export
+  * Started with first plugins for CI-modeling
+  * Some other minor changes 
 icon=icon.png
 experimental=False
 homepage=https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-6/Plug-ins
