@@ -165,6 +165,9 @@ class RasterInterpolator(object):
                 values.append(ident.results()[1])
                 x += xres
             y -= yres
+        for v in values:
+            if v is None or v == self.noDataValue:
+                return self.noDataValue
         total=0
         for k in range(0, len(values)):
             total = total + values[k]
@@ -195,7 +198,9 @@ class RasterInterpolator(object):
                 values.append(ident.results()[1])
                 x += xres
             y -= yres
-        total=0
+        for v in values:
+            if v is None:
+                return self.noDataValue
         value=max(values)
         return value
 
@@ -223,6 +228,8 @@ class RasterInterpolator(object):
                 values.append(ident.results()[1])
                 x += xres
             y -= yres
-        total=0
+        for v in values:
+            if v is None:
+                return self.noDataValue
         value=min(values)
         return value
