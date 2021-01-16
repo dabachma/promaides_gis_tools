@@ -76,9 +76,9 @@ class PluginDialog(QDialog):
         self.raster_layer_box.layerChanged.connect(self.setRasterLayer)
         self.raster_band_box.setEnabled(False)
 
-        self.method_box.addItem('nearest neighbor')
-        self.method_box.addItem('bi-linear')
-        self.method_box.addItem('bi-cubic')
+        self.method_box.addItem('nearest neighbor (downscaling/upscaling)')
+        self.method_box.addItem('bi-linear (downscaling)')
+        self.method_box.addItem('bi-cubic (downscaling)')
 
         #set roughness layer
         self.roughness_layer_box.setFilters(QgsMapLayerProxyModel.RasterLayer)
@@ -274,7 +274,7 @@ class PluginDialog(QDialog):
         dem_band = self.raster_band_box.value()
         dem_method = self.method_box.currentText()
         dem_nan = self.nan_box.value()
-        dem_interpol = RasterInterpolator(dem_layer, dem_band, dem_method, dem_nan)
+        dem_interpol = RasterInterpolator(dem_layer, dem_band, 10, 10, dem_method, dem_nan)
 
         base, left, right, h = [], [], [], []
 
@@ -655,7 +655,7 @@ class RiverProfileExport(object):
         roughness_layer = self.dialog.roughness_layer
         roughness_band = self.dialog.roughness_band_box.value()
         roughness_nan = self.dialog.default_roughness_box.value()
-        roughness_interpol = RasterInterpolator(roughness_layer, roughness_band, 'nearest neighbor', roughness_nan)
+        roughness_interpol = RasterInterpolator(roughness_layer, roughness_band, 10, 10, 'nearest neighbor (downscaling/upscaling)', roughness_nan)
         if roughness_layer:
             roughness_trans = QgsCoordinateTransform(input_layer.crs(), roughness_layer.crs(), QgsProject.instance())\
                 .transform

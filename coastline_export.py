@@ -36,9 +36,9 @@ class PluginDialog(QDialog):
 
         self.raster_band_box.setEnabled(False)
 
-        self.method_box.addItem('nearest neighbor')
-        self.method_box.addItem('bi-linear')
-        self.method_box.addItem('bi-cubic')
+        self.method_box.addItem('nearest neighbor (downscaling/upscaling)')
+        self.method_box.addItem('bi-linear (downscaling)')
+        self.method_box.addItem('bi-cubic (downscaling)')
 
         #connect signal and slots
         self.browse_button.clicked.connect(self.onBrowseButtonClicked)
@@ -248,7 +248,7 @@ class CoastlineExport(object):
             raster_band = self.dialog.raster_band_box.value()
             method = self.dialog.method_box.currentText()
             nan = self.dialog.nan_box.value()
-            interpolator = RasterInterpolator(raster_layer, raster_band, method, nan)
+            interpolator = RasterInterpolator(raster_layer, raster_band, 10, 10, method, nan)
             z_values = None
         else:
             interpolator = None
