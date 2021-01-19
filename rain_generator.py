@@ -5,6 +5,8 @@ from __future__ import absolute_import
 import math
 import os
 import tempfile
+import collections
+import statistics
 
 import numpy as np
 
@@ -286,11 +288,58 @@ class RainGenerator(object):
                     rain=False
                     norain=True
 
+
         print(self.rainstorm)
         print(self.norainduration,"norain")
         print(self.rainduration,"rain")
-    ##########################################################
 
+        #calculates minimum dry period duration
+        for i in range(len(self.norainduration)):
+            noraindurations=self.norainduration[i][0]
+            print(noraindurations,"before sorting")
+            noraindurations.sort()
+            print(noraindurations,"sorted")
+            for j in range(len(noraindurations)-1):
+                print(noraindurations,"noraindurations in loop")
+                sdnorain = statistics.stdev(noraindurations) #standard deviation of norain durations
+                meannorain = statistics.mean(noraindurations) #mean of norain durations
+                cv = sdnorain/meannorain #coefficient of variation
+                print(cv, "cv")
+                if cv<=1:
+                    cv1=cv
+                    dpd1= noraindurations[0]  #dpd = dry period duration
+                    print(dpd1,"dpd1")
+                if cv>=1:   #what if no positive cv happens?
+                    cv2=cv
+                    dpd2 = noraindurations[0]
+                    print(dpd2, "dpd2")
+                del noraindurations[0]
+                try:
+                    cv1
+                    try:
+                        cv2
+                        dpdmin = ((1 - cv1) * ((dpd2 - dpd1) / (cv2 - cv1))) + dpd1 #minimum dry period duration
+                        print(dpdmin, "dpdmin")
+                        break
+                    except UnboundLocalError:
+                        pass
+                except UnboundLocalError:
+                    pass
+
+###################################################################
+        #not needed
+        #print(len(self.norainduration),"len")
+        #for i in range(len(self.norainduration)):
+            #print(i,"i")
+            #print(self.norainduration[i][0],"array")
+            #countofnoraindurations = collections.Counter(self.norainduration[i][0])
+            #print(countofnoraindurations.keys()) #dpd values
+            #print(countofnoraindurations.values()) #dpd frequencies
+            #sortedcountofnoraindurations=sorted(countofnoraindurations.items(), key=lambda i: i[1]) #sort in ascending order based on frequency
+            #print(sortedcountofnoraindurations,"sorted")
+####################################################################
+
+#####################################################################
 
     
     def execTool(self):
