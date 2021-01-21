@@ -236,10 +236,10 @@ class RainGenerator(object):
             f.close()
 ###########################################################
     rainstorm=[]
-    norainduration=[]
+    norainduration=[] #rain is based on one dry timestep
     rainduration=[]
-    storms=[]
-    nostormsduration=[]
+    storms=[] #storm is based on calculated dpdmin
+    nostormsduration=[] #storm is based on calculated dpdmin
 
 ###########################################################
     def DataAnalysis(self):
@@ -299,11 +299,8 @@ class RainGenerator(object):
         #calculates minimum dry period duration
         for i in range(len(self.norainduration)):
             noraindurations=self.norainduration[i][0]
-            print(noraindurations,"before sorting")
             noraindurations.sort()
-            print(noraindurations,"sorted")
             for j in range(len(noraindurations)-1):
-                print(noraindurations,"noraindurations in loop")
                 sdnorain = statistics.stdev(noraindurations) #standard deviation of norain durations
                 meannorain = statistics.mean(noraindurations) #mean of norain durations
                 cv = sdnorain/meannorain #coefficient of variation
@@ -342,9 +339,8 @@ class RainGenerator(object):
                 raincount = 0
                 noraincount = 0
                 idpd = 0 #innerstorm dpd
-                stormintensity = 0
+                stormintensity = 0 #strom volume divided by number of timesteps in storm including innerstrom dpd
                 stormvolume = 0
-                stormcounter = 0
                 counter = 0
 
                 storm = False
@@ -352,9 +348,7 @@ class RainGenerator(object):
 
                 for k, value in enumerate(self.data[i][1]):
                     j=int(value)
-                    print(j,"j")
                     counter = counter + 1
-                    print(counter,"c1")
                     if j > 0:
                         if storm==False:
                             idpd=0
@@ -366,10 +360,7 @@ class RainGenerator(object):
                         if noraincount>dpdmin:
                             self.nostormsduration[i].append(noraincount)
                             counter=1
-                        if k == len(self.data[i][1])-1:
-                            print(k, "k")
-                            print(len(self.data[i][1]), "len")
-                            print(counter,"c3")
+                        if k == len(self.data[i][1])-1: #if the last value is positive
                             stormintensity = stormvolume / counter
                             self.storms[i].append([stormvolume, stormintensity, counter, idpd])
                         noraincount=0
@@ -381,7 +372,6 @@ class RainGenerator(object):
                         if storm==True and noraincount<dpdmin:
                             idpd=idpd+1
                         elif storm==True and noraincount>=dpdmin:
-                            print(counter, "c2")
                             storm=False
                             idpd = idpd - (noraincount - 1)
                             counter=counter-noraincount
@@ -391,7 +381,7 @@ class RainGenerator(object):
                             stormvolume=0
                             stormintensity=0
                             idpd=0
-                        if k == len(self.data[i][1])-1:
+                        if k == len(self.data[i][1])-1: #if the last value is 0
                             if noraincount<dpdmin:
                                 idpd = idpd - (noraincount - 1)
                                 counter = counter
@@ -399,7 +389,7 @@ class RainGenerator(object):
                                 self.storms[i].append([stormvolume, stormintensity, counter, idpd])
                             if noraincount>=dpdmin:
                                 self.nostormsduration[i].append(noraincount)
-                        print(stormvolume,"stormvolume")
+
 
 
                 print(self.nostormsduration, "nostormsduration after loop")
