@@ -238,19 +238,22 @@ class RainGenerator(object):
     rainstorm=[]
     norainduration=[]
     rainduration=[]
+    storms=[]
+    nostormsduration=[]
+
 ###########################################################
     def DataAnalysis(self):
 
     ##########################################################
     #calculates if there is a storm or not and their duration
         for x in range(self.ngauges):
-            self.rainstorm.append([])
+            #self.rainstorm.append([])
             self.norainduration.append([])
-            self.rainduration.append([])
+            #self.rainduration.append([])
             for y in range(1):
-                self.rainstorm[x].append([])
+                #self.rainstorm[x].append([])
                 self.norainduration[x].append([])
-                self.rainduration[x].append([])
+                #self.rainduration[x].append([])
 
         for i in range(len(self.data)):
             raincount = 0
@@ -268,23 +271,23 @@ class RainGenerator(object):
                 if j>0 and norain==True:
                     self.norainduration[i][0].append(noraincount)
                     noraincount=0
-                    self.rainstorm[i][0].append("nostorm")
+                    #self.rainstorm[i][0].append("nostorm")
                     rain=True
                     norain=False
                 if j==0 and rain==True:
-                    self.rainduration[i][0].append(raincount)
+                    #self.rainduration[i][0].append(raincount)
                     raincount=0
-                    self.rainstorm[i][0].append("storm")
+                    #self.rainstorm[i][0].append("storm")
                     rain=False
                     norain=True
                 if j>0 and k==len(self.data[i][1])-1:
-                    self.rainduration[i][0].append(raincount)
-                    self.rainstorm[i][0].append("storm")
+                    #self.rainduration[i][0].append(raincount)
+                    #self.rainstorm[i][0].append("storm")
                     rain=True
                     norain=False
                 if j==0 and k==len(self.data[i][1])-1:
                     self.norainduration[i][0].append(noraincount)
-                    self.rainstorm[i][0].append("nostorm")
+                    #self.rainstorm[i][0].append("nostorm")
                     rain=False
                     norain=True
 
@@ -319,12 +322,93 @@ class RainGenerator(object):
                     try:
                         cv2
                         dpdmin = ((1 - cv1) * ((dpd2 - dpd1) / (cv2 - cv1))) + dpd1 #minimum dry period duration
-                        print(dpdmin, "dpdmin")
+                        print(dpdmin, "dpdmin") ###### final product!!!!!
                         break
                     except UnboundLocalError:
                         pass
                 except UnboundLocalError:
                     pass
+
+            ##########################################################
+            # calculates storm and no storm statistics
+            for x in range(self.ngauges):
+                self.storms.append([])
+                self.nostormsduration.append([])
+                #for y in range(1):
+                    #self.storms[x].append([])
+                    #self.nostormsduration[x].append([])
+
+            for i in range(len(self.data)): #loops over raingauges
+                raincount = 0
+                noraincount = 0
+                idpd = 0 #innerstorm dpd
+                stormintensity = 0
+                stormvolume = 0
+                stormcounter = 0
+                counter = 0
+
+                storm = False
+                nostorm = False
+
+                for k, value in enumerate(self.data[i][1]):
+                    j=int(value)
+                    print(j,"j")
+                    counter = counter + 1
+                    print(counter,"c1")
+                    if j > 0:
+                        if storm==False:
+                            idpd=0
+                            stormvolume = 0
+                            stormintensity = 0
+                        storm=True
+                        stormvolume = stormvolume + j
+                        raincount = raincount + 1
+                        if noraincount>dpdmin:
+                            self.nostormsduration[i].append(noraincount)
+                            counter=1
+                        if k == len(self.data[i][1])-1:
+                            print(k, "k")
+                            print(len(self.data[i][1]), "len")
+                            print(counter,"c3")
+                            stormintensity = stormvolume / counter
+                            self.storms[i].append([stormvolume, stormintensity, counter, idpd])
+                        noraincount=0
+                    if j==0:
+                        noraincount = noraincount + 1
+                        raincount=0
+                        if noraincount<dpdmin:
+                            storm=True
+                        if storm==True and noraincount<dpdmin:
+                            idpd=idpd+1
+                        elif storm==True and noraincount>=dpdmin:
+                            print(counter, "c2")
+                            storm=False
+                            idpd = idpd - (noraincount - 1)
+                            counter=counter-noraincount
+                            stormintensity=stormvolume/counter
+                            self.storms[i].append([stormvolume,stormintensity,counter,idpd]) #storm volume, storm intensity, storm duration, interstorm dpd
+                            counter=noraincount
+                            stormvolume=0
+                            stormintensity=0
+                            idpd=0
+                        if k == len(self.data[i][1])-1:
+                            if noraincount<dpdmin:
+                                idpd = idpd - (noraincount - 1)
+                                counter = counter
+                                stormintensity = stormvolume / counter
+                                self.storms[i].append([stormvolume, stormintensity, counter, idpd])
+                            if noraincount>=dpdmin:
+                                self.nostormsduration[i].append(noraincount)
+                        print(stormvolume,"stormvolume")
+
+
+                print(self.nostormsduration, "nostormsduration after loop")
+                print(self.storms, "storms after loop")
+
+
+
+
+
 
 ###################################################################
         #not needed
