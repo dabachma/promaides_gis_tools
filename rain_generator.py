@@ -9,6 +9,8 @@ import collections
 import statistics
 
 import numpy as np
+from scipy.stats import expon
+from scipy.stats import poisson
 
 # QGIS modules
 from qgis.core import *
@@ -395,7 +397,36 @@ class RainGenerator(object):
                 print(self.nostormsduration, "nostormsduration after loop")
                 print(self.storms, "storms after loop")
 
+                #calculating the means
+                sumvolume=0
+                sumintensity=0
+                sumstormduration=0
+                suminterstormdpd=0
+                sumdpd=0
+                counter=0
+                #for storms
+                for value in self.storms[i]:
+                    sumvolume=sumvolume+value[0]
+                    sumintensity=sumintensity+value[1]
+                    sumstormduration=sumstormduration+value[2]
+                    suminterstormdpd=suminterstormdpd+value[3]
+                meanvolume=sumvolume/len(self.storms[i])
+                meanintensity=sumintensity/len(self.storms[i])
+                meanstormduration=sumstormduration/len(self.storms[i])
+                meaninterstormdpd=suminterstormdpd/len(self.storms[i])
+                print(meanvolume,meanintensity,meanstormduration,meaninterstormdpd,"storm means")
+                #for dry periods
+                for value in self.nostormsduration[i]:
+                    sumdpd=sumdpd+value
+                meandpd=sumdpd/len(self.nostormsduration[i])
+                print(meandpd,"meandpd")
 
+
+
+
+
+    def poisson(k, lamb):
+        return (lamb**k/math.factorial(k)) * np.exp(-lamb)
 
 
 
