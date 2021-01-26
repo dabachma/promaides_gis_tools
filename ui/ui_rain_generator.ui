@@ -109,16 +109,6 @@
      </property>
     </widget>
    </item>
-   <item row="13" column="0">
-    <widget class="QCheckBox" name="fullriver_box">
-     <property name="toolTip">
-      <string>If activated an inflow/outflow profile is set to the first/last cross-section, the overflow couplings of the last two profiles are set to false </string>
-     </property>
-     <property name="text">
-      <string>Save generated values for rain gauge locations</string>
-     </property>
-    </widget>
-   </item>
    <item row="16" column="0" colspan="9">
     <widget class="QLineEdit" name="folderEdit">
      <property name="toolTip">
@@ -228,6 +218,16 @@
      </property>
      <property name="wordWrap">
       <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="0" colspan="3">
+    <widget class="QCheckBox" name="fullriver_box">
+     <property name="toolTip">
+      <string>If activated an inflow/outflow profile is set to the first/last cross-section, the overflow couplings of the last two profiles are set to false </string>
+     </property>
+     <property name="text">
+      <string>Save generated values for rain gauge locations</string>
      </property>
     </widget>
    </item>
