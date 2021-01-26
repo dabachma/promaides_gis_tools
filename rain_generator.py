@@ -40,7 +40,7 @@ class PluginDialog(QDialog):
         self.GenerationAreaLayer.setFilters(QgsMapLayerProxyModel.PolygonLayer)
         self.DataAddressField.setFilters(QgsFieldProxyModel.String)
 
-        self.RainGaugeLayer.layerChanged.connect(self.UpdateDataAddressField)
+        self.RainGaugeLayer.layerChanged.connect(self.UpdateFields)
 
         self.RainGaugeLayer.setLayer(None)
         self.GenerationAreaLayer.setLayer(None)
@@ -56,8 +56,11 @@ class PluginDialog(QDialog):
         self.browseButton.setAutoDefault(False)
 
 
-    def UpdateDataAddressField(self, layer):
+    def UpdateFields(self, layer):
         self.DataAddressField.setLayer(self.RainGaugeLayer.currentLayer())
+        self.RainGaugeNameField.setLayer(self.RainGaugeLayer.currentLayer())
+
+
 
     def onBrowseButtonClicked(self):
         currentFolder = self.folderEdit.text()
@@ -168,7 +171,7 @@ class RainGenerator(object):
 
         self.dialog.ProcessAreaButton.clicked.connect(self.CreateGenerationArea)
         self.dialog.CheckButton.clicked.connect(self.CheckFiles)
-        self.dialog.TestButton.clicked.connect(self.DataAnalysis)
+        self.dialog.GenerateButton.clicked.connect(self.DataAnalysis)
 
     def scheduleAbort(self):
         self.cancel = True
@@ -378,7 +381,7 @@ class RainGenerator(object):
                             idpd = idpd - (noraincount - 1)
                             counter=counter-noraincount
                             stormintensity=stormvolume/counter
-                            self.storms[i].append([stormvolume,stormintensity,counter,idpd]) #storm volume, storm intensity, storm duration, interstorm dpd
+                            self.storms[i].append([stormvolume,stormintensity,counter,idpd]) #storm volume, storm mean intensity, storm duration, interstorm dpd
                             counter=noraincount
                             stormvolume=0
                             stormintensity=0
@@ -397,6 +400,17 @@ class RainGenerator(object):
                 print(self.nostormsduration, "nostormsduration after loop")
                 print(self.storms, "storms after loop")
 
+                #classifying the storms into 4 catagories based on duration
+                allstormdurations = []
+                for value in self.storms[i]:
+                 allstormdurations.append(value[2])
+                classificationtimestep=(max(allstormdurations)-min(allstormdurations))/4
+
+                class1intensities = []
+                class2intensities = []
+                class3intensities = []
+                class4intensities = []
+
                 #calculating the means
                 sumvolume=0
                 sumintensity=0
@@ -410,11 +424,31 @@ class RainGenerator(object):
                     sumintensity=sumintensity+value[1]
                     sumstormduration=sumstormduration+value[2]
                     suminterstormdpd=suminterstormdpd+value[3]
+                    #getting the intensities of each storm duration class
+                    if min(allstormdurations) <= value[2] < min(allstormdurations) + classificationtimestep:
+                        class1intensities.append(value[1])
+                    elif min(allstormdurations) + classificationtimestep <= value[2] < min(allstormdurations) + (2 * classificationtimestep):
+                        class2intensities.append(value[1])
+                    elif min(allstormdurations) + (2 * classificationtimestep) <= value[2] < min(allstormdurations) + (3 * classificationtimestep):
+                        class3intensities.append(value[1])
+                    elif min(allstormdurations) + (3 * classificationtimestep) <= value[2] <= min(allstormdurations) + (4 * classificationtimestep):
+                        class4intensities.append(value[1])
+
+                #storm statistics
                 meanvolume=sumvolume/len(self.storms[i])
                 meanintensity=sumintensity/len(self.storms[i])
                 meanstormduration=sumstormduration/len(self.storms[i])
                 meaninterstormdpd=suminterstormdpd/len(self.storms[i])
+
+                #storm class itensities
+                class1meanintensity= sum(class1intensities)/len(class1intensities)
+                class2meanintensity = sum(class2intensities) / len(class2intensities)
+                class3meanintensity = sum(class3intensities) / len(class3intensities)
+                class4meanintensity = sum(class4intensities) / len(class4intensities)
+
+                print(class1meanintensity,class2meanintensity,class3meanintensity,class4meanintensity,"storm duration class mean intensities")
                 print(meanvolume,meanintensity,meanstormduration,meaninterstormdpd,"storm means")
+
                 #for dry periods
                 for value in self.nostormsduration[i]:
                     sumdpd=sumdpd+value
@@ -422,16 +456,20 @@ class RainGenerator(object):
                 print(meandpd,"meandpd")
 
 
+    #use poisson.pmf(k,lambd) from the library scipy.stats
+    #k=np.arange(0,1000)
+    #distribution = np.zeros(k_axis.shape[0])
+    #for i in range(k_axis.shape[0]):
+        #distribution[i] = poisson.pmf(i, lambd)
+    #plt.bar(k_axis, distribution)
+    
+    #numpy.random.choice(numpy.arange(1, 7), p=[0.1, 0.05, 0.05, 0.2, 0.4, 0.2])
+    
+    
+    def poisson_distribution(k, lambd):
+        return (lambd ** k * np.exp(-lambd)) / np.math.factorial(k)
 
-
-
-    def poisson(k, lamb):
-        return (lamb**k/math.factorial(k)) * np.exp(-lamb)
-
-
-
-
-###################################################################
+    ###################################################################
         #not needed
         #print(len(self.norainduration),"len")
         #for i in range(len(self.norainduration)):
