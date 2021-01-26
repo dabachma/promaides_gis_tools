@@ -7,6 +7,7 @@ import os
 import tempfile
 import collections
 import statistics
+import random
 
 import numpy as np
 from scipy.stats import expon
@@ -486,6 +487,23 @@ class RainGenerator(object):
                 #writing the file
                 with open(filepath, 'a') as raingaugegenerateddata:
                     raingaugegenerateddata.write('!BEGIN   #%s\n' % "raingaugename")
+                    raingaugegenerateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i),str(self.dialog.RequestedGenerationDuration.value())))
+
+                    counter=1
+                    while(counter <= self.dialog.RequestedGenerationDuration.value()):
+                        randomchoice = random.choice(stormordpd)
+                        if randomchoice == "dpd": #dry period
+                            roundeddpd = 0
+                            while(roundeddpd<dpdmin):  #check for the generated dpd to be bigger than dpdmin
+                                dpd = np.random.exponential(meandpd) #chooses the dpd based on an exponentail distribution
+                                roundeddpd = round(dpd)
+                            for j in range(roundeddpd): #writes the time steps
+                                raingaugegenerateddata.write('%s %s\n' % (str(counter), str(0)))
+                                counter=counter+1
+                                if counter>self.dialog.RequestedGenerationDuration.value():
+                                    return
+
+
 
 
 
