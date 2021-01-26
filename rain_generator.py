@@ -173,6 +173,7 @@ class RainGenerator(object):
         self.dialog.CheckButton.clicked.connect(self.CheckFiles)
         self.dialog.GenerateButton.clicked.connect(self.DataAnalysis)
 
+
     def scheduleAbort(self):
         self.cancel = True
 
@@ -248,6 +249,22 @@ class RainGenerator(object):
 
 ###########################################################
     def DataAnalysis(self):
+
+        filename = self.dialog.folderEdit.text()
+        if not filename:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'No output folder given!'
+            )
+            return
+        filepath = os.path.join(self.dialog.folderEdit.text(), "GeneratedDataforRainGauges" + '.txt')
+        with open(filepath, 'a') as raingaugegenerateddata:
+            raingaugegenerateddata.write('# comment\n')
+            raingaugegenerateddata.write('# !BEGIN\n')
+            raingaugegenerateddata.write('# number begining from 0 ++ number of points\n')
+            raingaugegenerateddata.write('# hour [h] discharge [m³/s]\n')
+            raingaugegenerateddata.write('# !END\n\n\n')
+
 
     ##########################################################
     #calculates if there is rain or no rain periods and their duration
@@ -463,6 +480,22 @@ class RainGenerator(object):
                     sumdpd=sumdpd+value
                 meandpd=sumdpd/len(self.nostormsduration[i])
                 print(meandpd,"meandpd")
+
+
+                #####################################################################
+                #writing the file
+                with open(filepath, 'a') as raingaugegenerateddata:
+                    raingaugegenerateddata.write('!BEGIN   #%s\n' % "raingaugename")
+
+
+
+
+
+
+
+
+
+
 
 
     #use poisson.pmf(k,lambd) from the library scipy.stats
