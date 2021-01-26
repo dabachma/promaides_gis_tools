@@ -250,7 +250,7 @@ class RainGenerator(object):
     def DataAnalysis(self):
 
     ##########################################################
-    #calculates if there is a storm or not and their duration
+    #calculates if there is rain or no rain periods and their duration
         for x in range(self.ngauges):
             #self.rainstorm.append([])
             self.norainduration.append([])
@@ -298,9 +298,9 @@ class RainGenerator(object):
 
 
         print(self.rainstorm)
-        print(self.norainduration,"norain")
-        print(self.rainduration,"rain")
+        print(self.norainduration,"noraindurations")
 
+        #######################################################################
         #calculates minimum dry period duration
         for i in range(len(self.norainduration)):
             noraindurations=self.norainduration[i][0]
@@ -397,9 +397,17 @@ class RainGenerator(object):
 
 
 
-                print(self.nostormsduration, "nostormsduration after loop")
-                print(self.storms, "storms after loop")
-
+                print(self.nostormsduration, "nostormsduration after loop") #finalproduct!!
+                print(self.storms, "storms after loop") #finalproduct!!
+                #################################################################
+                #making an array for randomly chosing storm or dpd
+                stormordpd=[]
+                for j in range(len(self.storms[i])):
+                    stormordpd.append("storm")
+                for j in range(len(self.nostormsduration[i])):
+                    stormordpd.append("dpd")
+                print(stormordpd)
+                #################################################################
                 #classifying the storms into 4 catagories based on duration
                 allstormdurations = []
                 for value in self.storms[i]:
@@ -411,13 +419,14 @@ class RainGenerator(object):
                 class3intensities = []
                 class4intensities = []
 
+                ###################################################################
                 #calculating the means
                 sumvolume=0
                 sumintensity=0
                 sumstormduration=0
                 suminterstormdpd=0
                 sumdpd=0
-                counter=0
+
                 #for storms
                 for value in self.storms[i]:
                     sumvolume=sumvolume+value[0]
