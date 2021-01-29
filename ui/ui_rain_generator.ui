@@ -140,7 +140,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label_21">
         <property name="text">
-         <string>Rain Gauge Locations</string>
+         <string>Rain gauge locations</string>
         </property>
        </widget>
       </item>
@@ -157,7 +157,7 @@
       <item row="1" column="0">
        <widget class="QLabel" name="label_22">
         <property name="text">
-         <string>Data Locations</string>
+         <string>Data locations</string>
         </property>
        </widget>
       </item>
@@ -211,7 +211,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label_23">
         <property name="text">
-         <string>Generation Area</string>
+         <string>Generation area</string>
         </property>
        </widget>
       </item>
