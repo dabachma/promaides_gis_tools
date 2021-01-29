@@ -298,7 +298,7 @@ class RainGenerator(object):
             rain = False
             norain = False
             for k, value in enumerate(self.data[i][1]):
-                j=int(value)
+                j=float(value)
                 if j>0:
                     raincount = raincount + 1
                     rain=True
@@ -384,7 +384,7 @@ class RainGenerator(object):
                 nostorm = False
 
                 for k, value in enumerate(self.data[i][1]):
-                    j=int(value)
+                    j=float(value)
                     counter = counter + 1
                     if j > 0:
                         if storm==False:
@@ -504,9 +504,10 @@ class RainGenerator(object):
                     raingaugegenerateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i),str(self.dialog.RequestedGenerationDuration.value())))
 
                     counter=1
+                    stormstatus="dpd"
                     while(counter <= self.dialog.RequestedGenerationDuration.value()):
-                        randomchoice = random.choice(stormordpd)
-                        if randomchoice == "dpd": #dry period
+                        #randomchoice = random.choice(stormordpd)
+                        if stormstatus == "dpd": #dry period
                             roundeddpd = 0
                             while(roundeddpd<dpdmin):  #check for the generated dpd to be bigger than dpdmin
                                 dpd = np.random.exponential(meandpd) #chooses the dpd based on an exponentail distribution
@@ -516,6 +517,7 @@ class RainGenerator(object):
                                 counter=counter+1
                                 if counter>self.dialog.RequestedGenerationDuration.value():
                                     return
+                            stormstatus = "storm"
 
 
 
