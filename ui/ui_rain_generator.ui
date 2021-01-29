@@ -44,10 +44,10 @@
       <item row="0" column="5">
        <widget class="QCheckBox" name="HeaderBox">
         <property name="toolTip">
-         <string>If activated an inflow/outflow profile is set to the first/last cross-section, the overflow couplings of the last two profiles are set to false </string>
+         <string/>
         </property>
         <property name="text">
-         <string>Contain Header</string>
+         <string>Header</string>
         </property>
         <property name="checked">
          <bool>true</bool>
@@ -149,12 +149,6 @@
       </item>
       <item row="2" column="1" colspan="5">
        <widget class="QgsFieldExpressionWidget" name="RainGaugeNameField" native="true">
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>25</height>
-         </size>
-        </property>
         <property name="toolTip">
          <string/>
         </property>
@@ -183,16 +177,6 @@
       <string>Spatial Interpolation</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="5">
-       <widget class="QPushButton" name="ProcessAreaButton">
-        <property name="toolTip">
-         <string/>
-        </property>
-        <property name="text">
-         <string>Process Area</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_25">
         <property name="text">
@@ -217,7 +201,7 @@
       <item row="3" column="0" colspan="3">
        <widget class="QCheckBox" name="SpatialInterpolationOnlyBox">
         <property name="toolTip">
-         <string>If activated an inflow/outflow profile is set to the first/last cross-section, the overflow couplings of the last two profiles are set to false </string>
+         <string/>
         </property>
         <property name="text">
          <string>Spatial interpolation only</string>
@@ -230,9 +214,6 @@
          <string>Generation Area</string>
         </property>
        </widget>
-      </item>
-      <item row="0" column="1" colspan="4">
-       <widget class="QgsMapLayerComboBox" name="GenerationAreaLayer"/>
       </item>
       <item row="1" column="1">
        <widget class="QSpinBox" name="dxBox">
@@ -250,6 +231,19 @@
          <string>Spatial interpolation method</string>
         </property>
        </widget>
+      </item>
+      <item row="1" column="5">
+       <widget class="QPushButton" name="ProcessAreaButton">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string>Process Area</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" colspan="5">
+       <widget class="QgsMapLayerComboBox" name="GenerationAreaLayer"/>
       </item>
      </layout>
     </widget>
@@ -283,7 +277,7 @@
       <item row="1" column="0" colspan="2">
        <widget class="QCheckBox" name="fullriver_box">
         <property name="toolTip">
-         <string>If activated an inflow/outflow profile is set to the first/last cross-section, the overflow couplings of the last two profiles are set to false </string>
+         <string/>
         </property>
         <property name="text">
          <string>Save generated values for rain gauge locations</string>
