@@ -46,12 +46,14 @@ class PluginDialog(QDialog):
         self.RainGaugeLayer.setLayer(None)
         self.GenerationAreaLayer.setLayer(None)
 
-        self.DataTypeBox.addItem('minutely')
+        #self.DataTypeBox.addItem('minutely')
         self.DataTypeBox.addItem('Hourly')
         self.DataTypeBox.addItem('Daily')
 
-        self.dxBox.setValue(10)
-        self.dyBox.setValue(10)
+        self.SpatialInterpolationMethodBox.addItem("Inversed Distance Weighting")
+
+        self.dxBox.setValue(5000)
+        self.dyBox.setValue(5000)
 
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
         self.browseButton.setAutoDefault(False)
@@ -94,6 +96,7 @@ class RainGenerator(object):
             self.iface.removeToolBarIcon(self.act)
 
 ##########################################################################
+    layer2 = QgsVectorLayer("Polygon", 'Generation Area', 'memory')
     def CreateGenerationArea(self):
         if type(self.dialog.GenerationAreaLayer.currentLayer()) == type(None):
             self.dialog.iface.messageBar().pushCritical(
@@ -108,8 +111,8 @@ class RainGenerator(object):
         ymax = ex.yMaximum()
         xmin = ex.xMinimum()
         ymin = ex.yMinimum()
-        layer2 = QgsVectorLayer("Polygon", 'Generation Area', 'memory')
-        prov = layer2.dataProvider()
+        #layer2 = QgsVectorLayer("Polygon", 'Generation Area', 'memory')
+        prov = self.layer2.dataProvider()
 
         fields = QgsFields()
         fields.append(QgsField('ID', QVariant.Int, '', 10, 0))
@@ -118,8 +121,8 @@ class RainGenerator(object):
         fields.append(QgsField('YMIN', QVariant.Double, '', 24, 6))
         fields.append(QgsField('YMAX', QVariant.Double, '', 24, 6))
         prov.addAttributes(fields)
-        layer2.updateExtents()
-        layer2.updateFields()
+        self.layer2.updateExtents()
+        self.layer2.updateFields()
 
         if self.dialog.dxBox.value() <= 0 or self.dialog.dyBox.value() <= 0:
             self.dialog.iface.messageBar().pushCritical(
@@ -155,9 +158,9 @@ class RainGenerator(object):
         #feat = QgsFeature()
         #feat.setGeometry(QgsGeometry.fromRect(layer.extent()))
         #prov.addFeatures([feat])
-        layer2.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
-        layer2.updateExtents()
-        QgsProject.instance().addMapLayer(layer2)
+        self.layer2.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
+        self.layer2.updateExtents()
+        QgsProject.instance().addMapLayer(self.layer2)
 ####################################################################
 
     def execDialog(self):
@@ -207,7 +210,10 @@ class RainGenerator(object):
                 )
                 return
             f = open(address.strip("\u202a"), "r")
-            lines = f.readlines()
+            if self.dialog.HeaderBox.isChecked():
+                lines = f.readlines()[1:]
+            else:
+                lines = f.readlines()
             times = []
             rains = []
             for x in lines:
@@ -235,12 +241,16 @@ class RainGenerator(object):
         for i, locations in enumerate(files):
             address = locations.replace("\\", "/")
             f = open(address.strip("\u202a"), "r")
-            lines = f.readlines()
+            if self.dialog.HeaderBox.isChecked():
+                lines = f.readlines()[1:]
+            else:
+                lines = f.readlines()
             for x in lines:
                 x=x.replace('\n','')
                 self.data[i][0].append((x.split(' ')[0]).strip("\\n"))
                 self.data[i][1].append((x.split(' ')[1]).strip("\\n"))
             f.close()
+        print(self.data)
 ###########################################################
     rainstorm=[]
     norainduration=[] #rain is based on one dry timestep
@@ -250,6 +260,10 @@ class RainGenerator(object):
 
 ###########################################################
     def DataAnalysis(self):
+
+        if self.dialog.SpatialInterpolationOnlyBox.isChecked():
+            self.SpatialInterpolation()
+            return
 
         filename = self.dialog.folderEdit.text()
         if not filename:
@@ -504,6 +518,66 @@ class RainGenerator(object):
                                     return
 
 
+
+
+
+
+    def SpatialInterpolation(self):
+        filename = self.dialog.folderEdit.text()
+        if not filename:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'No output folder given!'
+            )
+            return
+        filepath = os.path.join(self.dialog.folderEdit.text(), "GeneratedRainfall" + '.txt')
+        with open(filepath, 'a') as generateddata:
+            generateddata.write('# comment\n')
+            generateddata.write('# !BEGIN\n')
+            generateddata.write('# number begining from 0 ++ number of points\n')
+            generateddata.write('# hour [h] discharge [m³/s]\n')
+            generateddata.write('# !END\n\n\n')
+
+            raingaugelocations=[]
+            generationlocations=[]
+
+            #getting the locations of raingauges
+            point_layer=self.dialog.RainGaugeLayer.currentLayer()
+            features = point_layer.getFeatures()
+            for feature in features:
+                buff = feature.geometry()
+                raingaugelocations.append(buff.asPoint())
+
+            #getting the generation locations
+            area_layer=self.layer2
+            features = area_layer.getFeatures()
+            for feature in features:
+                buff = feature.geometry()
+                generationlocations.append(buff.centroid().asPoint())
+
+
+            #calculate generation duration
+            rainlengths=[]
+            for j in range(len(self.data)):
+                rainlengths.append(len(self.data[j][0]))
+
+            #writing the file
+            for i in range(len(generationlocations)):
+                generateddata.write('!BEGIN   #%s\n' % "raingaugename")
+                generateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i), str(min(rainlengths))))
+                counter=1
+                n=2 #exponent factor for the invert distance weighting formula
+                while counter<=min(rainlengths):
+                    upperformula=0
+                    lowerformula=0
+                    for j in range(len(self.data)):
+                        distance=raingaugelocations[j].distance(generationlocations[i])
+                        upperformula = upperformula + ((1 / (distance**n)) * float(self.data[j][1][counter-1]))
+                        lowerformula=lowerformula+(1/(distance**n))
+                    generateddata.write('%s %s\n' % (str(counter), str(upperformula/lowerformula)))
+                    if counter==min(rainlengths):
+                        generateddata.write('\n\n')
+                    counter=counter+1
 
 
 
