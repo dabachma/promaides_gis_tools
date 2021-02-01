@@ -43,6 +43,7 @@ class PluginDialog(QDialog):
 
         self.RainGaugeLayer.layerChanged.connect(self.UpdateFields)
         self.AnalyzeAllDataBox.stateChanged.connect(self.UpdateUntilFromBoxes)
+        self.SpatialInterpolationOnlyBox.stateChanged.connect(self.UpdateOutputOptions)
         self.SpatialInterpolationMethodBox.activated.connect(self.UpdateExponentFactorField)
 
         self.RainGaugeLayer.setLayer(None)
@@ -69,12 +70,17 @@ class PluginDialog(QDialog):
         self.ExponentFactorBox.setEnabled(False)
         self.label_32.setEnabled(False)
 
+        self.groupBox_2.setEnabled(False)
+        self.groupBox_3.setEnabled(False)
+
 
     def UpdateFields(self, layer):
         self.DataAddressField.setLayer(self.RainGaugeLayer.currentLayer())
         self.RainGaugeNameField.setLayer(self.RainGaugeLayer.currentLayer())
         self.FromBox.clear()
         self.UntilBox.clear()
+        self.groupBox_2.setEnabled(False)
+        self.groupBox_3.setEnabled(False)
 
     def UpdateExponentFactorField(self):
         if self.SpatialInterpolationMethodBox.currentText()=="Inversed Distance Weighting":
@@ -97,6 +103,16 @@ class PluginDialog(QDialog):
             self.CheckButton2.setEnabled(True)
             self.label_30.setEnabled(True)
             self.label_31.setEnabled(True)
+
+    def UpdateOutputOptions(self):
+        if self.SpatialInterpolationOnlyBox.isChecked():
+            self.label_27.setEnabled(False)
+            self.RequestedGenerationDurationBox.setEnabled(False)
+            self.SaveRainGaugeValuesBox.setEnabled(False)
+        else:
+            self.label_27.setEnabled(True)
+            self.RequestedGenerationDurationBox.setEnabled(True)
+            self.SaveRainGaugeValuesBox.setEnabled(True)
 
 
     def onBrowseButtonClicked(self):
@@ -130,73 +146,6 @@ class RainGenerator(object):
         else:
             self.iface.removeToolBarIcon(self.act)
 
-##########################################################################
-    layer2 = QgsVectorLayer("Polygon", 'Generation Area', 'memory')
-    def CreateGenerationArea(self):
-        if type(self.dialog.GenerationAreaLayer.currentLayer()) == type(None):
-            self.dialog.iface.messageBar().pushCritical(
-                'Rain Generator',
-                'No Layer Selected !'
-            )
-            return
-
-        layer = self.dialog.GenerationAreaLayer.currentLayer()
-        ex = layer.extent()
-        xmax = ex.xMaximum()
-        ymax = ex.yMaximum()
-        xmin = ex.xMinimum()
-        ymin = ex.yMinimum()
-        #layer2 = QgsVectorLayer("Polygon", 'Generation Area', 'memory')
-        prov = self.layer2.dataProvider()
-
-        fields = QgsFields()
-        fields.append(QgsField('ID', QVariant.Int, '', 10, 0))
-        fields.append(QgsField('XMIN', QVariant.Double, '', 24, 6))
-        fields.append(QgsField('XMAX', QVariant.Double, '', 24, 6))
-        fields.append(QgsField('YMIN', QVariant.Double, '', 24, 6))
-        fields.append(QgsField('YMAX', QVariant.Double, '', 24, 6))
-        prov.addAttributes(fields)
-        self.layer2.updateExtents()
-        self.layer2.updateFields()
-
-        if self.dialog.dxBox.value() <= 0 or self.dialog.dyBox.value() <= 0:
-            self.dialog.iface.messageBar().pushCritical(
-                'Rain Generator',
-                'Invalid Values for dx or dy !'
-            )
-            return
-        else:
-            hspacing = self.dialog.dxBox.value()
-            vspacing = self.dialog.dyBox.value()
-
-
-
-        id = 0
-        y = ymax
-        while y >= ymin:
-            x = xmin
-            while x <= xmax:
-                point1 = QgsPointXY(x, y)
-                point2 = QgsPointXY(x + hspacing, y)
-                point3 = QgsPointXY(x + hspacing, y - vspacing)
-                point4 = QgsPointXY(x, y - vspacing)
-                vertices = [point1, point2, point3, point4]  # Vertices of the polygon for the current id
-                inAttr = [id, x, x + hspacing, y - vspacing, y]
-                feat = QgsFeature()
-                feat.setGeometry(QgsGeometry().fromPolygonXY([vertices]))  # Set geometry for the current id
-                feat.setAttributes(inAttr)  # Set attributes for the current id
-                prov.addFeatures([feat])
-                x = x + hspacing
-                id += 1
-            y = y - vspacing
-
-        #feat = QgsFeature()
-        #feat.setGeometry(QgsGeometry.fromRect(layer.extent()))
-        #prov.addFeatures([feat])
-        self.layer2.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
-        self.layer2.updateExtents()
-        QgsProject.instance().addMapLayer(self.layer2)
-####################################################################
 
     def execDialog(self):
         """
@@ -221,6 +170,75 @@ class RainGenerator(object):
         self.dialog = None
         self.act.setEnabled(True)
         self.cancel = False
+
+##########################################################################
+    layer2 = QgsVectorLayer("Polygon", 'Generation Area', 'memory')
+
+    def CreateGenerationArea(self):
+        if type(self.dialog.GenerationAreaLayer.currentLayer()) == type(None):
+            self.dialog.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'No Layer Selected !'
+            )
+            return
+
+        layer = self.dialog.GenerationAreaLayer.currentLayer()
+        ex = layer.extent()
+        xmax = ex.xMaximum()
+        ymax = ex.yMaximum()
+        xmin = ex.xMinimum()
+        ymin = ex.yMinimum()
+        # layer2 = QgsVectorLayer("Polygon", 'Generation Area', 'memory')
+        prov = self.layer2.dataProvider()
+
+        fields = QgsFields()
+        fields.append(QgsField('ID', QVariant.Int, '', 10, 0))
+        fields.append(QgsField('XMIN', QVariant.Double, '', 24, 6))
+        fields.append(QgsField('XMAX', QVariant.Double, '', 24, 6))
+        fields.append(QgsField('YMIN', QVariant.Double, '', 24, 6))
+        fields.append(QgsField('YMAX', QVariant.Double, '', 24, 6))
+        prov.addAttributes(fields)
+        self.layer2.updateExtents()
+        self.layer2.updateFields()
+
+        if self.dialog.dxBox.value() <= 0 or self.dialog.dyBox.value() <= 0:
+            self.dialog.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'Invalid Values for dx or dy !'
+            )
+            return
+        else:
+            hspacing = self.dialog.dxBox.value()
+            vspacing = self.dialog.dyBox.value()
+
+        id = 0
+        y = ymax
+        while y >= ymin:
+            x = xmin
+            while x <= xmax:
+                point1 = QgsPointXY(x, y)
+                point2 = QgsPointXY(x + hspacing, y)
+                point3 = QgsPointXY(x + hspacing, y - vspacing)
+                point4 = QgsPointXY(x, y - vspacing)
+                vertices = [point1, point2, point3, point4]  # Vertices of the polygon for the current id
+                inAttr = [id, x, x + hspacing, y - vspacing, y]
+                feat = QgsFeature()
+                feat.setGeometry(QgsGeometry().fromPolygonXY([vertices]))  # Set geometry for the current id
+                feat.setAttributes(inAttr)  # Set attributes for the current id
+                prov.addFeatures([feat])
+                x = x + hspacing
+                id += 1
+            y = y - vspacing
+
+        # feat = QgsFeature()
+        # feat.setGeometry(QgsGeometry.fromRect(layer.extent()))
+        # prov.addFeatures([feat])
+        self.layer2.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
+        self.layer2.updateExtents()
+        QgsProject.instance().addMapLayer(self.layer2)
+        self.dialog.groupBox_3.setEnabled(True)
+
+####################################################################
 
     data = []
     ngauges = 0
@@ -298,7 +316,8 @@ class RainGenerator(object):
             self.dialog.UntilBox.addItem(k)
         #self.dialog.FromBox.currentIndex(0)
         #self.dialog.UntilBoxBox.currentIndex(min(lengths)-1)
-
+        if self.dialog.AnalyzeAllDataBox.isChecked():
+            self.dialog.groupBox_2.setEnabled(True)
 
 ###########################################################
     rainstorm=[]
@@ -553,14 +572,22 @@ class RainGenerator(object):
 
 
                 #####################################################################
+                raingaugenames, ok = QgsVectorLayerUtils.getValues(self.dialog.RainGaugeLayer.currentLayer(), self.dialog.RainGaugeNameField.expression(), selectedOnly = False)
+                if not ok:
+                    self.iface.messageBar().pushCritical(
+                        'Rain Generator',
+                        'Invalid Expression for Names!'
+                    )
+                    return
+
                 #writing the file
                 with open(filepath, 'a') as raingaugegenerateddata:
-                    raingaugegenerateddata.write('!BEGIN   #%s\n' % "raingaugename")
-                    raingaugegenerateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i),str(self.dialog.RequestedGenerationDuration.value())))
+                    raingaugegenerateddata.write('!BEGIN   #%s\n' % raingaugenames[i])
+                    raingaugegenerateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i),str(self.dialog.RequestedGenerationDurationBox.value())))
 
                     counter=1
                     stormstatus="dpd"
-                    while(counter <= self.dialog.RequestedGenerationDuration.value()):
+                    while(counter <= self.dialog.RequestedGenerationDurationBox.value()):
                         #randomchoice = random.choice(stormordpd)
                         if stormstatus == "dpd": #dry period
                             roundeddpd = 0
@@ -570,7 +597,7 @@ class RainGenerator(object):
                             for j in range(roundeddpd): #writes the time steps
                                 raingaugegenerateddata.write('%s %s\n' % (str(counter), str(0)))
                                 counter=counter+1
-                                if counter>self.dialog.RequestedGenerationDuration.value():
+                                if counter>self.dialog.RequestedGenerationDurationBox.value():
                                     return
                             stormstatus = "storm"
 
@@ -608,6 +635,7 @@ class RainGenerator(object):
                 tempdata[i][1].append(self.data[i][1][j])
 
         self.data=tempdata
+        self.dialog.groupBox_2.setEnabled(True)
 ####################################################################################
 
 
