@@ -42,13 +42,15 @@ class PluginDialog(QDialog):
         self.DataAddressField.setFilters(QgsFieldProxyModel.String)
 
         self.RainGaugeLayer.layerChanged.connect(self.UpdateFields)
+        self.AnalyzeAllDataBox.stateChanged.connect(self.UpdateUntilFromBoxes)
+        self.SpatialInterpolationMethodBox.activated.connect(self.UpdateExponentFactorField)
 
         self.RainGaugeLayer.setLayer(None)
         self.GenerationAreaLayer.setLayer(None)
 
         #self.DataTypeBox.addItem('minutely')
         self.DataTypeBox.addItem('Hourly')
-        self.DataTypeBox.addItem('Daily')
+        #self.DataTypeBox.addItem('Daily')
 
         self.SpatialInterpolationMethodBox.addItem("Inversed Distance Weighting")
 
@@ -58,11 +60,43 @@ class PluginDialog(QDialog):
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
         self.browseButton.setAutoDefault(False)
 
+        self.FromBox.setEnabled(False)
+        self.UntilBox.setEnabled(False)
+        self.CheckButton2.setEnabled(False)
+        self.label_30.setEnabled(False)
+        self.label_31.setEnabled(False)
+
+        self.ExponentFactorBox.setEnabled(False)
+        self.label_32.setEnabled(False)
+
 
     def UpdateFields(self, layer):
         self.DataAddressField.setLayer(self.RainGaugeLayer.currentLayer())
         self.RainGaugeNameField.setLayer(self.RainGaugeLayer.currentLayer())
+        self.FromBox.clear()
+        self.UntilBox.clear()
 
+    def UpdateExponentFactorField(self):
+        if self.SpatialInterpolationMethodBox.currentText()=="Inversed Distance Weighting":
+            self.ExponentFactorBox.setEnabled(True)
+            self.label_32.setEnabled(True)
+        else:
+            self.ExponentFactorBox.setEnabled(False)
+            self.label_32.setEnabled(False)
+
+    def UpdateUntilFromBoxes(self):
+        if self.AnalyzeAllDataBox.isChecked():
+            self.FromBox.setEnabled(False)
+            self.UntilBox.setEnabled(False)
+            self.CheckButton2.setEnabled(False)
+            self.label_30.setEnabled(False)
+            self.label_31.setEnabled(False)
+        else:
+            self.FromBox.setEnabled(True)
+            self.UntilBox.setEnabled(True)
+            self.CheckButton2.setEnabled(True)
+            self.label_30.setEnabled(True)
+            self.label_31.setEnabled(True)
 
 
     def onBrowseButtonClicked(self):
@@ -71,6 +105,7 @@ class PluginDialog(QDialog):
         if folder != '':
             self.folderEdit.setText(folder)
             self.folderEdit.editingFinished.emit()
+
 
 
 class RainGenerator(object):
@@ -176,6 +211,7 @@ class RainGenerator(object):
         self.dialog.ProcessAreaButton.clicked.connect(self.CreateGenerationArea)
         self.dialog.CheckButton.clicked.connect(self.CheckFiles)
         self.dialog.GenerateButton.clicked.connect(self.DataAnalysis)
+        self.dialog.CheckButton2.clicked.connect(self.AnalyzeFromUntil)
 
 
     def scheduleAbort(self):
@@ -192,6 +228,7 @@ class RainGenerator(object):
     nrains = 0
 ############################################################
     def CheckFiles(self):
+        self.data=[]
         files, ok = QgsVectorLayerUtils.getValues(self.dialog.RainGaugeLayer.currentLayer(), self.dialog.DataAddressField.expression(), False)
         if not ok:
             self.iface.messageBar().pushCritical(
@@ -251,6 +288,18 @@ class RainGenerator(object):
                 self.data[i][1].append((x.split(' ')[1]).strip("\\n"))
             f.close()
         print(self.data)
+
+        #filling the for and until boxes
+        lengths=[]
+        for j in range(len(self.data)):
+            lengths.append(len(self.data[j][0]))
+        for k in self.data[lengths.index(max(lengths))][0]: #adds the time values for the shortest time series
+            self.dialog.FromBox.addItem(k)
+            self.dialog.UntilBox.addItem(k)
+        #self.dialog.FromBox.currentIndex(0)
+        #self.dialog.UntilBoxBox.currentIndex(min(lengths)-1)
+
+
 ###########################################################
     rainstorm=[]
     norainduration=[] #rain is based on one dry timestep
@@ -273,6 +322,12 @@ class RainGenerator(object):
             )
             return
         filepath = os.path.join(self.dialog.folderEdit.text(), "GeneratedDataforRainGauges" + '.txt')
+        try: #deletes previous files
+            if os.path.isfile(filepath):
+                os.remove(filepath)
+        except:
+            pass
+
         with open(filepath, 'a') as raingaugegenerateddata:
             raingaugegenerateddata.write('# comment\n')
             raingaugegenerateddata.write('# !BEGIN\n')
@@ -520,11 +575,48 @@ class RainGenerator(object):
                             stormstatus = "storm"
 
 
+##############################################################################
+    def AnalyzeFromUntil(self):
+        #checks if the values in the from and until boxes are correct and puts them in self.data
+        tempdata=[]
+        for x in range(len(self.data)):
+            tempdata.append([])
+            for y in range(2):
+                tempdata[x].append([])
+
+        for i in range(len(self.data)):
+            if self.dialog.FromBox.currentText() not in self.data[i][0] or self.dialog.UntilBox.currentText() not in self.data[i][0]:
+                self.iface.messageBar().pushCritical(
+                    'Rain Generator',
+                    'Entered Values Dont Exist in Atleast One of the Input Files  !'
+                )
+                return
+
+            fromindex=self.data[i][0].index(self.dialog.FromBox.currentText())
+            untilindex = self.data[i][0].index(self.dialog.UntilBox.currentText())
+
+            if fromindex >= untilindex:
+                self.iface.messageBar().pushCritical(
+                    'Rain Generator',
+                    'The Values Entered Are Not Valid  !'
+                )
+                return
+
+        for i in range(len(self.data)):
+            for j in range(self.data[i][0].index(self.dialog.FromBox.currentText()),self.data[i][0].index(self.dialog.UntilBox.currentText())+1):
+                tempdata[i][0].append(self.data[i][0][j])
+                tempdata[i][1].append(self.data[i][1][j])
+
+        self.data=tempdata
+####################################################################################
 
 
-
-
+#################################################################################
     def SpatialInterpolation(self):
+        self.iface.messageBar().pushInfo(
+            'Rain Generator',
+            'Performing Spatial Interpolation, Please Wait !'
+        )
         filename = self.dialog.folderEdit.text()
         if not filename:
             self.iface.messageBar().pushCritical(
@@ -533,6 +625,12 @@ class RainGenerator(object):
             )
             return
         filepath = os.path.join(self.dialog.folderEdit.text(), "GeneratedRainfall" + '.txt')
+        try: #deletes previous files
+            if os.path.isfile(filepath):
+                os.remove(filepath)
+        except:
+            pass
+
         with open(filepath, 'a') as generateddata:
             generateddata.write('# comment\n')
             generateddata.write('# !BEGIN\n')
@@ -567,8 +665,8 @@ class RainGenerator(object):
             for i in range(len(generationlocations)):
                 generateddata.write('!BEGIN   #%s\n' % "raingaugename")
                 generateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i), str(min(rainlengths))))
-                counter=1
-                n=2 #exponent factor for the invert distance weighting formula
+                counter = 1
+                n = self.dialog.ExponentFactorBox.value() #exponent factor for the invert distance weighting formula
                 while counter<=min(rainlengths):
                     upperformula=0
                     lowerformula=0
@@ -576,13 +674,15 @@ class RainGenerator(object):
                         distance=raingaugelocations[j].distance(generationlocations[i])
                         upperformula = upperformula + ((1 / (distance**n)) * float(self.data[j][1][counter-1]))
                         lowerformula=lowerformula+(1/(distance**n))
-                    generateddata.write('%s %s\n' % (str(counter), str(upperformula/lowerformula)))
+                    generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str((upperformula/lowerformula)/3600000) , str(upperformula/lowerformula)))
                     if counter==min(rainlengths):
                         generateddata.write('\n\n')
                     counter=counter+1
 
-
-
+            self.iface.messageBar().pushSuccess(
+                'Time Viewer',
+                'Generation Successful !'
+            )
 
 
 
