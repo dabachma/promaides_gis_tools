@@ -254,7 +254,7 @@
       <item row="2" column="0">
        <widget class="QLabel" name="label_28">
         <property name="text">
-         <string>Rain gauge name</string>
+         <string>Rain gauge names</string>
         </property>
        </widget>
       </item>

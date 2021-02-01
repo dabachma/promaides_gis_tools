@@ -704,6 +704,7 @@ class RainGenerator(object):
                         lowerformula=lowerformula+(1/(distance**n))
                     generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str((upperformula/lowerformula)/3600000) , str(upperformula/lowerformula)))
                     if counter==min(rainlengths):
+                        generateddata.write('!END')
                         generateddata.write('\n\n')
                     counter=counter+1
 
