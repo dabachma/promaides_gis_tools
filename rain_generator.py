@@ -182,6 +182,7 @@ class RainGenerator(object):
             )
             return
 
+        self.layer2 = QgsVectorLayer("Polygon", 'Generation Area', 'memory')
         layer = self.dialog.GenerationAreaLayer.currentLayer()
         ex = layer.extent()
         xmax = ex.xMaximum()
@@ -693,17 +694,18 @@ class RainGenerator(object):
             for i in range(len(generationlocations)):
                 generateddata.write('!BEGIN   #%s\n' % "raingaugename")
                 generateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i), str(min(rainlengths))))
-                counter = 1
+                counter = 0
                 n = self.dialog.ExponentFactorBox.value() #exponent factor for the invert distance weighting formula
-                while counter<=min(rainlengths):
+                while counter+1<=min(rainlengths):
                     upperformula=0
                     lowerformula=0
                     for j in range(len(self.data)):
                         distance=raingaugelocations[j].distance(generationlocations[i])
-                        upperformula = upperformula + ((1 / (distance**n)) * float(self.data[j][1][counter-1]))
+                        upperformula = upperformula + ((1 / (distance**n)) * float(self.data[j][1][counter]))
                         lowerformula=lowerformula+(1/(distance**n))
-                    generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str((upperformula/lowerformula)/3600000) , str(upperformula/lowerformula)))
-                    if counter==min(rainlengths):
+                        rainvalue= round((upperformula/lowerformula),3)
+                    generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str(rainvalue/3600000) , str(rainvalue)))
+                    if counter+1==min(rainlengths):
                         generateddata.write('!END')
                         generateddata.write('\n\n')
                     counter=counter+1
