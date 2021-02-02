@@ -14,9 +14,6 @@ from scipy.stats import expon
 from scipy.stats import poisson
 import scipy.linalg
 
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
-
 # QGIS modules
 from qgis.core import *
 from qgis.PyQt.QtCore import Qt
@@ -59,6 +56,7 @@ class PluginDialog(QDialog):
 
         self.SpatialInterpolationMethodBox.addItem("Inversed Distance Weighting")
         self.SpatialInterpolationMethodBox.addItem("Trend Surface Analysis (Polynomial 1st Order)")
+        self.SpatialInterpolationMethodBox.setCurrentIndex(-1)
 
         self.dxBox.setValue(5000)
         self.dyBox.setValue(5000)
@@ -751,8 +749,8 @@ class RainGenerator(object):
                         A = np.c_[data[:, 0], data[:, 1], np.ones(data.shape[0])]
                         C, _, _, _ = scipy.linalg.lstsq(A, data[:, 2])  # coefficients
 
-                        # evaluate it on grid
-                        Z = C[0] * X + C[1] * Y + C[2]
+                        # formula
+                        #Z = C[0] * X + C[1] * Y + C[2]
 
                     rainvaluesintimestep=[]
                     for i in generationlocations:
@@ -774,6 +772,15 @@ class RainGenerator(object):
                             generateddata.write('\n\n')
                         counter=counter+1
  ######################################################################################
+            elif self.dialog.SpatialInterpolationMethodBox.currentText() == "Trend Surface Analysis (Polynomial 2nd Order)":
+
+                #elif order == 2:
+                    # best-fit quadratic curve
+                    A = np.c_[np.ones(data.shape[0]), data[:, :2], np.prod(data[:, :2], axis=1), data[:, :2] ** 2]
+                    C, _, _, _ = scipy.linalg.lstsq(A, data[:, 2])
+
+                    # evaluate it on a grid
+                    Z = np.dot(np.c_[np.ones(XX.shape), XX, YY, XX * YY, XX ** 2, YY ** 2], C).reshape(X.shape)
 
 
 

@@ -688,7 +688,6 @@ class DEMExport(object):
                         'Invalid expression for boundary condition value !'
                     )
                     return
-
                 boundarytype, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundarytype_box.expression(), False)
                 if not ok:
                     self.iface.messageBar().pushCritical(
@@ -732,9 +731,9 @@ class DEMExport(object):
                             ##############################################################################
 
                             boundaryenabledforcell="true"
-                            cellstationary=str(boundarystationary[poly.id()])
-                            cellboundaryvalue=str(boundaryvalue[poly.id()])
-                            cellboundarytype=str(boundarytype[poly.id()])
+                            cellstationary=str(boundarystationary[poly.id()-1])
+                            cellboundaryvalue=str(boundaryvalue[poly.id()-1])
+                            cellboundarytype=str(boundarytype[poly.id()-1])
                             cellproperties=[boundaryenabledforcell,cellstationary,cellboundaryvalue,cellboundarytype]
                             break
                         else:
