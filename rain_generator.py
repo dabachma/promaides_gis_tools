@@ -12,6 +12,10 @@ import random
 import numpy as np
 from scipy.stats import expon
 from scipy.stats import poisson
+import scipy.linalg
+
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
 # QGIS modules
 from qgis.core import *
@@ -54,6 +58,7 @@ class PluginDialog(QDialog):
         #self.DataTypeBox.addItem('Daily')
 
         self.SpatialInterpolationMethodBox.addItem("Inversed Distance Weighting")
+        self.SpatialInterpolationMethodBox.addItem("Trend Surface Analysis (Polynomial 1st Order)")
 
         self.dxBox.setValue(5000)
         self.dyBox.setValue(5000)
@@ -689,29 +694,91 @@ class RainGenerator(object):
             rainlengths=[]
             for j in range(len(self.data)):
                 rainlengths.append(len(self.data[j][0]))
+#################################################################################################
+            #Inversed Distance Weighting
+            if self.dialog.SpatialInterpolationMethodBox.currentText()=="Inversed Distance Weighting":
+                #writing the file
+                for i in range(len(generationlocations)):
+                    generateddata.write('!BEGIN   #%s\n' % "raingaugename")
+                    generateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i), str(min(rainlengths))))
+                    counter = 0
+                    n = self.dialog.ExponentFactorBox.value() #exponent factor for the invert distance weighting formula
+                    while counter+1<=min(rainlengths):
+                        upperformula=0
+                        lowerformula=0
+                        for j in range(len(self.data)):
+                            distance=raingaugelocations[j].distance(generationlocations[i])
+                            upperformula = upperformula + ((1 / (distance**n)) * float(self.data[j][1][counter]))
+                            lowerformula=lowerformula+(1/(distance**n))
+                            rainvalue= round((upperformula/lowerformula),3)
+                        generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str(rainvalue/3600000) , str(rainvalue)))
+                        if counter+1==min(rainlengths):
+                            generateddata.write('!END')
+                            generateddata.write('\n\n')
+                        counter=counter+1
+######################################################################################################
+            #Trend Surface Analysis (Polynomial 1st Order)
+            elif self.dialog.SpatialInterpolationMethodBox.currentText()=="Trend Surface Analysis (Polynomial 1st Order)":
 
-            #writing the file
-            for i in range(len(generationlocations)):
-                generateddata.write('!BEGIN   #%s\n' % "raingaugename")
-                generateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i), str(min(rainlengths))))
-                counter = 0
-                n = self.dialog.ExponentFactorBox.value() #exponent factor for the invert distance weighting formula
-                while counter+1<=min(rainlengths):
-                    upperformula=0
-                    lowerformula=0
-                    for j in range(len(self.data)):
-                        distance=raingaugelocations[j].distance(generationlocations[i])
-                        upperformula = upperformula + ((1 / (distance**n)) * float(self.data[j][1][counter]))
-                        lowerformula=lowerformula+(1/(distance**n))
-                        rainvalue= round((upperformula/lowerformula),3)
-                    generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str(rainvalue/3600000) , str(rainvalue)))
-                    if counter+1==min(rainlengths):
-                        generateddata.write('!END')
-                        generateddata.write('\n\n')
-                    counter=counter+1
+                allrainvalues=[]
+                for counter in range(min(rainlengths)):
+                    xs = []
+                    ys = []
+                    zs = []
+                    # putting all x and y and z values in seperate arrays
+                    for r, i in enumerate(raingaugelocations):
+                        xs.append(i.x())
+                        ys.append(i.y())
+                        zs.append(float(self.data[r][1][counter]))
+
+                    data = np.c_[xs, ys, zs]
+
+                    # grid covering the domain of the data
+                    # getting the minimum and maximum x and ys of generation area
+                    layer = self.dialog.GenerationAreaLayer.currentLayer()
+                    ex = layer.extent()
+                    xmax = ex.xMaximum()
+                    ymax = ex.yMaximum()
+                    xmin = ex.xMinimum()
+                    ymin = ex.yMinimum()
+
+                    X, Y = np.meshgrid(np.linspace(xmin, xmax, self.dialog.dxBox.value()),
+                                       np.linspace(ymin, ymax, self.dialog.dyBox.value()))
+
+                    order = 1  # 1: linear, 2: quadratic
+                    if order == 1:
+                        # best-fit linear plane
+                        A = np.c_[data[:, 0], data[:, 1], np.ones(data.shape[0])]
+                        C, _, _, _ = scipy.linalg.lstsq(A, data[:, 2])  # coefficients
+
+                        # evaluate it on grid
+                        Z = C[0] * X + C[1] * Y + C[2]
+
+                    rainvaluesintimestep=[]
+                    for i in generationlocations:
+                        value=(C[0] * i.x()) + (C[1] * i.y()) + C[2]
+                        rainvaluesintimestep.append(value)
+                    allrainvalues.append(rainvaluesintimestep)
+
+                #writing the file
+                for i in range(len(generationlocations)):
+                    generateddata.write('!BEGIN   #%s\n' % "raingaugename")
+                    generateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i), str(min(rainlengths))))
+                    counter = 0
+                    while counter+1<=min(rainlengths):
+                        for j in range(len(self.data)):
+                            rainvalue= allrainvalues[counter][i]
+                        generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str(rainvalue/3600000) , str(rainvalue)))
+                        if counter+1==min(rainlengths):
+                            generateddata.write('!END')
+                            generateddata.write('\n\n')
+                        counter=counter+1
+ ######################################################################################
+
+
 
             self.iface.messageBar().pushSuccess(
-                'Time Viewer',
+                'Rain Generator',
                 'Generation Successful !'
             )
 
