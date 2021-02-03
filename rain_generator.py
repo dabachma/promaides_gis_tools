@@ -175,7 +175,7 @@ class RainGenerator(object):
         self.cancel = False
 
 ##########################################################################
-    layer2 = QgsVectorLayer("Polygon", 'Generation Area', 'memory')
+    layer2 = QgsVectorLayer("Polygon", 'Generation_Area', 'memory')
 
     def CreateGenerationArea(self):
         if type(self.dialog.GenerationAreaLayer.currentLayer()) == type(None):
@@ -185,14 +185,13 @@ class RainGenerator(object):
             )
             return
 
-        self.layer2 = QgsVectorLayer("Polygon", 'Generation Area', 'memory')
+        self.layer2 = QgsVectorLayer("Polygon", 'Generation_Area', 'memory')
         layer = self.dialog.GenerationAreaLayer.currentLayer()
         ex = layer.extent()
         xmax = ex.xMaximum()
         ymax = ex.yMaximum()
         xmin = ex.xMinimum()
         ymin = ex.yMinimum()
-        # layer2 = QgsVectorLayer("Polygon", 'Generation Area', 'memory')
         prov = self.layer2.dataProvider()
 
         fields = QgsFields()
@@ -692,6 +691,36 @@ class RainGenerator(object):
             rainlengths=[]
             for j in range(len(self.data)):
                 rainlengths.append(len(self.data[j][0]))
+
+            ###############################################################
+            # time viewer layer
+            if self.dialog.TImeVieweLayerBox.isChecked():
+                layer = self.layer2
+                feats = [feat for feat in layer.getFeatures()]
+
+                timeviewerlayer = QgsVectorLayer("Polygon", 'Time_Viewer_Layer', 'memory')
+
+                timeviewerlayer_data = timeviewerlayer.dataProvider()
+                attr = layer.dataProvider().fields().toList()
+                timeviewerlayer_data.addAttributes(attr)
+                timeviewerlayer.dataProvider().addAttributes(
+                [QgsField("Boundary Value", QVariant.Double), QgsField("date_time", QVariant.Double)])
+                for i in range(min(rainlengths)):
+                    timeviewerlayer_data.addFeatures(feats)
+
+                fieldids=[]
+                fields = timeviewerlayer.dataProvider().fields()
+                #deleting extra fields
+                fieldstodelete=["XMIN","XMAX","YMIN","YMAX"]
+                for field in fields:
+                    if field.name() in fieldstodelete:
+                        fieldids.append(fields.indexFromName(field.name()))
+
+                timeviewerlayer.dataProvider().deleteAttributes(fieldids)
+                timeviewerlayer.setCrs(
+                    QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
+                timeviewerlayer.updateFields()
+            ##################################################################
 #################################################################################################
             #Inversed Distance Weighting
             if self.dialog.SpatialInterpolationMethodBox.currentText()=="Inversed Distance Weighting":
@@ -708,8 +737,24 @@ class RainGenerator(object):
                             distance=raingaugelocations[j].distance(generationlocations[i])
                             upperformula = upperformula + ((1 / (distance**n)) * float(self.data[j][1][counter]))
                             lowerformula=lowerformula+(1/(distance**n))
-                            rainvalue= round((upperformula/lowerformula),3)
+                        rainvalue= round((upperformula/lowerformula),3)
                         generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str(rainvalue/3600000) , str(rainvalue)))
+
+                        ###############################################
+                        # time viewer layer
+                        if self.dialog.TImeVieweLayerBox.isChecked():
+                            fields = timeviewerlayer.dataProvider().fields()
+                            datetimefieldid=fields.indexFromName("date_time")
+                            rainvaluefieldid=fields.indexFromName("Boundary Value")
+                            idfieldid=fields.indexFromName("ID")
+                            featureids=[]
+                            for feature in timeviewerlayer.getFeatures():
+                                if float(feature.attributes()[idfieldid]) == float(i):
+                                    featureids.append(feature.id())
+                            atts = {datetimefieldid: counter, rainvaluefieldid: rainvalue}
+                            timeviewerlayer.dataProvider().changeAttributeValues({featureids[counter]: atts})
+                        ###############################################
+
                         if counter+1==min(rainlengths):
                             generateddata.write('!END')
                             generateddata.write('\n\n')
@@ -764,8 +809,21 @@ class RainGenerator(object):
                     generateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i), str(min(rainlengths))))
                     counter = 0
                     while counter+1<=min(rainlengths):
-                        for j in range(len(self.data)):
-                            rainvalue= allrainvalues[counter][i]
+                        rainvalue= float(allrainvalues[counter][i])
+                        ###############################################
+                        # time viewer layer
+                        if self.dialog.TImeVieweLayerBox.isChecked():
+                            fields = timeviewerlayer.dataProvider().fields()
+                            datetimefieldid=fields.indexFromName("date_time")
+                            rainvaluefieldid=fields.indexFromName("Boundary Value")
+                            idfieldid=fields.indexFromName("ID")
+                            featureids=[]
+                            for feature in timeviewerlayer.getFeatures():
+                                if float(feature.attributes()[idfieldid]) == float(i):
+                                    featureids.append(feature.id())
+                            atts = {datetimefieldid: counter, rainvaluefieldid: rainvalue}
+                            timeviewerlayer.dataProvider().changeAttributeValues({featureids[counter]: atts})
+                        ###############################################
                         generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str(rainvalue/3600000) , str(rainvalue)))
                         if counter+1==min(rainlengths):
                             generateddata.write('!END')
@@ -788,12 +846,12 @@ class RainGenerator(object):
                 'Rain Generator',
                 'Generation Successful !'
             )
-
-
-
-
-
-
+        ##########################################################
+        #time viewer layer
+        if self.dialog.TImeVieweLayerBox.isChecked():
+            timeviewerlayer.updateFields()
+            QgsProject.instance().addMapLayer(timeviewerlayer)
+        ##########################################################
 
 
 

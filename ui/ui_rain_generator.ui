@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>661</width>
-    <height>485</height>
+    <width>684</width>
+    <height>549</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -141,7 +141,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label_27">
         <property name="text">
-         <string>Generation duration (hr)</string>
+         <string>Generation duration (same as input timestep)</string>
         </property>
        </widget>
       </item>
@@ -158,7 +158,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0" colspan="2">
+      <item row="1" column="0">
        <widget class="QCheckBox" name="SaveRainGaugeValuesBox">
         <property name="toolTip">
          <string/>
@@ -168,7 +168,17 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0" colspan="2">
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="TImeVieweLayerBox">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string>Produce output layer for Time Viewer</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="2">
        <widget class="QLineEdit" name="folderEdit">
         <property name="toolTip">
          <string>Set output folder</string>
@@ -178,7 +188,7 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
+      <item row="3" column="2">
        <widget class="QPushButton" name="browseButton">
         <property name="maximumSize">
          <size>
@@ -191,7 +201,7 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
+      <item row="3" column="3">
        <widget class="QPushButton" name="GenerateButton">
         <property name="text">
          <string>Generate</string>
