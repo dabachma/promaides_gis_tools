@@ -751,7 +751,7 @@ class RainGenerator(object):
                             for feature in timeviewerlayer.getFeatures():
                                 if float(feature.attributes()[idfieldid]) == float(i):
                                     featureids.append(feature.id())
-                            atts = {datetimefieldid: counter, rainvaluefieldid: rainvalue}
+                            atts = {datetimefieldid: self.data[rainlengths.index(min(rainlengths))][0][counter], rainvaluefieldid: rainvalue}
                             timeviewerlayer.dataProvider().changeAttributeValues({featureids[counter]: atts})
                         ###############################################
 
@@ -821,7 +821,7 @@ class RainGenerator(object):
                             for feature in timeviewerlayer.getFeatures():
                                 if float(feature.attributes()[idfieldid]) == float(i):
                                     featureids.append(feature.id())
-                            atts = {datetimefieldid: counter, rainvaluefieldid: rainvalue}
+                            atts = {datetimefieldid: self.data[rainlengths.index(min(rainlengths))][0][counter], rainvaluefieldid: rainvalue}
                             timeviewerlayer.dataProvider().changeAttributeValues({featureids[counter]: atts})
                         ###############################################
                         generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str(rainvalue/3600000) , str(rainvalue)))
