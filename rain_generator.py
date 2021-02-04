@@ -56,6 +56,7 @@ class PluginDialog(QDialog):
 
         self.SpatialInterpolationMethodBox.addItem("Inversed Distance Weighting")
         self.SpatialInterpolationMethodBox.addItem("Trend Surface Analysis (Polynomial 1st Order)")
+        self.SpatialInterpolationMethodBox.addItem("Trend Surface Analysis (Polynomial 2nd Order)")
         self.SpatialInterpolationMethodBox.setCurrentIndex(-1)
 
         self.dxBox.setValue(5000)
@@ -841,16 +842,83 @@ class RainGenerator(object):
  ######################################################################################
             elif self.dialog.SpatialInterpolationMethodBox.currentText() == "Trend Surface Analysis (Polynomial 2nd Order)":
 
-                #elif order == 2:
-                    # best-fit quadratic curve
-                    A = np.c_[np.ones(data.shape[0]), data[:, :2], np.prod(data[:, :2], axis=1), data[:, :2] ** 2]
-                    C, _, _, _ = scipy.linalg.lstsq(A, data[:, 2])
+                allrainvalues = []
+                for counter in range(min(rainlengths)):
+                    xs = []
+                    ys = []
+                    zs = []
+                    # putting all x and y and z values in seperate arrays
+                    for r, i in enumerate(raingaugelocations):
+                        xs.append(i.x())
+                        ys.append(i.y())
+                        zs.append(float(self.data[r][1][counter]))
 
-                    # evaluate it on a grid
-                    Z = np.dot(np.c_[np.ones(XX.shape), XX, YY, XX * YY, XX ** 2, YY ** 2], C).reshape(X.shape)
+                    data = np.c_[xs, ys, zs]
 
+                    # grid covering the domain of the data
+                    # getting the minimum and maximum x and ys of generation area
+                    layer = self.dialog.GenerationAreaLayer.currentLayer()
+                    ex = layer.extent()
+                    xmax = ex.xMaximum()
+                    ymax = ex.yMaximum()
+                    xmin = ex.xMinimum()
+                    ymin = ex.yMinimum()
 
+                    X, Y = np.meshgrid(np.linspace(xmin, xmax, self.dialog.dxBox.value()),
+                                       np.linspace(ymin, ymax, self.dialog.dyBox.value()))
 
+                    order = 2  # 2: quadratic
+                    if order == 2:
+                        # best-fit quadratic curve
+                        A = np.c_[np.ones(data.shape[0]), data[:, :2], np.prod(data[:, :2], axis=1), data[:, :2] ** 2]
+                        C, _, _, _ = scipy.linalg.lstsq(A, data[:, 2])
+
+                        # formula
+                        # Z = C[4]*X**2. + C[5]*Y**2. + C[3]*X*Y + C[1]*X + C[2]*Y + C[0]
+
+                    rainvaluesintimestep = []
+                    for i in generationlocations:
+                        value = C[4]*i.x()**2. + C[5]*i.y()**2. + C[3]*i.x()*i.y() + C[1]*i.x() + C[2]*i.y() + C[0]
+                        rainvaluesintimestep.append(value)
+                    allrainvalues.append(rainvaluesintimestep)
+
+                # writing the file
+                for i in range(len(generationlocations)):
+                    generateddata.write('!BEGIN   #%s\n' % "raingaugename")
+                    generateddata.write(
+                        '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                        str(i), str(min(rainlengths))))
+                    counter = 0
+                    while counter + 1 <= min(rainlengths):
+                        rainvalue = float(allrainvalues[counter][i])
+                        ###############################################
+                        # time viewer layer
+                        if self.dialog.TImeVieweLayerBox.isChecked():
+                            fields = timeviewerlayer.dataProvider().fields()
+                            datetimefieldid = fields.indexFromName("date_time")
+                            rainvaluefieldid = fields.indexFromName("Boundary Value")
+                            idfieldid = fields.indexFromName("ID")
+                            featureids = []
+                            for feature in timeviewerlayer.getFeatures():
+                                if float(feature.attributes()[idfieldid]) == float(i):
+                                    featureids.append(feature.id())
+                            try:
+                                atts = {
+                                    datetimefieldid: float(self.data[rainlengths.index(min(rainlengths))][0][counter]),
+                                    rainvaluefieldid: rainvalue}
+                            except:
+                                atts = {datetimefieldid: self.data[rainlengths.index(min(rainlengths))][0][counter],
+                                        rainvaluefieldid: rainvalue}
+                            timeviewerlayer.dataProvider().changeAttributeValues({featureids[counter]: atts})
+                        ###############################################
+                        generateddata.write(
+                            '%s %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                        if counter + 1 == min(rainlengths):
+                            generateddata.write('!END')
+                            generateddata.write('\n\n')
+                        counter = counter + 1
+
+###########################################################################################
             self.iface.messageBar().pushSuccess(
                 'Rain Generator',
                 'Generation Successful !'
