@@ -333,7 +333,7 @@ class RainGenerator(object):
     def DataAnalysis(self):
 
         if self.dialog.SpatialInterpolationOnlyBox.isChecked():
-            self.SpatialInterpolation()
+            self.PreSpatialInterpolation()
             return
 
         filename = self.dialog.folderEdit.text()
@@ -640,14 +640,14 @@ class RainGenerator(object):
         self.data=tempdata
         self.dialog.groupBox_2.setEnabled(True)
 ####################################################################################
-
-
-#################################################################################
-    def SpatialInterpolation(self):
+    def PreSpatialInterpolation(self):
         self.iface.messageBar().pushInfo(
             'Rain Generator',
             'Performing Spatial Interpolation, Please Wait !'
         )
+        QTimer.singleShot(500, self.SpatialInterpolation) #waits half a second for the message to be displayed
+#################################################################################
+    def SpatialInterpolation(self):
         filename = self.dialog.folderEdit.text()
         if not filename:
             self.iface.messageBar().pushCritical(
@@ -751,7 +751,10 @@ class RainGenerator(object):
                             for feature in timeviewerlayer.getFeatures():
                                 if float(feature.attributes()[idfieldid]) == float(i):
                                     featureids.append(feature.id())
-                            atts = {datetimefieldid: float(self.data[rainlengths.index(min(rainlengths))][0][counter]), rainvaluefieldid: rainvalue}
+                            try:
+                                atts = {datetimefieldid: float(self.data[rainlengths.index(min(rainlengths))][0][counter]), rainvaluefieldid: rainvalue}
+                            except:
+                                atts = {datetimefieldid: self.data[rainlengths.index(min(rainlengths))][0][counter], rainvaluefieldid: rainvalue}
                             timeviewerlayer.dataProvider().changeAttributeValues({featureids[counter]: atts})
                         ###############################################
 
@@ -821,7 +824,13 @@ class RainGenerator(object):
                             for feature in timeviewerlayer.getFeatures():
                                 if float(feature.attributes()[idfieldid]) == float(i):
                                     featureids.append(feature.id())
-                            atts = {datetimefieldid: float(self.data[rainlengths.index(min(rainlengths))][0][counter]), rainvaluefieldid: rainvalue}
+                            try:
+                                atts = {
+                                    datetimefieldid: float(self.data[rainlengths.index(min(rainlengths))][0][counter]),
+                                    rainvaluefieldid: rainvalue}
+                            except:
+                                atts = {datetimefieldid: self.data[rainlengths.index(min(rainlengths))][0][counter],
+                                        rainvaluefieldid: rainvalue}
                             timeviewerlayer.dataProvider().changeAttributeValues({featureids[counter]: atts})
                         ###############################################
                         generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str(rainvalue/3600000) , str(rainvalue)))
