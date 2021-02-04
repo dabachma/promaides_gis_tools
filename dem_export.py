@@ -607,13 +607,13 @@ class DEMExport(object):
             'roughn': {
                 'layer': self.dialog.roughnessLayer(),
                 'band': self.dialog.roughnessBand(),
-                'interpol_mode': 'nearest neighbor',
+                'interpol_mode': 'nearest neighbor (downscaling/upscaling)',
                 'nan': self.dialog.roughnessNaN()
             },
             'init': {
                 'layer': self.dialog.initLayer(),
                 'band': self.dialog.initBand(),
-                'interpol_mode': 'nearest neighbor',
+                'interpol_mode': 'nearest neighbor (downscaling/upscaling)',
                 'nan': self.dialog.initNaN()
             }
         }
