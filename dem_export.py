@@ -681,6 +681,9 @@ class DEMExport(object):
                     )
                     return
 
+                fields = polygonlayer.dataProvider().fields()
+                boundaryvaluefieldid = fields.indexFromName(str(self.dialog.boundaryvalue_box.expression()))
+
                 boundaryvalue, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundaryvalue_box.expression(), False)
                 if not ok:
                     self.iface.messageBar().pushCritical(
@@ -731,9 +734,12 @@ class DEMExport(object):
                             ##############################################################################
 
                             boundaryenabledforcell="true"
-                            cellstationary=str(boundarystationary[poly.id()-1])
-                            cellboundaryvalue=str(boundaryvalue[poly.id()-1])
-                            cellboundarytype=str(boundarytype[poly.id()-1])
+                            cellstationary=str(boundarystationary[poly.id()])
+                            if (self.dialog.boundaryvalue_box.expression()).isnumeric():
+                                cellboundaryvalue=str(boundaryvalue[poly.id()])
+                            else:
+                                cellboundaryvalue=poly.attributes()[boundaryvaluefieldid]
+                            cellboundarytype=str(boundarytype[poly.id()])
                             cellproperties=[boundaryenabledforcell,cellstationary,cellboundaryvalue,cellboundarytype]
                             break
                         else:
