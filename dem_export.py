@@ -671,7 +671,7 @@ class DEMExport(object):
         ########################################################################
         #reading boundary polygon data
         if self.dialog.mGroupBox_4.isChecked():
-            polygonlayer = self.dialog.BCLayer()
+            polygonlayer = self.dialog.BCLayerBox.currentLayer()
             if polygonlayer:
                 boundarystationary, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.stationarytype_box.expression(), False)
                 if not ok:
@@ -680,9 +680,17 @@ class DEMExport(object):
                         'Invalid expression for stationary boundary condition !'
                     )
                     return
-
+                ##################################################################
+                #getting the id of each attribute field
                 fields = polygonlayer.dataProvider().fields()
-                boundaryvaluefieldid = fields.indexFromName(str(self.dialog.boundaryvalue_box.expression()))
+                for f in fields:
+                    if str(f.name())==self.dialog.boundaryvalue_box.currentText():
+                        boundaryvaluefieldid=fields.indexFromName(f.name())
+                    if str(f.name())==self.dialog.stationarytype_box.currentText():
+                        stationarytypefieldid=fields.indexFromName(f.name())
+                    if str(f.name())==self.dialog.boundarytype_box.currentText():
+                        boundarytypefieldid=fields.indexFromName(f.name())
+                #################################################################
 
                 boundaryvalue, ok = QgsVectorLayerUtils.getValues(polygonlayer, self.dialog.boundaryvalue_box.expression(), False)
                 if not ok:
@@ -734,12 +742,25 @@ class DEMExport(object):
                             ##############################################################################
 
                             boundaryenabledforcell="true"
-                            cellstationary=str(boundarystationary[poly.id()])
-                            if (self.dialog.boundaryvalue_box.expression()).isnumeric():
+                            #############################################################################
+                            #boundary stationary
+                            if fields.indexFromName(self.dialog.stationarytype_box.currentText())==-1:
+                                cellstationary=str(boundarystationary[poly.id()])
+                            else:
+                                cellstationary=poly.attributes()[stationarytypefieldid]
+                            #############################################################################
+                            #boundary value
+                            if fields.indexFromName(self.dialog.boundaryvalue_box.currentText())==-1:
                                 cellboundaryvalue=str(boundaryvalue[poly.id()])
                             else:
                                 cellboundaryvalue=poly.attributes()[boundaryvaluefieldid]
-                            cellboundarytype=str(boundarytype[poly.id()])
+                            ###########################################################################
+                            #boundary type
+                            if fields.indexFromName(self.dialog.boundarytype_box.currentText())==-1:
+                                cellboundarytype=str(boundarytype[poly.id()])
+                            else:
+                                cellboundarytype=poly.attributes()[boundarytypefieldid]
+                            ###########################################################################
                             cellproperties=[boundaryenabledforcell,cellstationary,cellboundaryvalue,cellboundarytype]
                             break
                         else:
