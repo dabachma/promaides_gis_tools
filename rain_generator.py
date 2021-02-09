@@ -10,9 +10,9 @@ import statistics
 import random
 
 import numpy as np
-from scipy.stats import expon
-from scipy.stats import poisson
+import scipy.stats as stats
 import scipy.linalg
+from scipy.optimize import curve_fit
 
 # QGIS modules
 from qgis.core import *
@@ -518,12 +518,12 @@ class RainGenerator(object):
             print(self.storms, "storms after loop") #finalproduct!!
             #################################################################
             #making an array for randomly chosing storm or dpd (isnt required anymore)
-            stormordpd=[]
-            for j in range(len(self.storms[i])):
-                stormordpd.append("storm")
-            for j in range(len(self.nostormsduration[i])):
-                stormordpd.append("dpd")
-            print(stormordpd)
+            #stormordpd=[]
+            #for j in range(len(self.storms[i])):
+                #stormordpd.append("storm")
+            #for j in range(len(self.nostormsduration[i])):
+                #stormordpd.append("dpd")
+            #print(stormordpd)
             #################################################################
             #classifying the storms into 4 catagories based on duration
             allstormdurations = []
@@ -535,6 +535,11 @@ class RainGenerator(object):
             class2intensities = []
             class3intensities = []
             class4intensities = []
+            class1durations = []
+            class2durations = []
+            class3durations = []
+            class4durations = []
+
 
             ###################################################################
             #calculating the means
@@ -553,12 +558,39 @@ class RainGenerator(object):
                 #getting the intensities of each storm duration class
                 if min(allstormdurations) <= value[2] < min(allstormdurations) + classificationtimestep:
                     class1intensities.append(value[1])
+                    class1durations.append(value[2])
                 elif min(allstormdurations) + classificationtimestep <= value[2] < min(allstormdurations) + (2 * classificationtimestep):
                     class2intensities.append(value[1])
+                    class2durations.append(value[2])
                 elif min(allstormdurations) + (2 * classificationtimestep) <= value[2] < min(allstormdurations) + (3 * classificationtimestep):
                     class3intensities.append(value[1])
+                    class3durations.append(value[2])
                 elif min(allstormdurations) + (3 * classificationtimestep) <= value[2] <= min(allstormdurations) + (4 * classificationtimestep):
                     class4intensities.append(value[1])
+                    class4durations.append(value[2])
+
+            print(class1intensities,"class1 mean intensities")
+            print(class2intensities, "class2 mean intensities")
+            print(class3intensities, "class3 mean intensities")
+            print(class4intensities, "class4 mean intensities")
+            print(class1durations, "class1 durations")
+            print(class2durations, "class2 durations")
+            print(class3durations, "class3 durations")
+            print(class4durations, "class4 durations")
+
+            #########################################################
+            #fitting mean intensities and durations for each class to the gamma distribution and getting alpha and beta
+            #fit_alpha, fit_loc, fit_beta = stats.gamma.fit(class2intensities)
+            #print(fit_alpha, fit_loc, fit_beta,"fit")
+            #print(self.GammaFunction(2, fit_alpha, fit_beta), "random 2")
+
+            #theta=1/beta (scale)
+            #alpha is the k (shape)
+            #print(np.random.gamma(fit_alpha,scale=np.var(class2intensities)/(sum(class2intensities)/len(class2intensities))),"random 1")
+
+            #pars, cov = curve_fit(f=self.GammaFunction, xdata=class2durations, ydata=class2intensities, p0=[0, 0], bounds=(0, max(class2durations)), maxfev=5000)
+            #print(self.GammaFunction(53,pars[0],pars[1]),"random 2")
+            ########################################################
 
             #storm statistics
             meanvolume=sumvolume/len(self.storms[i])
@@ -591,6 +623,9 @@ class RainGenerator(object):
                 )
                 return
 
+            prpdata=[]
+            prpstorms=[]
+
             #writing the file
             with open(filepath, 'a') as raingaugegenerateddata:
                 raingaugegenerateddata.write('!BEGIN   #%s\n' % raingaugenames[i])
@@ -600,18 +635,83 @@ class RainGenerator(object):
                 stormstatus="dpd"
                 while(counter <= self.dialog.RequestedGenerationDurationBox.value()):
                     #randomchoice = random.choice(stormordpd)
-                    if stormstatus == "dpd": #dry period
+                    ############################################################
+                    #dry period
+                    if stormstatus == "dpd":
                         roundeddpd = 0
                         while(roundeddpd<dpdmin):  #check for the generated dpd to be bigger than dpdmin
                             dpd = np.random.exponential(meandpd) #chooses the dpd based on an exponentail distribution
                             roundeddpd = round(dpd)
                         for j in range(roundeddpd): #writes the time steps
                             raingaugegenerateddata.write('%s %s\n' % (str(counter), str(0)))
+                            prpdata.append(0)
                             counter=counter+1
-                            if counter>self.dialog.RequestedGenerationDurationBox.value():
-                                return
+                            if counter>self.dialog.RequestedGenerationDurationBox.value(): #get out of for loop
+                                break
+                        if counter > self.dialog.RequestedGenerationDurationBox.value(): #get out of while loop
+                            raingaugegenerateddata.write('\n\n')
+                            break
                         stormstatus = "storm"
+                    ##############################################################
+                    #storm
+                    if stormstatus == "storm":
+                        currentstorm=[]
+                        stormduration = np.random.exponential(meanstormduration)
+                        roundedstormduration=math.ceil(stormduration) #storm duration
+                        ##########################################################
+                        #not sure of the mean intensity calculation
+                        #getting storm mean intensity
+                        # first duration class
+                        if min(allstormdurations) <= roundedstormduration < min(allstormdurations) + classificationtimestep:
+                            fit_alpha = (sum(class1intensities) / len(class1intensities)) ** 2 / np.var(
+                                class1intensities)
+                            meanintensity=(np.random.gamma(fit_alpha, scale=np.var(class1intensities) / (
+                                        sum(class1intensities) / len(class1intensities))))
+                        # second duration class
+                        elif min(allstormdurations) + classificationtimestep <= roundedstormduration < min(allstormdurations) + (
+                                2 * classificationtimestep):
+                            fit_alpha = (sum(class2intensities) / len(class2intensities)) ** 2 / np.var(
+                                class2intensities)
+                            meanintensity = (np.random.gamma(fit_alpha, scale=np.var(class2intensities) / (
+                                    sum(class2intensities) / len(class2intensities))))
+                        # third duration class
+                        elif min(allstormdurations) + (2 * classificationtimestep) <= roundedstormduration < min(
+                                allstormdurations) + (3 * classificationtimestep):
+                            fit_alpha = (sum(class3intensities) / len(class3intensities)) ** 2 / np.var(
+                                class3intensities)
+                            meanintensity = (np.random.gamma(fit_alpha, scale=np.var(class3intensities) / (
+                                    sum(class3intensities) / len(class3intensities))))
+                        # fourth duration class
+                        elif min(allstormdurations) + (3 * classificationtimestep) <= roundedstormduration <= min(
+                                allstormdurations) + (4 * classificationtimestep):
+                            fit_alpha = (sum(class4intensities) / len(class4intensities)) ** 2 / np.var(
+                                class4intensities)
+                            meanintensity = (np.random.gamma(fit_alpha, scale=np.var(class4intensities) / (
+                                    sum(class4intensities) / len(class4intensities))))
+                        ########################################################################
+                        for j in range(roundedstormduration): #writes the time steps
+                            raingaugegenerateddata.write(
+                                '%s %s   #%s mm/h\n' % (str(counter), str(meanintensity / 3600000), str(meanintensity)))
+                            currentstorm.append(meanintensity)
+                            prpdata.append(meanintensity)
+                            counter=counter+1
+                            if counter>self.dialog.RequestedGenerationDurationBox.value(): #get out of for loop
+                                prpstorms.append(currentstorm)
+                                break
+                        stormstatus = "dpd"
+                        prpstorms.append(currentstorm)
+                        if counter > self.dialog.RequestedGenerationDurationBox.value(): #get out of while loop
+                            raingaugegenerateddata.write('\n\n')
+                            break
 
+                print(prpdata,"prpdata")
+                print(prpstorms,"prpstorms")
+                print(i,"i")
+
+
+##############################################################################
+    def GammaFunction(self,x,alpha,beta):
+        return ((beta**alpha)*(x**(alpha-1))*np.exp(-beta*x))/math.gamma(alpha) #math.factorial doesnt work for integral numbers therfor we use math.gamma instead and math.gamma(a+1)=math.factorial(a)
 
 ##############################################################################
     def AnalyzeFromUntil(self):
