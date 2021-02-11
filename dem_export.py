@@ -722,7 +722,10 @@ class DEMExport(object):
 
                             ##########################################################################
                             #value check
-                            boundarystationarystatus = str(boundarystationary[poly.id()]).lower()
+                            try:
+                                boundarystationarystatus = str(boundarystationary[poly.id()]).lower()
+                            except:
+                                boundarystationarystatus = str(boundarystationary[poly.id()-1]).lower()
                             if check_true_false(boundarystationarystatus) == 0:
                                 self.iface.messageBar().pushCritical(
                                     '2D-Floodplain Export',
@@ -731,7 +734,10 @@ class DEMExport(object):
                                 self.quitDialog()
                                 return
 
-                            cellboundarytypestatus=str(boundarytype[poly.id()])
+                            try:
+                                cellboundarytypestatus=str(boundarytype[poly.id()])
+                            except:
+                                cellboundarytypestatus = str(boundarytype[poly.id()-1])
                             if check_cell_boundary_type(cellboundarytypestatus) == 0:
                                 self.iface.messageBar().pushCritical(
                                     '2D-Floodplain Export',
@@ -745,19 +751,28 @@ class DEMExport(object):
                             #############################################################################
                             #boundary stationary
                             if fields.indexFromName(self.dialog.stationarytype_box.currentText())==-1:
-                                cellstationary=str(boundarystationary[poly.id()])
+                                try:
+                                    cellstationary=str(boundarystationary[poly.id()])
+                                except:
+                                    cellstationary = str(boundarystationary[poly.id()-1])
                             else:
                                 cellstationary=poly.attributes()[stationarytypefieldid]
                             #############################################################################
                             #boundary value
                             if fields.indexFromName(self.dialog.boundaryvalue_box.currentText())==-1:
-                                cellboundaryvalue=str(boundaryvalue[poly.id()])
+                                try:
+                                    cellboundaryvalue=str(boundaryvalue[poly.id()])
+                                except:
+                                    cellboundaryvalue = str(boundaryvalue[poly.id()-1])
                             else:
                                 cellboundaryvalue=poly.attributes()[boundaryvaluefieldid]
                             ###########################################################################
                             #boundary type
                             if fields.indexFromName(self.dialog.boundarytype_box.currentText())==-1:
-                                cellboundarytype=str(boundarytype[poly.id()])
+                                try:
+                                    cellboundarytype=str(boundarytype[poly.id()])
+                                except:
+                                    cellboundarytype = str(boundarytype[poly.id()-1])
                             else:
                                 cellboundarytype=poly.attributes()[boundarytypefieldid]
                             ###########################################################################
