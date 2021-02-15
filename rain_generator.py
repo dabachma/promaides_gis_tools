@@ -103,12 +103,15 @@ class PluginDialog(QDialog):
             self.CheckButton2.setEnabled(False)
             self.label_30.setEnabled(False)
             self.label_31.setEnabled(False)
+            self.groupBox_2.setEnabled(True)
         else:
             self.FromBox.setEnabled(True)
             self.UntilBox.setEnabled(True)
             self.CheckButton2.setEnabled(True)
             self.label_30.setEnabled(True)
             self.label_31.setEnabled(True)
+            self.groupBox_2.setEnabled(False)
+            self.groupBox_3.setEnabled(False)
 
     def UpdateOutputOptions(self):
         if self.SpatialInterpolationOnlyBox.isChecked():
@@ -334,6 +337,11 @@ class RainGenerator(object):
         #self.dialog.UntilBoxBox.currentIndex(min(lengths)-1)
         if self.dialog.AnalyzeAllDataBox.isChecked():
             self.dialog.groupBox_2.setEnabled(True)
+
+        self.iface.messageBar().pushSuccess(
+            'Rain Generator',
+            'Files seem ok !'
+        )
 
 ###########################################################
     rainstorm=[]
