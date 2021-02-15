@@ -8,6 +8,8 @@ import tempfile
 import collections
 import statistics
 import random
+import pandas
+import csv
 
 import numpy as np
 import scipy.stats as stats
@@ -112,11 +114,11 @@ class PluginDialog(QDialog):
         if self.SpatialInterpolationOnlyBox.isChecked():
             self.label_27.setEnabled(False)
             self.RequestedGenerationDurationBox.setEnabled(False)
-            self.SaveRainGaugeValuesBox.setEnabled(False)
+            self.SaveRainGaugePRPBox.setEnabled(False)
         else:
             self.label_27.setEnabled(True)
             self.RequestedGenerationDurationBox.setEnabled(True)
-            self.SaveRainGaugeValuesBox.setEnabled(True)
+            self.SaveRainGaugePRPBox.setEnabled(True)
 
 
     def onBrowseButtonClicked(self):
@@ -268,6 +270,8 @@ class RainGenerator(object):
                     'File Does Not Exist!'
                 )
                 return
+
+            ###################################
             f = open(address.strip("\u202a"), "r")
             if self.dialog.HeaderBox.isChecked():
                 lines = f.readlines()[1:]
@@ -283,6 +287,14 @@ class RainGenerator(object):
                 numberoftimes = len(times)
             if len(rains) >= numberofrains:
                 numberofrains = len(rains)
+            #######################################
+            #df = pandas.read_csv(address.strip("\u202a"),delimiter=',')
+            #times=df["Time"].tolist()
+            #rains=df["Value"]
+            #for c in df.columns:
+            #    print(c)
+
+            #######################################
 
         #puttin data in an array
         self.ngauges = len(files)
@@ -835,7 +847,12 @@ class RainGenerator(object):
                 #writing the file
                 for i in range(len(generationlocations)):
                     generateddata.write('!BEGIN   #%s\n' % "raingaugename")
-                    generateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i), str(min(rainlengths))))
+                    if self.dialog.SquareRainPulseBox.isChecked():
+                        generateddata.write(
+                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                            str(i), str(min(rainlengths)*2)))
+                    else:
+                        generateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i), str(min(rainlengths))))
                     counter = 0
                     n = self.dialog.ExponentFactorBox.value() #exponent factor for the invert distance weighting formula
                     while counter+1<=min(rainlengths):
@@ -847,7 +864,9 @@ class RainGenerator(object):
                             lowerformula=lowerformula+(1/(distance**n))
                         rainvalue= round((upperformula/lowerformula),3)
                         generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str(rainvalue/3600000) , str(rainvalue)))
-
+                        if self.dialog.SquareRainPulseBox.isChecked():
+                            generateddata.write(
+                                '%s.99 %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
                         ###############################################
                         # time viewer layer
                         if self.dialog.TImeVieweLayerBox.isChecked():
@@ -917,7 +936,14 @@ class RainGenerator(object):
                 #writing the file
                 for i in range(len(generationlocations)):
                     generateddata.write('!BEGIN   #%s\n' % "raingaugename")
-                    generateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i), str(min(rainlengths))))
+                    if self.dialog.SquareRainPulseBox.isChecked():
+                        generateddata.write(
+                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                                str(i), str(min(rainlengths) * 2)))
+                    else:
+                        generateddata.write(
+                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                            str(i), str(min(rainlengths))))
                     counter = 0
                     while counter+1<=min(rainlengths):
                         rainvalue= float(allrainvalues[counter][i])
@@ -942,6 +968,9 @@ class RainGenerator(object):
                             timeviewerlayer.dataProvider().changeAttributeValues({featureids[counter]: atts})
                         ###############################################
                         generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str(rainvalue/3600000) , str(rainvalue)))
+                        if self.dialog.SquareRainPulseBox.isChecked():
+                            generateddata.write(
+                                '%s.99 %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
                         if counter+1==min(rainlengths):
                             generateddata.write('!END')
                             generateddata.write('\n\n')
@@ -992,9 +1021,14 @@ class RainGenerator(object):
                 # writing the file
                 for i in range(len(generationlocations)):
                     generateddata.write('!BEGIN   #%s\n' % "raingaugename")
-                    generateddata.write(
-                        '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
-                        str(i), str(min(rainlengths))))
+                    if self.dialog.SquareRainPulseBox.isChecked():
+                        generateddata.write(
+                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                                str(i), str(min(rainlengths) * 2)))
+                    else:
+                        generateddata.write(
+                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                            str(i), str(min(rainlengths))))
                     counter = 0
                     while counter + 1 <= min(rainlengths):
                         rainvalue = float(allrainvalues[counter][i])
@@ -1020,6 +1054,9 @@ class RainGenerator(object):
                         ###############################################
                         generateddata.write(
                             '%s %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                        if self.dialog.SquareRainPulseBox.isChecked():
+                            generateddata.write(
+                                '%s.99 %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
                         if counter + 1 == min(rainlengths):
                             generateddata.write('!END')
                             generateddata.write('\n\n')
