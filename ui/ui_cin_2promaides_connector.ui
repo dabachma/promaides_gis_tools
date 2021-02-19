@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>549</width>
+    <height>922</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Point Export for ProMaIDes CIN-module</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../icons/cin.png</normaloff>../icons/cin.png</iconset>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_6">
+   <item row="2" column="0">
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="toolTip">
+      <string>Set the name of the observation points; just a string attribute is allowed!</string>
+     </property>
+     <property name="title">
+      <string>Critical Infrastructure Source and Sink Pairs</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
+       <widget class="QLabel" name="Label_12">
+        <property name="text">
+         <string>Critical Infrastructure - Source </string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="comboBox_source"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="Label_8">
+        <property name="text">
+         <string>Critical Infrastructure - Sink</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="comboBox_sink"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_19">
+        <property name="text">
+         <string>Connection Type</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QPushButton" name="addButton_2source_sink_pair">
+        <property name="toolTip">
+         <string>Add additional floodplain rasters</string>
+        </property>
+        <property name="text">
+         <string>Merge to Source - Sink Pair</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="comboBox_conTypes">
+        <property name="toolTip">
+         <string>Upscaling e.g. from 10 x 10 m to 30 x 30 m; downscaling e.g. from 30 x 30 m to 10 x 10 m</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="toolTip">
+      <string>Set the name of the observation points; just a string attribute is allowed!</string>
+     </property>
+     <property name="title">
+      <string>Critical Infrastructure Objects in Input Layers</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="1" column="0">
+       <widget class="QPushButton" name="addButton_2source">
+        <property name="toolTip">
+         <string>Add additional floodplain rasters</string>
+        </property>
+        <property name="text">
+         <string>Add to Source</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QListWidget" name="listWidget_input">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>List with floodplain rasters</string>
+        </property>
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::SingleSelection</enum>
+        </property>
+        <property name="sortingEnabled">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="addButton_2sink">
+        <property name="toolTip">
+         <string>Add additional floodplain rasters</string>
+        </property>
+        <property name="text">
+         <string>Add to Sink</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QGroupBox" name="groupBox_4">
+     <property name="toolTip">
+      <string>Set the name of the observation points; just a string attribute is allowed!</string>
+     </property>
+     <property name="title">
+      <string>Critical Infrastructure Coupled Pairs</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="1" column="0">
+       <widget class="QPushButton" name="removeButton">
+        <property name="text">
+         <string>Remove Source-Sink-Pair</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QListWidget" name="listWidget_pairs">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>List with floodplain rasters</string>
+        </property>
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::SingleSelection</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="maximumSize">
+      <size>
+       <width>10077215</width>
+       <height>10077215</height>
+      </size>
+     </property>
+     <property name="toolTip">
+      <string>Set the name of the observation points; just a string attribute is allowed!</string>
+     </property>
+     <property name="title">
+      <string>Chosen Input Layer</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="input_label">
+        <property name="maximumSize">
+         <size>
+          <width>1077215</width>
+          <height>1077215</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QGroupBox" name="groupBox_5">
+     <property name="toolTip">
+      <string>Set the name of the observation points; just a string attribute is allowed!</string>
+     </property>
+     <property name="title">
+      <string>Export</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="1" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_ok">
+          <property name="text">
+           <string>Ok</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_cancel">
+          <property name="text">
+           <string>Cancel</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QLineEdit" name="folderEdit">
+          <property name="toolTip">
+           <string>Set output folder</string>
+          </property>
+          <property name="placeholderText">
+           <string>&lt;output folder&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="browseButton">
+          <property name="maximumSize">
+           <size>
+            <width>27</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
