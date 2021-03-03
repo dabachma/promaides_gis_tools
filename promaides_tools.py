@@ -21,6 +21,7 @@ from .time_viewer import TimeViewer
 from .rain_generator import RainGenerator
 from .dam_raster import DAMRasterExport
 from .cin_point import CINPointExport
+from .cin_connector import CINConnectorExport
 from .cin_polygon import CINPolygonExport
 
 import os
@@ -50,6 +51,7 @@ class PromaidesToolbox(object):
         self.dam_raster = DAMRasterExport(self.iface)
         #CIN
         self.cin_point = CINPointExport(self.iface)
+        self.cin_connector = CINConnectorExport(self.iface)
         self.cin_polygon = CINPolygonExport(self.iface)
 
         #General
@@ -93,6 +95,7 @@ class PromaidesToolbox(object):
         
         #CIN
         self.cin_point.initGui(self.submenu_cin)
+        self.cin_connector.initGui(self.submenu_cin)
         self.cin_polygon.initGui(self.submenu_cin)
 
         #General
@@ -125,6 +128,7 @@ class PromaidesToolbox(object):
         
         #CIN
         self.cin_point.unload(self.submenu_cin)
+        self.cin_connector.unload(self.submenu_cin)
         self.cin_polygon.unload(self.submenu_cin)
 
         #General
