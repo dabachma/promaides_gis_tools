@@ -649,7 +649,7 @@ class RiverProfileExport(object):
         dem_name = self.dialog.raster_layer.name()
         dem_method = self.dialog.method_box.currentText()
         dem_nan = self.dialog.nan_box.value()
-        dem_interpol = RasterInterpolator(dem_layer, dem_band, dem_method, dem_nan)
+        dem_interpol = RasterInterpolator(dem_layer, dem_band, 1, 1, dem_method, dem_nan)
         dem_trans: object = QgsCoordinateTransform(input_layer.crs(), dem_layer.crs(), QgsProject.instance()).transform
 
         roughness_layer = self.dialog.roughness_layer
