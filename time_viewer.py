@@ -36,7 +36,7 @@ class PluginDialog(QDockWidget):
 
         self.iface = iface
 
-        self.InputLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
+        #self.InputLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
         self.InputLayerBox.setLayer(None)
         self.InputLayerBox.layerChanged.connect(self.UpdateFrameID)
         self.FieldIDBox.fieldChanged.connect(self.UpdateProcessButton)
