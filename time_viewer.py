@@ -172,9 +172,7 @@ class PluginDialog(QDockWidget):
                 self.layers.append(layer)
                 self.InputLayerBox.setLayer(layer)
                 #self.InitialFilters.append("")
-                newlayername = layer.name() + "\n"
-                self.layerlist = self.layerlist + newlayername
-            self.LayerDisplayer.setText(self.layerlist)
+                self.listWidget_input.addItem(layer.name())
 
             for n, layer in enumerate(self.layers):
                 layer.setSubsetString('')
