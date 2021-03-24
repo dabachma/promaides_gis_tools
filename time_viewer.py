@@ -54,10 +54,8 @@ class PluginDialog(QDockWidget):
 
         self.SaveBox.addItem('PNG')
         self.SaveBox.addItem('JPEG')
-        #self.FPSBox.setValue(1)
 
         self.Displayer.setText("Hello!")
-        self.LayerDisplayer.setText("No Layer Selected")
             
         def saveframeclicked(state):
             if state > 0:
@@ -174,9 +172,7 @@ class PluginDialog(QDockWidget):
                 self.layers.append(layer)
                 self.InputLayerBox.setLayer(layer)
                 #self.InitialFilters.append("")
-                newlayername = layer.name() + "\n"
-                self.layerlist = self.layerlist + newlayername
-            self.LayerDisplayer.setText(self.layerlist)
+                self.listWidget_input.addItem(layer.name())
 
             for n, layer in enumerate(self.layers):
                 layer.setSubsetString('')
@@ -235,9 +231,7 @@ class PluginDialog(QDockWidget):
             )
             return
 
-        newlayername = layer.name() + "\n"
-        self.layerlist = self.layerlist + newlayername
-        self.LayerDisplayer.setText(self.layerlist)
+        self.listWidget_input.addItem(layer.name())
         self.layers.append(layer)
         self.ProcessButton.setEnabled(True)
         self.PlayButton.setEnabled(False)
@@ -258,30 +252,28 @@ class PluginDialog(QDockWidget):
 
 
     def RemoveLayer(self):
-        if type(self.InputLayerBox.currentLayer()) == type(None):
+        if len(self.listWidget_input.selectedItems())==0:
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
                 'No Layer Selected !'
             )
             return
-        else:
-            layer = self.InputLayer()
 
+        for item in self.listWidget_input.selectedItems():
+            newlayername=item.text()
+            row = self.listWidget_input.row(item)
+            self.listWidget_input.takeItem(row)
+        layer= QgsProject.instance().mapLayersByName(newlayername)[0]
         if layer not in self.layers:
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
                 'Layer Not Selected !'
             )
             return
-
         for n, l in enumerate(self.layers):
             if len(self.InitialFilters)>0:
                 if n <= (len(self.InitialFilters) - 1):
                     l.setSubsetString(self.InitialFilters[n])
-
-        newlayername = layer.name() + "\n"
-        self.layerlist=self.layerlist.replace(newlayername,"")
-        self.LayerDisplayer.setText(self.layerlist)
         self.layers.remove(layer)
         self.ProcessButton.setEnabled(True)
         self.PlayButton.setEnabled(False)
@@ -294,10 +286,8 @@ class PluginDialog(QDockWidget):
         self.browseButton.setEnabled(False)
 
         self.InitialFilters = []
-        if self.layerlist=="":
-            self.LayerDisplayer.setText("No Layer Selected")
+        if self.listWidget_input.count()==0:
             self.ProcessButton.setEnabled(False)
-
 
 
     def UpdateFrameID(self, layer):
@@ -583,15 +573,20 @@ class PluginDialog(QDockWidget):
                 return
             if self.ExportVideoState==True:
                 try:
-                    if os.path.isfile(self.VideoTempFolder + "TimeViewerOutput.mp4"):
-                        os.remove(self.VideoTempFolder + "TimeViewerOutput.mp4")
+                    if self.VideoFileNameBox.text()=="":
+                        VideoFileName="TimeViewerOutput"
+                    else:
+                        VideoFileName=self.VideoFileNameBox.text()
+                    if os.path.isfile(self.VideoTempFolder + VideoFileName + ".mp4"):
+                        os.remove(self.VideoTempFolder + VideoFileName + ".mp4")
                     os.chdir(self.VideoTempFolder)
                     Executable = os.path.normpath(self.ffmpegaddress)
-                    myCommand = "\""+ "\""+ Executable + "\"" + " -r 15 -f image2 -s 1920x1080" + " -i " + " TimeViewer%d.png"  +  " -vcodec libx264 -crf 25  -pix_fmt yuv420p -vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\"" + " TimeViewerOutput.mp4"+"\""
+                    Videofps=self.FPSBox2.value()
+                    myCommand = "\"" + "\"" + Executable + "\"" + " -r " + str(Videofps) + " -f image2 -s 1920x1080" + " -i " + " TimeViewer%d.png"  +  " -vcodec libx264 -crf 25  -pix_fmt yuv420p -vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\"" + " " + VideoFileName + ".mp4"+"\""
                     os.system(myCommand)
-                    if os.path.isfile(str(self.outFolder()) + "/TimeViewerOutput.mp4"):
-                        os.remove(str(self.outFolder()) + "/TimeViewerOutput.mp4")
-                    os.rename(self.VideoTempFolder + "TimeViewerOutput.mp4" , str(self.outFolder()) + "/TimeViewerOutput.mp4")
+                    if os.path.isfile(str(self.outFolder()) + "/" + VideoFileName + ".mp4"):
+                        os.remove(str(self.outFolder()) + "/" + VideoFileName + ".mp4")
+                    os.rename(self.VideoTempFolder + VideoFileName + ".mp4" , str(self.outFolder()) + "/" + VideoFileName + ".mp4")
                     files = glob.glob(self.VideoTempFolder+"*")
                     for f in files:
                         os.remove(f)
