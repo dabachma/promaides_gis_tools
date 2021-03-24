@@ -54,10 +54,8 @@ class PluginDialog(QDockWidget):
 
         self.SaveBox.addItem('PNG')
         self.SaveBox.addItem('JPEG')
-        #self.FPSBox.setValue(1)
 
         self.Displayer.setText("Hello!")
-        #self.LayerDisplayer.setText("No Layer Selected")
             
         def saveframeclicked(state):
             if state > 0:
