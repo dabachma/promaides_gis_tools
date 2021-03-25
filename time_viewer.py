@@ -137,6 +137,7 @@ class PluginDialog(QDockWidget):
 
     def ReadSettings(self):
         try:
+            self.listWidget_input.clear()
             proj = QgsProject.instance()
             field=proj.readEntry("TimeViewer","Field")
             self.FieldIDBox.setField(str(field[0]))
@@ -163,9 +164,12 @@ class PluginDialog(QDockWidget):
             for i in range(Nframeids):
                 frameid, type_conversion_ok = proj.readEntry("TimeViewer", "FrameIDs" + str(i))
                 self.FrameIDs.append(frameid)
+            try:
+                self.FrameIDs = list(map(int, self.FrameIDs))
+            except:
+                pass
             self.FrameIDs.sort()
             self.ffmpegaddress, type_conversion_ok = proj.readEntry("TimeViewer", "ffmpegaddress")
-
 
             for layername in self.layerlist2:
                 layer = QgsProject.instance().mapLayersByName(layername)[0]
@@ -177,12 +181,13 @@ class PluginDialog(QDockWidget):
             for n, layer in enumerate(self.layers):
                 layer.setSubsetString('')
                 field = self.FieldIDBox.currentText()
-                self.value = self.FrameIDs[self.count]
-                self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
-                if str(self.InitialFilters[n]) == "":
-                    layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
-                else:
-                    layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
+                if len(self.FrameIDs)>0:
+                    self.value = self.FrameIDs[self.count]
+                    self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
+                    if str(self.InitialFilters[n]) == "":
+                        layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
+                    else:
+                        layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
                 self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
 
             self.ProcessButton.setEnabled(True)
@@ -357,12 +362,13 @@ class PluginDialog(QDockWidget):
                 for n, layer in enumerate(self.layers):
                     layer.setSubsetString('')
                     field = self.FieldIDBox.currentText()
-                    self.value = self.FrameIDs[self.count]
-                    self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
-                    if str(self.InitialFilters[n]) == "":
-                        layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
-                    else:
-                        layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
+                    if len(self.FrameIDs)>0:
+                        self.value = self.FrameIDs[self.count]
+                        self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
+                        if str(self.InitialFilters[n]) == "":
+                            layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
+                        else:
+                            layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
 
     def UpdateProcessButton(self):
         if len(self.layers)>0:
