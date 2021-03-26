@@ -309,6 +309,11 @@ class PluginDialog(QDockWidget):
         self.Displayer.setText("Processing...")
         self.StopPlay()
         self.count = 0
+        self.InitialFilters=[]
+        if type(self.InputLayerBox.currentLayer()) != type(None):
+            for layer in self.layers:
+                self.InitialFilters.append(layer.subsetString())
+
         if type(self.InputLayerBox.currentLayer()) != type(None) and len(self.FrameIDs)>0:
             for n, layer in enumerate(self.layers):
                 layer.setSubsetString('')
@@ -321,9 +326,9 @@ class PluginDialog(QDockWidget):
     def ReadFrameIDs(self):
         self.FrameIDs = []
         for layer in self.layers:
-            InitialFilter = layer.subsetString()
-            self.InitialFilters.append(layer.subsetString())
-            layer.setSubsetString(InitialFilter)
+            #InitialFilter = layer.subsetString()
+            #self.InitialFilters.append(layer.subsetString())
+            #layer.setSubsetString(InitialFilter)
             field = self.FieldIDBox.currentText()
             idx = layer.fields().indexOf('{index}'.format(index=field))
             if idx==-1:
