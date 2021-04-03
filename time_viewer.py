@@ -342,7 +342,14 @@ class PluginDialog(QDockWidget):
             for i in FrameIDvalues:
                 self.FrameIDs.append(i)
         self.FrameIDs = list(dict.fromkeys(self.FrameIDs))
-        self.FrameIDs.sort()
+        try:
+            self.FrameIDs.sort()
+        except:
+            self.iface.messageBar().pushCritical(
+                'Time Viewer',
+                'Could not process input layers! '
+            )
+            return
         self.ProcessButton.setEnabled(True)
         self.PlayButton.setEnabled(True)
         self.TimeSlider.setEnabled(True)
