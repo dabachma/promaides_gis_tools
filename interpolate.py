@@ -50,7 +50,7 @@ class RasterInterpolator(object):
             self.theWidth = self.dataProv.xSize()
             self.theHeight = self.dataProv.ySize()
 
-            if method == 'nearest neighbor (downscaling/upscaling)':
+            if method == 'nearest neighbor (downscaling/upscaling)' or 'nearest neighbor':
                 self.interpolate = lambda point: self._nearest(point)
             elif method == 'bi-linear (downscaling)':
                 self.interpolate = lambda point: self._linear(point)
