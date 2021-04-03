@@ -39,6 +39,8 @@ changelog=
   * Add new aggregation method for 2d-floodplain export
   * Started with first plugins for CI-modeling
   * Some other minor changes 
+  Version 0.6.6
+  * Some other minor changes 
 icon=icon.png
 experimental=False
 homepage=https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-6/Plug-ins
