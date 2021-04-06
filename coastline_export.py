@@ -386,17 +386,17 @@ class CoastlineExport(object):
                 for p in buff.vertices():
                     points.append(p)
 
-                coastline_file.write('{0:d} {1} {2:d}\n'.format(index, label, len(points)))
+                coastline_file.write('{0:d} {1} {2:d}\n'.format(index, label, len(points)-1))
 
                 # iterate over points in polygon in CCW direction
                 # if signed_distance < 0, polygon is CW
                 # points = polygon[0][1:] if signed_area(polygon[0]) > 0 else reversed(polygon[0][1:])
                 # don't include the first point which is identical to the last
 
-                for point in points:
+                for i in range(len(points)-1):
 
                     if interpolate_z:
-                        z = interpolator(QgsPointXY(point))
+                        z = interpolator(QgsPointXY(points[i]))
                     else:
                         z = z_values[index]
                     print(z)
@@ -413,12 +413,12 @@ class CoastlineExport(object):
 
                     if abf:
                         coastline_file.write('{x} {y} {z} {zb} {bf} {ab} {op} {ov} {po}\n'
-                                             .format(x=point.x(), y=point.y(), z=z, zb=be,
+                                             .format(x=points[i].x(), y=points[i].y(), z=z, zb=be,
                                                      bf=str(bf_buff).lower(), ab=str(abf_buff).lower(),
                                                      op=ao, ov=str(of_buff).lower(), po=pf))
                     else:
                         coastline_file.write('{x} {y} {z} {zb} {bf} {ab} {res} {ov} {po}\n'
-                                             .format(x=point.x(), y=point.y(), z=z, zb=be,
+                                             .format(x=points[i].x(), y=points[i].y(), z=z, zb=be,
                                                      bf=str(bf_buff).lower(), ab=str(abf_buff).lower(),
                                                      res=res, ov=str(of_buff).lower(), po=pf))
 
