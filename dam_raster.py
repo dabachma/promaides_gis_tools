@@ -54,10 +54,12 @@ class PluginDialog(QDialog):
 
         # The module consists of two input options ecn/ pop. The lines below set the default that none of them are chosen in the beginning.
         # The user has to choose one of them. The two bottom functions will make sure that only one of the options can be chosen.
-        self.mGroupBox_ecn.setChecked(False)
-        self.mGroupBox_pop.setChecked(False)
+
+
         self.mGroupBox_ecn.clicked.connect(self.check_mGroupBox_ecn)
         self.mGroupBox_pop.clicked.connect(self.check_mGroupBox_pop)
+        self.mGroupBox_ecn.setChecked(True)
+
 
         self.picker = QgsMapToolEmitPoint(self.iface.mapCanvas())
 
@@ -82,6 +84,19 @@ class PluginDialog(QDialog):
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
         self.browseButton.setAutoDefault(False)
 
+        self.mGroupBox_ecn.setChecked(True)
+        self.popNaNBox.setEnabled(False)
+        self.popTypeBox.setEnabled(False)
+        self.popUnitTransBox.setEnabled(False)
+        self.popLayerBox.setEnabled(False)
+        self.label_20.setEnabled(False)
+        self.label.setEnabled(False)
+        self.label_12.setEnabled(False)
+        self.label_21.setEnabled(False)
+
+
+
+
     def closeEvent(self, event):
         self.ClosingSignal.emit()
 
@@ -105,6 +120,11 @@ class PluginDialog(QDialog):
         self.popNaNBox.setEnabled(True)
         self.popTypeBox.setEnabled(True)
         self.popUnitTransBox.setEnabled(True)
+        self.popLayerBox.setEnabled(True)
+        self.label_20.setEnabled(True)
+        self.label.setEnabled(True)
+        self.label_12.setEnabled(True)
+        self.label_21.setEnabled(True)
 
     def enableMapPicker(self, clicked):
         #  Triggered after 'pick coordinates from Map ...' and will link to QG functino to read coordinates from a map click.
@@ -544,13 +564,13 @@ class DAMRasterExport(object):
         input_layers = {
             'ecn': {
                 'layer': self.dialog.ecnLayer(),
-                'interpol_mode': "nearest neighbor",  #  Previously dialog box lucInterpolationMode
+                'interpol_mode': "nearest neighbor (downscaling/upscaling)",  #  Previously dialog box lucInterpolationMode
                 'nan': self.dialog.ecnNaN(),
                 'deltaecn': self.dialog.ecnDelta()
                 },
             'pop': {
                 'layer': self.dialog.popLayer(),
-                'interpol_mode': "nearest neighbor",  # Previously dialog box lucInterpolationMode
+                'interpol_mode': "nearest neighbor (downscaling/upscaling)",  # Previously dialog box lucInterpolationMode
                 'nan': self.dialog.popNaN(),
                 'pop_dam_category': self.dialog.popType(),
                 'pop_unittrans': self.dialog.popUnitTrans()
@@ -599,8 +619,10 @@ class DAMRasterExport(object):
                 trans[data_name] = QgsCoordinateTransform(self.previewLayer.crs(), items['layer'].crs(), QgsProject.instance()).transform
             else:
                 trans[data_name] = lambda p: p
-            interpol[data_name] = RasterInterpolator(items['layer'], 1, items['interpol_mode'],
+            interpol[data_name] = RasterInterpolator(items['layer'], 1, 10, 10, items['interpol_mode'],
                                                      items['nan']).interpolate
+
+
             # if the dataayer is named ecn and the tick box in the user interface is checked the ecn export will be done.
             if data_name == 'ecn' and self.dialog.mGroupBox_ecn.isChecked():
                 rastertype_0 = 'ecn'
