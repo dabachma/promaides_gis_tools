@@ -223,7 +223,7 @@ class DensifyLinestring(object):
                 self.iface.messageBar().pushCritical(
                     'Resample Polyline Vertices',
                     'Invalid value found in field "{}"! Aborting ...'
-                    .format(self.dialog.label_field_box.expression())
+                    .format(self.dialog.value_box.expression())
                 )
                 line_layer.destroyEditCommand()
                 self.quitDialog()

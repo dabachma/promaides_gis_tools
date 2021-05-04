@@ -17,6 +17,7 @@ from .river_profile_export import RiverProfileExport
 from .dem_export import DEMExport
 from .database_export import DatabaseExport
 from .hello_world import HelloWorld
+from .crosssectioncreator import CrossSectionCreator
 from .time_viewer import TimeViewer
 from .rain_generator import RainGenerator
 from .dam_raster import DAMRasterExport
@@ -42,6 +43,7 @@ class PromaidesToolbox(object):
         self.polygon_exprt = PolygonExport(self.iface)
         self.coastline_exprt = CoastlineExport(self.iface)
         self.densify = DensifyLinestring(self.iface)
+        self.crosssection = CrossSectionCreator(self.iface)
         self.river_profile_exprt = RiverProfileExport(self.iface)
         self.dem_export = DEMExport(self.iface)
         self.time = TimeViewer(self.iface)
@@ -78,6 +80,7 @@ class PromaidesToolbox(object):
         self.submenu_hyd.addSeparator()
         self.river_profile_exprt.initGui(self.submenu_hyd)
         self.densify.initGui(self.submenu_hyd)
+        self.crosssection.initGui(self.submenu_hyd)
         self.submenu_hyd.addSeparator()
         self.dem_export.initGui(self.submenu_hyd)
         self.dikeline_exprt.initGui(self.submenu_hyd)
@@ -116,6 +119,7 @@ class PromaidesToolbox(object):
         self.polygon_exprt.unload(self.submenu_hyd)
         self.coastline_exprt.unload(self.submenu_hyd)
         self.densify.unload(self.submenu_hyd)
+        self.crosssection.unload(self.submenu_hyd)
         self.river_profile_exprt.unload(self.submenu_hyd)
         self.dem_export.unload(self.submenu_hyd)
         self.time.unload(self.submenu_hyd)
