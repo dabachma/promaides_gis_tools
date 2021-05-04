@@ -42,8 +42,8 @@ class PromaidesToolbox(object):
         self.observationpoint_exprt = ObservationPointExport(self.iface)
         self.polygon_exprt = PolygonExport(self.iface)
         self.coastline_exprt = CoastlineExport(self.iface)
-        self.densify = DensifyLinestring(self.iface)
         self.crosssection = CrossSectionCreator(self.iface)
+        self.densify = DensifyLinestring(self.iface)
         self.river_profile_exprt = RiverProfileExport(self.iface)
         self.dem_export = DEMExport(self.iface)
         self.time = TimeViewer(self.iface)
@@ -78,9 +78,11 @@ class PromaidesToolbox(object):
 
         self.observationpoint_exprt.initGui(self.submenu_hyd)
         self.submenu_hyd.addSeparator()
-        self.river_profile_exprt.initGui(self.submenu_hyd)
-        self.densify.initGui(self.submenu_hyd)
+
         self.crosssection.initGui(self.submenu_hyd)
+        self.densify.initGui(self.submenu_hyd)
+
+        self.river_profile_exprt.initGui(self.submenu_hyd)
         self.submenu_hyd.addSeparator()
         self.dem_export.initGui(self.submenu_hyd)
         self.dikeline_exprt.initGui(self.submenu_hyd)

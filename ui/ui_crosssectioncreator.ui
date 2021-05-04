@@ -31,6 +31,10 @@
   <property name="windowTitle">
    <string>Cross Section Creator</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../icons/hyd.png</normaloff>../icons/hyd.png</iconset>
+  </property>
   <property name="modal">
    <bool>false</bool>
   </property>
