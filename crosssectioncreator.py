@@ -78,7 +78,7 @@ class CrossSectionCreator(object):
         self.act.setEnabled(False)
         self.dialog.show()
 
-        self.dialog.RunButton.clicked.connect(self.Run)
+        self.dialog.RunButton.clicked.connect(self.WritePleaseWait)
 
     def scheduleAbort(self):
         self.cancel = True
@@ -88,7 +88,9 @@ class CrossSectionCreator(object):
         self.act.setEnabled(True)
         self.cancel = False
 
-    def Run(self):
+
+
+    def WritePleaseWait(self):
         if type(self.dialog.RiverShapeBox.currentLayer()) == type(None):
             self.iface.messageBar().pushCritical(
                 'Cross Section Creator',
@@ -114,6 +116,9 @@ class CrossSectionCreator(object):
             'Cross Section Creator',
             'Processing, Please Wait !'
         )
+        QTimer.singleShot(1, self.Run)
+
+    def Run(self):
 
         outputlocation = self.dialog.filename_edit.text() + "/crosssections.shp"
         params = {'DEM': self.dialog.ElevationBox.currentLayer().dataProvider().dataSourceUri(), 'DIST_LINE': self.dialog.DistanceBox.value(), 'DIST_PROFILE': self.dialog.LengthBox.value(),
@@ -158,7 +163,7 @@ class CrossSectionCreator(object):
             atts = {Stations: self.dialog.DistanceBox.value()*FeutureID, Names: self.dialog.NameBox.text()+"_"+str(FeutureID), ProfileType: "river"}
             # call changeAttributeValues(), pass feature id and attribute dictionary
             prov.changeAttributeValues({feat.id(): atts})
-            feat['Stations'] = self.dialog.DistanceBox.value() * FeutureID
+            feat['Stations'] = self.dialog.DistanceBox.value() * (-FeutureID)
             feat['Names'] = self.dialog.NameBox.text() + "_" + str(FeutureID)
             feat['Type'] = "river"
             resultlayer.updateFeature(feat)
@@ -167,10 +172,7 @@ class CrossSectionCreator(object):
         resultlayer.updateFields()
         QgsProject.instance().addMapLayer(resultlayer)
 
-
-
-
-        self.iface.messageBar().pushInfo(
+        self.iface.messageBar().pushSuccess(
             'Cross Section Creator',
             'Operation finished successfully!'
         )
