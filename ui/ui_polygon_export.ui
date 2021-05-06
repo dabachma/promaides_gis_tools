@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>468</width>
-    <height>110</height>
+    <height>113</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,9 +32,6 @@
        <width>80</width>
        <height>50</height>
       </size>
-     </property>
-     <property name="toolTip">
-      <string>Start animation</string>
      </property>
      <property name="styleSheet">
       <string notr="true">QPushButton {
