@@ -15,6 +15,7 @@ UI_PATH = get_ui_path('ui_dikeline_export.ui')
 
 #general
 from datetime import datetime
+import webbrowser
 from .version import *
 
 # This plugin exports the dikelinie file for the HYD-module of ProMaIdes from a line shape file;
@@ -42,15 +43,18 @@ class PluginDialog(QDialog):
         #connect by signal and slot
         self.browse_button.clicked.connect(self.onBrowseButtonClicked)
         self.interpolation_group.clicked.connect(self.change_interpolation)
+        self.HelpButton.clicked.connect(self.Help)
 
         self.iface.currentLayerChanged.connect(self.setInputLayer)
 
         self.setInputLayer(self.iface.activeLayer())
         self.setRasterLayer(self.raster_layer_box.currentLayer())
-		
 
     def __del__(self):
         self.iface.currentLayerChanged.disconnect(self.setInputLayer)
+
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-43/Dikeline-Export")
 
     def onBrowseButtonClicked(self):
         current_filename = self.filename_edit.text()

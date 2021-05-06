@@ -13,6 +13,7 @@ from .environment import get_ui_path
 
 #general
 from datetime import datetime
+import webbrowser
 from .version import *
 
 UI_PATH = get_ui_path('ui_observationpoint_export.ui')
@@ -29,9 +30,13 @@ class PluginDialog(QDialog):
         self.browse_button.clicked.connect(self.onBrowseButtonClicked)
         self.iface.currentLayerChanged.connect(self.setInputLayer)
         self.setInputLayer(self.iface.activeLayer())
+        self.HelpButton.clicked.connect(self.Help)
 
     def __del__(self):
         self.iface.currentLayerChanged.disconnect(self.setInputLayer)
+
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-46/Observation-Point-Export")
 
     def onBrowseButtonClicked(self):
         current_filename = self.filename_edit.text()

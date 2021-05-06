@@ -46,12 +46,28 @@
      </property>
     </widget>
    </item>
+   <item row="0" column="1">
+    <widget class="QgsMapLayerComboBox" name="RiverShapeBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="toolTip">
+      <string>Layer to add</string>
+     </property>
+    </widget>
+   </item>
    <item row="1" column="0">
     <widget class="QLabel" name="label_22">
      <property name="text">
       <string>Area elevation</string>
      </property>
     </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QgsMapLayerComboBox" name="ElevationBox"/>
    </item>
    <item row="2" column="0" colspan="2">
     <widget class="Line" name="line_2">
@@ -223,21 +239,43 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="1" colspan="3">
-    <widget class="QgsMapLayerComboBox" name="RiverShapeBox">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
+   <item row="0" column="3">
+    <widget class="QPushButton" name="HelpButton">
+     <property name="maximumSize">
+      <size>
+       <width>80</width>
+       <height>50</height>
+      </size>
      </property>
      <property name="toolTip">
-      <string>Layer to add</string>
+      <string>Start animation</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton {
+    color: #333;
+    border: 0px solid #555;
+    border-radius: 0px;
+    border-style: outset;
+    background: transparent;
+    padding: 5px;
+    }
+
+</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>../icons/HelpButton.png</normaloff>../icons/HelpButton.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>25</width>
+       <height>25</height>
+      </size>
      </property>
     </widget>
-   </item>
-   <item row="1" column="1" colspan="3">
-    <widget class="QgsMapLayerComboBox" name="ElevationBox"/>
    </item>
   </layout>
  </widget>

@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import math
 import os
 import tempfile
+import webbrowser
 
 # QGIS modules
 from qgis.core import *
@@ -31,10 +32,14 @@ class PluginDialog(QDialog):
         self.input_layer = None
 
         self.iface.currentLayerChanged.connect(self.setInputLayer)
+        self.HelpButton.clicked.connect(self.Help)
         self.setInputLayer(self.iface.activeLayer())
 
     def __del__(self):
         self.iface.currentLayerChanged.disconnect(self.setInputLayer)
+
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-12/Resample-Polyline-Vertices")
 
     def setInputLayer(self, layer):
         """

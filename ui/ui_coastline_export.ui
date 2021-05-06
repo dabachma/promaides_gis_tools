@@ -38,21 +38,8 @@
   <property name="modal">
    <bool>false</bool>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
-    <widget class="QLabel" name="input_label">
-     <property name="toolTip">
-      <string>Just 1 polygon is allowed!</string>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="1" column="0" colspan="3">
     <widget class="QGroupBox" name="coastline_group">
      <property name="title">
       <string>Coastline properties</string>
@@ -274,7 +261,20 @@
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="4" column="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="2" column="0" colspan="3">
     <widget class="QGroupBox" name="interpolation_group">
      <property name="toolTip">
       <string>Height interpolation from raster layer (DEM)</string>
@@ -362,7 +362,7 @@
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="3" column="0" colspan="3">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLineEdit" name="filename_edit">
@@ -389,26 +389,68 @@
      </item>
     </layout>
    </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
+   <item row="5" column="0" colspan="3">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QPushButton" name="HelpButton">
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>50</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>Start animation</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    color: #333;
+    border: 0px solid #555;
+    border-radius: 0px;
+    border-style: outset;
+    background: transparent;
+    padding: 5px;
+    }
+
+</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>../icons/HelpButton.png</normaloff>../icons/HelpButton.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>25</width>
+         <height>25</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDialogButtonBox" name="button_box">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
-   <item>
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+   <item row="0" column="0" colspan="3">
+    <widget class="QLabel" name="input_label">
+     <property name="toolTip">
+      <string>Just 1 polygon is allowed!</string>
      </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
      </property>
     </widget>
    </item>

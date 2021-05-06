@@ -61,8 +61,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>1324</width>
-         <height>326</height>
+         <width>1293</width>
+         <height>328</height>
         </rect>
        </property>
        <property name="maximumSize">
@@ -71,28 +71,128 @@
          <height>345</height>
         </size>
        </property>
-       <layout class="QGridLayout" name="gridLayout_4">
-        <item row="1" column="1">
-         <widget class="QPushButton" name="SavePreferenceButton">
-          <property name="toolTip">
-           <string/>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="0" column="0" colspan="2">
+         <widget class="QGroupBox" name="InputGroupBox">
+          <property name="maximumSize">
+           <size>
+            <width>99999</width>
+            <height>298</height>
+           </size>
           </property>
-          <property name="text">
-           <string>Save Session</string>
+          <property name="title">
+           <string>Input</string>
           </property>
+          <layout class="QGridLayout" name="gridLayout_5">
+           <item row="2" column="0" colspan="6">
+            <widget class="QListWidget" name="listWidget_input">
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>List with floodplain rasters</string>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+             <property name="selectionMode">
+              <enum>QAbstractItemView::SingleSelection</enum>
+             </property>
+             <property name="sortingEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3" colspan="3">
+            <widget class="QgsMapLayerComboBox" name="InputLayerBox">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="toolTip">
+              <string>Layer to add</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0" colspan="3">
+            <widget class="QLabel" name="label_21">
+             <property name="text">
+              <string>Input Layer</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="5">
+            <widget class="QPushButton" name="ProcessButton">
+             <property name="toolTip">
+              <string>Process and reload</string>
+             </property>
+             <property name="text">
+              <string>Process</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0" colspan="3">
+            <widget class="QLabel" name="label_24">
+             <property name="text">
+              <string>Selected Layers:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QPushButton" name="RemoveButton">
+             <property name="toolTip">
+              <string>Remove layer</string>
+             </property>
+             <property name="text">
+              <string>Remove</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_22">
+             <property name="text">
+              <string>Frame ID</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="4">
+            <widget class="QgsFieldExpressionWidget" name="FieldIDBox" native="true">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>Column of date/time data</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QPushButton" name="AddButton">
+             <property name="toolTip">
+              <string>Add layer</string>
+             </property>
+             <property name="text">
+              <string>Add</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QPushButton" name="RestorePreferenceButton">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string>Restore Session</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="4">
+        <item row="0" column="2">
          <widget class="QGroupBox" name="PlayGroupBox">
           <property name="maximumSize">
            <size>
@@ -401,127 +501,7 @@
           </layout>
          </widget>
         </item>
-        <item row="0" column="0" colspan="3">
-         <widget class="QGroupBox" name="InputGroupBox">
-          <property name="maximumSize">
-           <size>
-            <width>99999</width>
-            <height>298</height>
-           </size>
-          </property>
-          <property name="title">
-           <string>Input</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_5">
-           <item row="2" column="0" colspan="6">
-            <widget class="QListWidget" name="listWidget_input">
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>List with floodplain rasters</string>
-             </property>
-             <property name="alternatingRowColors">
-              <bool>true</bool>
-             </property>
-             <property name="selectionMode">
-              <enum>QAbstractItemView::SingleSelection</enum>
-             </property>
-             <property name="sortingEnabled">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="3" colspan="3">
-            <widget class="QgsMapLayerComboBox" name="InputLayerBox">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="toolTip">
-              <string>Layer to add</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0" colspan="3">
-            <widget class="QLabel" name="label_21">
-             <property name="text">
-              <string>Input Layer</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="5">
-            <widget class="QPushButton" name="ProcessButton">
-             <property name="toolTip">
-              <string>Process and reload</string>
-             </property>
-             <property name="text">
-              <string>Process</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0" colspan="3">
-            <widget class="QLabel" name="label_24">
-             <property name="text">
-              <string>Selected Layers:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="5">
-            <widget class="QPushButton" name="RemoveButton">
-             <property name="toolTip">
-              <string>Remove layer</string>
-             </property>
-             <property name="text">
-              <string>Remove</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_22">
-             <property name="text">
-              <string>Frame ID</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="4">
-            <widget class="QgsFieldExpressionWidget" name="FieldIDBox" native="true">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>Column of date/time data</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="4">
-            <widget class="QPushButton" name="AddButton">
-             <property name="toolTip">
-              <string>Add layer</string>
-             </property>
-             <property name="text">
-              <string>Add</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="0" column="5">
+        <item row="0" column="3">
          <widget class="QGroupBox" name="OutputGroupBox">
           <property name="maximumSize">
            <size>
@@ -684,6 +664,64 @@
             </widget>
            </item>
           </layout>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QPushButton" name="RestorePreferenceButton">
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string>Restore Session</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QPushButton" name="SavePreferenceButton">
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string>Save Session</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3" alignment="Qt::AlignRight">
+         <widget class="QPushButton" name="HelpButton">
+          <property name="maximumSize">
+           <size>
+            <width>80</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Start animation</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QPushButton {
+    color: #333;
+    border: 0px solid #555;
+    border-radius: 0px;
+    border-style: outset;
+    background: transparent;
+    padding: 5px;
+    }
+
+</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset>
+            <normaloff>../icons/HelpButton.png</normaloff>../icons/HelpButton.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>25</width>
+            <height>25</height>
+           </size>
+          </property>
          </widget>
         </item>
        </layout>

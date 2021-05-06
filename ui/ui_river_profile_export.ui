@@ -75,7 +75,27 @@
      <property name="collapsed" stdset="0">
       <bool>false</bool>
      </property>
-     <layout class="QFormLayout" name="formLayout">
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="14" column="0">
+       <widget class="QCheckBox" name="fullriver_box">
+        <property name="toolTip">
+         <string>If activated an inflow/outflow profile is set to the first/last cross-section, the overflow couplings of the last two profiles are set to false </string>
+        </property>
+        <property name="text">
+         <string>Write full river</string>
+        </property>
+       </widget>
+      </item>
+      <item row="15" column="0">
+       <widget class="QCheckBox" name="flip_directions_box">
+        <property name="toolTip">
+         <string>Change the direction of profile points; they have to be from left to right in flow direction</string>
+        </property>
+        <property name="text">
+         <string>Flip line direction of cross-sections</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_2">
         <property name="toolTip">
@@ -89,7 +109,17 @@
       <item row="0" column="1">
        <widget class="QgsFieldExpressionWidget" name="name_box" native="true"/>
       </item>
-      <item row="2" column="0">
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_8">
+        <property name="toolTip">
+         <string>Spacing for the geometric tables for each profiles</string>
+        </property>
+        <property name="text">
+         <string>Delta table spacing [m]</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
        <widget class="QLabel" name="label_10">
         <property name="toolTip">
          <string>3 possibilities: river, bridge, weir</string>
@@ -100,22 +130,12 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QgsFieldExpressionWidget" name="type_box" native="true"/>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label_9">
-        <property name="toolTip">
-         <string>3 possibilities: inflow, standard, outflow</string>
-        </property>
-        <property name="text">
-         <string>Connection type</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
        <widget class="QgsFieldExpressionWidget" name="connection_box" native="true"/>
       </item>
-      <item row="6" column="0">
+      <item row="1" column="1">
+       <widget class="QgsFieldExpressionWidget" name="type_box" native="true"/>
+      </item>
+      <item row="3" column="0">
        <widget class="QLabel" name="label_7">
         <property name="toolTip">
          <string>Set here the Station of the river profile; it is decreasing from upstream to downstream</string>
@@ -125,113 +145,27 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="1">
+      <item row="3" column="1">
        <widget class="QgsFieldExpressionWidget" name="station_box" native="true"/>
       </item>
-      <item row="8" column="0">
-       <widget class="QLabel" name="label_8">
-        <property name="toolTip">
-         <string>Spacing for the geometric tables for each profiles</string>
-        </property>
-        <property name="text">
-         <string>Delta table spacing [m]</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="1">
+      <item row="4" column="1">
        <widget class="QgsFieldExpressionWidget" name="delta_box" native="true">
         <property name="enabled">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="12" column="0">
-       <widget class="QLabel" name="label_11">
-        <property name="text">
-         <string>Initial water depth [m]</string>
-        </property>
-       </widget>
-      </item>
-      <item row="12" column="1">
-       <widget class="QgsFieldExpressionWidget" name="initial_box" native="true"/>
-      </item>
-      <item row="13" column="0">
-       <widget class="QCheckBox" name="abs_init_box">
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_9">
         <property name="toolTip">
-         <string>True := Initial values are absolut water levels; False :=  Initial values are water depth values</string>
+         <string>3 possibilities: inflow, standard, outflow</string>
         </property>
         <property name="text">
-         <string>Initial conditions are absolute water levels</string>
+         <string>Connection type</string>
         </property>
        </widget>
       </item>
-      <item row="15" column="0">
-       <widget class="QCheckBox" name="autostation_box">
-        <property name="toolTip">
-         <string>True := Profile-Station is calculated according the geometrical dictance of the lowest points; the order of the profiles is defined by an increasing id (double) from upstream to downstream; False := the Station field is used</string>
-        </property>
-        <property name="text">
-         <string>Auto stationing</string>
-        </property>
-       </widget>
-      </item>
-      <item row="17" column="0">
-       <widget class="QLabel" name="label_25">
-        <property name="text">
-         <string>Profile id</string>
-        </property>
-       </widget>
-      </item>
-      <item row="17" column="1">
-       <widget class="QgsFieldExpressionWidget" name="profileid_box" native="true"/>
-      </item>
-      <item row="21" column="0">
-       <widget class="QCheckBox" name="fullriver_box">
-        <property name="toolTip">
-         <string>If activated an inflow/outflow profile is set to the first/last cross-section, the overflow couplings of the last two profiles are set to false </string>
-        </property>
-        <property name="text">
-         <string>Write full river</string>
-        </property>
-       </widget>
-      </item>
-      <item row="22" column="0">
-       <widget class="QCheckBox" name="flip_directions_box">
-        <property name="toolTip">
-         <string>Change the direction of profile points; they have to be from left to right in flow direction</string>
-        </property>
-        <property name="text">
-         <string>Flip line direction of cross-sections</string>
-        </property>
-       </widget>
-      </item>
-      <item row="20" column="0">
-       <widget class="QLabel" name="label_26">
-        <property name="text">
-         <string>Options:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="19" column="0">
-       <widget class="Line" name="line_2">
-        <property name="minimumSize">
-         <size>
-          <width>200</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="baseSize">
-         <size>
-          <width>200</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="14" column="0">
+      <item row="8" column="0">
        <widget class="Line" name="line">
         <property name="minimumSize">
          <size>
@@ -250,7 +184,17 @@
         </property>
        </widget>
       </item>
-      <item row="11" column="0">
+      <item row="6" column="1">
+       <widget class="QgsFieldExpressionWidget" name="initial_box" native="true"/>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="label_11">
+        <property name="text">
+         <string>Initial water depth [m]</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
        <widget class="Line" name="line_3">
         <property name="minimumSize">
          <size>
@@ -260,6 +204,100 @@
         </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QCheckBox" name="abs_init_box">
+        <property name="toolTip">
+         <string>True := Initial values are absolut water levels; False :=  Initial values are water depth values</string>
+        </property>
+        <property name="text">
+         <string>Initial conditions are absolute water levels</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="0">
+       <widget class="QCheckBox" name="autostation_box">
+        <property name="toolTip">
+         <string>True := Profile-Station is calculated according the geometrical dictance of the lowest points; the order of the profiles is defined by an increasing id (double) from upstream to downstream; False := the Station field is used</string>
+        </property>
+        <property name="text">
+         <string>Auto stationing</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="0">
+       <widget class="QLabel" name="label_25">
+        <property name="text">
+         <string>Profile id</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="1">
+       <widget class="QgsFieldExpressionWidget" name="profileid_box" native="true"/>
+      </item>
+      <item row="11" column="0">
+       <widget class="Line" name="line_2">
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="baseSize">
+         <size>
+          <width>200</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="0" rowspan="2">
+       <widget class="QLabel" name="label_26">
+        <property name="text">
+         <string>Options:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="16" column="0">
+       <widget class="QPushButton" name="HelpButton">
+        <property name="maximumSize">
+         <size>
+          <width>80</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Start animation</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    color: #333;
+    border: 0px solid #555;
+    border-radius: 0px;
+    border-style: outset;
+    background: transparent;
+    padding: 5px;
+    }
+
+</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../icons/HelpButton.png</normaloff>../icons/HelpButton.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>25</width>
+          <height>25</height>
+         </size>
         </property>
        </widget>
       </item>

@@ -13,6 +13,7 @@ from .environment import get_ui_path
 
 #general
 from datetime import datetime
+import webbrowser
 from .version import *
 
 
@@ -46,6 +47,7 @@ class PluginDialog(QDialog):
         self.overflow.stateChanged.connect(self.change_overflow)
         self.abrupt_break.stateChanged.connect(self.change_abrupt)
         self.interpolation_group.clicked.connect(self.change_interpolation)
+        self.HelpButton.clicked.connect(self.Help)
         self.iface.currentLayerChanged.connect(self.setInputLayer)
 
         self.setInputLayer(self.iface.activeLayer())
@@ -53,6 +55,9 @@ class PluginDialog(QDialog):
 
     def __del__(self):
         self.iface.currentLayerChanged.disconnect(self.setInputLayer)
+
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-49/Coastline-Export")
 
     def onBrowseButtonClicked(self):
 

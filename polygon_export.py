@@ -13,6 +13,7 @@ from .environment import get_ui_path
 
 #general
 from datetime import datetime
+import webbrowser
 from .version import *
 
 
@@ -30,6 +31,7 @@ class PluginDialog(QDialog):
         self.input_layer = None
 
         self.browse_button.clicked.connect(self.onBrowseButtonClicked)
+        self.HelpButton.clicked.connect(self.Help)
 
         self.iface.currentLayerChanged.connect(self.setInputLayer)
 
@@ -37,6 +39,9 @@ class PluginDialog(QDialog):
 
     def __del__(self):
         self.iface.currentLayerChanged.disconnect(self.setInputLayer)
+
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-47/Noflow-Polygon-Export")
 
     def onBrowseButtonClicked(self):
         current_filename = self.filename_edit.text()

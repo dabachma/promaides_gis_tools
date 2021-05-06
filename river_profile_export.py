@@ -4,6 +4,7 @@ from __future__ import absolute_import
 # 3rd party modules
 import numpy as np
 from datetime import datetime
+import webbrowser
 
 # QGIS modules
 from qgis.core import *
@@ -91,6 +92,7 @@ class PluginDialog(QDialog):
         self.comboBox_main.setLayer(None)
 
         self.browse_button.clicked.connect(self.onBrowseButtonClicked)
+        self.HelpButton.clicked.connect(self.Help)
         self.iface.currentLayerChanged.connect(self.setInputLayer)
 
         #############################################
@@ -138,6 +140,9 @@ class PluginDialog(QDialog):
     def __del__(self):
         #self.iface.currentLayerChanged.disconnect(self.setInputLayer)
         print('Done')
+
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-45/1D-River-Profile-Export")
 
     def onBrowseButtonClicked(self):
         current_filename = self.filename_edit.text()

@@ -9,6 +9,7 @@ import time
 import subprocess
 import sys
 import glob
+import webbrowser
 
 
 # QGIS modules
@@ -90,7 +91,11 @@ class PluginDialog(QDockWidget):
         self.ExportVideoButton.clicked.connect(self.OpenVideoExportDialog)
         self.SavePreferenceButton.clicked.connect(self.SaveSettings)
         self.RestorePreferenceButton.clicked.connect(self.ReadSettings)
+        self.HelpButton.clicked.connect(self.Help)
         self.browseButton.setAutoDefault(False)
+
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-3/TimeViewer")
 
     def closeEvent(self, event):
         if type(self.InputLayerBox.currentLayer()) != type(None):

@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import os
 from qgis import processing
 import tempfile
+import webbrowser
 
 # QGIS modules
 from qgis.core import *
@@ -39,7 +40,9 @@ class PluginDialog(QDialog):
         self.PolygonLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
 
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
+        self.HelpButton.clicked.connect(self.Help)
         self.PolygonBox.stateChanged.connect(self.RiverPolygonClicked)
+
 
 
     def onBrowseButtonClicked(self):
@@ -47,6 +50,11 @@ class PluginDialog(QDialog):
         folder = QFileDialog.getExistingDirectory(self.iface.mainWindow(), 'Cross Section Creator', currentFolder)
         if folder != '':
             self.filename_edit.setText(folder)
+
+
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-62/Cross-Section-Creator")
+
 
     def RiverPolygonClicked(self):
         if self.PolygonBox.isChecked():

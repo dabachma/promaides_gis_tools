@@ -6,6 +6,7 @@ import os
 import math
 from datetime import datetime
 import tempfile
+import webbrowser
 
 # QGIS modules
 from qgis.core import *
@@ -94,6 +95,7 @@ class PluginDialog(QDialog):
         self.roughnessLayerBox.layerChanged.connect(self.updateRoughnessBandBox)
         self.initLayerBox.layerChanged.connect(self.updateInitBandBox)
         self.pickButton.clicked.connect(self.enableMapPicker)
+        self.HelpButton.clicked.connect(self.Help)
         self.pickButton.setAutoDefault(False)
 
 
@@ -112,6 +114,9 @@ class PluginDialog(QDialog):
 
     def reject(self):
         self.RejectSignal.emit()
+
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-44/2D-Floodplain-Export")
 
 
     def UpdateImportButtons(self):
