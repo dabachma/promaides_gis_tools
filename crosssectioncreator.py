@@ -4,6 +4,7 @@ from __future__ import absolute_import
 # system modules
 import os
 from qgis import processing
+import tempfile
 
 # QGIS modules
 from qgis.core import *
@@ -30,10 +31,15 @@ class PluginDialog(QDialog):
 
         self.iface = iface
 
+        self.PolygonLayerBox.setEnabled(False)
+        self.label_26.setEnabled(False)
+
         self.RiverShapeBox.setFilters(QgsMapLayerProxyModel.LineLayer)
         self.ElevationBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
+        self.PolygonLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
 
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
+        self.PolygonBox.stateChanged.connect(self.RiverPolygonClicked)
 
 
     def onBrowseButtonClicked(self):
@@ -41,6 +47,17 @@ class PluginDialog(QDialog):
         folder = QFileDialog.getExistingDirectory(self.iface.mainWindow(), 'Cross Section Creator', currentFolder)
         if folder != '':
             self.filename_edit.setText(folder)
+
+    def RiverPolygonClicked(self):
+        if self.PolygonBox.isChecked():
+            self.PolygonLayerBox.setEnabled(True)
+            self.label_26.setEnabled(True)
+            self.LengthBox.setEnabled(False)
+
+        else:
+            self.PolygonLayerBox.setEnabled(False)
+            self.label_26.setEnabled(False)
+            self.LengthBox.setEnabled(True)
 
 
 
@@ -72,7 +89,7 @@ class CrossSectionCreator(object):
         """
         """
         self.dialog = PluginDialog(self.iface, self.iface.mainWindow())
-        self.dialog.accepted.connect(self.execTool)
+        #self.dialog.accepted.connect(self.execTool)
         self.dialog.rejected.connect(self.quitDialog)
         self.dialog.setModal(False)
         self.act.setEnabled(False)
@@ -84,10 +101,10 @@ class CrossSectionCreator(object):
         self.cancel = True
 
     def quitDialog(self):
+        self.dialog.hide()
         self.dialog = None
         self.act.setEnabled(True)
         self.cancel = False
-
 
 
     def WritePleaseWait(self):
@@ -105,6 +122,13 @@ class CrossSectionCreator(object):
             )
             return
 
+        if type(self.dialog.PolygonLayerBox.currentLayer()) == type(None) and self.PolygonBox.isChecked():
+            self.iface.messageBar().pushCritical(
+                'Cross Section Creator',
+                'No River Shape Polygon Selected !'
+            )
+            return
+
         if self.dialog.filename_edit.text() == "":
             self.iface.messageBar().pushCritical(
                 'Cross Section Creator',
@@ -116,12 +140,21 @@ class CrossSectionCreator(object):
             'Cross Section Creator',
             'Processing, Please Wait !'
         )
-        QTimer.singleShot(1, self.Run)
+        QTimer.singleShot(100, self.Run)
 
     def Run(self):
 
-        outputlocation = self.dialog.filename_edit.text() + "/crosssections.shp"
-        params = {'DEM': self.dialog.ElevationBox.currentLayer().dataProvider().dataSourceUri(), 'DIST_LINE': self.dialog.DistanceBox.value(), 'DIST_PROFILE': self.dialog.LengthBox.value(),
+        if self.dialog.PolygonBox.isChecked():
+            ProfileLengths=500
+        else:
+            ProfileLengths = self.dialog.LengthBox.value()
+
+        if self.dialog.PolygonBox.isChecked():
+            outputlocation = tempfile.gettempdir()+ "/crosssections.shp"
+        else:
+            outputlocation = self.dialog.filename_edit.text() + "/crosssections.shp"
+
+        params = {'DEM': self.dialog.ElevationBox.currentLayer().dataProvider().dataSourceUri(), 'DIST_LINE': self.dialog.DistanceBox.value(), 'DIST_PROFILE': ProfileLengths,
          'LINES': self.dialog.RiverShapeBox.currentLayer().dataProvider().dataSourceUri(),
          'NUM_PROFILE': 3, 'PROFILES': outputlocation}
         result =processing.run('saga:crossprofiles', params)
@@ -170,7 +203,23 @@ class CrossSectionCreator(object):
 
         resultlayer.commitChanges()
         resultlayer.updateFields()
-        QgsProject.instance().addMapLayer(resultlayer)
+
+        if self.dialog.PolygonBox.isChecked():
+            outputlocation2 = self.dialog.filename_edit.text() + "/crosssections.shp"
+            params = { 'INPUT' : resultlayer.dataProvider().dataSourceUri(), 'INPUT_FIELDS' : [], 'OUTPUT' : outputlocation2, 'OVERLAY' : self.dialog.PolygonLayerBox.currentLayer().dataProvider().dataSourceUri(), 'OVERLAY_FIELDS' : [], 'OVERLAY_FIELDS_PREFIX' : '' }
+            result = processing.run('qgis:intersection', params)
+            resultlayer = QgsVectorLayer(outputlocation2, "Cross Sections", "ogr")
+            resultlayer.setName('Cross Sections')
+            QgsProject.instance().addMapLayer(resultlayer)
+        else:
+            QgsProject.instance().addMapLayer(resultlayer)
+
+        try:
+            resultlayer.renderer().symbol().setWidth(0.7)
+            resultlayer.triggerRepaint()
+        except:
+            pass
+
 
         self.iface.messageBar().pushSuccess(
             'Cross Section Creator',
@@ -178,8 +227,8 @@ class CrossSectionCreator(object):
         )
         self.quitDialog()
 
-    def execTool(self):
-        print("hello")
+    #def execTool(self):
+        #print("hello")
 
 
 
