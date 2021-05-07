@@ -248,12 +248,17 @@ class CrossSectionCreator(object):
             pass
 
         if self.dialog.DeleteBox.isChecked():
+            id=[]
             resultlayer.startEditing()
+
             for f1 in resultlayer.getFeatures():
-                for f2 in resultlayer.getFeatures():
-                    if f1.geometry().intersects(f2.geometry()) and f1.id() != f2.id():
-                        resultlayer.deleteFeature(f2.id())
-                        resultlayer.updateFields()
+                if f1.id() not in id:
+                    for f2 in resultlayer.getFeatures():
+                        if f1.geometry().intersects(f2.geometry()) and f1.id() != f2.id():
+                            resultlayer.deleteFeature(f1.id())
+                            id.append(f1.id())
+                            resultlayer.updateFields()
+            resultlayer.updateFields()
             resultlayer.commitChanges()
             resultlayer.updateFields()
 
