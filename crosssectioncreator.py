@@ -33,7 +33,9 @@ class PluginDialog(QDialog):
         self.iface = iface
 
         self.PolygonLayerBox.setEnabled(False)
+        self.MaxLengthBox.setEnabled(False)
         self.label_26.setEnabled(False)
+        self.label_27.setEnabled(False)
 
         self.RiverShapeBox.setFilters(QgsMapLayerProxyModel.LineLayer)
         self.ElevationBox.setFilters(QgsMapLayerProxyModel.RasterLayer)
@@ -59,12 +61,16 @@ class PluginDialog(QDialog):
     def RiverPolygonClicked(self):
         if self.PolygonBox.isChecked():
             self.PolygonLayerBox.setEnabled(True)
+            self.MaxLengthBox.setEnabled(True)
             self.label_26.setEnabled(True)
+            self.label_27.setEnabled(True)
             self.LengthBox.setEnabled(False)
 
         else:
             self.PolygonLayerBox.setEnabled(False)
+            self.MaxLengthBox.setEnabled(False)
             self.label_26.setEnabled(False)
+            self.label_27.setEnabled(False)
             self.LengthBox.setEnabled(True)
 
 
@@ -153,7 +159,7 @@ class CrossSectionCreator(object):
     def Run(self):
 
         if self.dialog.PolygonBox.isChecked():
-            ProfileLengths=500
+            ProfileLengths = self.dialog.MaxLengthBox.value()
         else:
             ProfileLengths = self.dialog.LengthBox.value()
 
@@ -219,6 +225,19 @@ class CrossSectionCreator(object):
             resultlayer = QgsVectorLayer(outputlocation2, "Cross Sections", "ogr")
             resultlayer.setName('Cross Sections')
             QgsProject.instance().addMapLayer(resultlayer)
+
+            i=[]
+            resultlayer.startEditing()
+            for feat1 in resultlayer.getFeatures():
+                for feat2 in self.dialog.RiverShapeBox.currentLayer().getFeatures():
+                    if not feat1.geometry().intersects(feat2.geometry()):
+                        i.append(1)
+                if len(i)==self.dialog.RiverShapeBox.currentLayer().featureCount():
+                    resultlayer.deleteFeature(feat1.id())
+                i=[]
+            resultlayer.commitChanges()
+            resultlayer.updateFields()
+
         else:
             QgsProject.instance().addMapLayer(resultlayer)
 
@@ -227,6 +246,16 @@ class CrossSectionCreator(object):
             resultlayer.triggerRepaint()
         except:
             pass
+
+        if self.dialog.DeleteBox.isChecked():
+            resultlayer.startEditing()
+            for f1 in resultlayer.getFeatures():
+                for f2 in resultlayer.getFeatures():
+                    if f1.geometry().intersects(f2.geometry()) and f1.id() != f2.id():
+                        resultlayer.deleteFeature(f2.id())
+                        resultlayer.updateFields()
+            resultlayer.commitChanges()
+            resultlayer.updateFields()
 
 
         self.iface.messageBar().pushSuccess(
