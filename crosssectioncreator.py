@@ -164,7 +164,7 @@ class CrossSectionCreator(object):
             ProfileLengths = self.dialog.LengthBox.value()
 
         if self.dialog.PolygonBox.isChecked():
-            outputlocation = tempfile.gettempdir()+ "/crosssections.shp"
+            outputlocation = tempfile.gettempdir() + "/crosssections.shp"
         else:
             outputlocation = self.dialog.filename_edit.text() + "/crosssections.shp"
 
@@ -219,27 +219,60 @@ class CrossSectionCreator(object):
         resultlayer.updateFields()
 
         if self.dialog.PolygonBox.isChecked():
-            outputlocation2 = self.dialog.filename_edit.text() + "/crosssections.shp"
-            params = { 'INPUT' : resultlayer.dataProvider().dataSourceUri(), 'INPUT_FIELDS' : [], 'OUTPUT' : outputlocation2, 'OVERLAY' : self.dialog.PolygonLayerBox.currentLayer().dataProvider().dataSourceUri(), 'OVERLAY_FIELDS' : [], 'OVERLAY_FIELDS_PREFIX' : '' }
+            #create temporary layer for checking
+            outputlocationtemp = tempfile.gettempdir() + "/crosssectionstemp.shp"
+            paramstemp = {'DEM': self.dialog.ElevationBox.currentLayer().dataProvider().dataSourceUri(),
+                          'DIST_LINE': self.dialog.DistanceBox.value(), 'DIST_PROFILE': 1,
+                          'LINES': self.dialog.RiverShapeBox.currentLayer().dataProvider().dataSourceUri(),
+                          'NUM_PROFILE': 3, 'PROFILES': outputlocationtemp}
+            resulttemp = processing.run('saga:crossprofiles', paramstemp)
+            resultlayertemp = QgsVectorLayer(outputlocationtemp, "Cross Sections temp", "ogr")
+            resultlayertemp.updateFields()
+
+            outputlocationmultipart = tempfile.gettempdir() + "/crosssectionstemp2.shp"
+            params = { 'INPUT' : resultlayer.dataProvider().dataSourceUri(), 'INPUT_FIELDS' : [], 'OUTPUT' : outputlocationmultipart, 'OVERLAY' : self.dialog.PolygonLayerBox.currentLayer().dataProvider().dataSourceUri(), 'OVERLAY_FIELDS' : [], 'OVERLAY_FIELDS_PREFIX' : '' }
             result = processing.run('qgis:intersection', params)
-            resultlayer = QgsVectorLayer(outputlocation2, "Cross Sections", "ogr")
-            resultlayer.setName('Cross Sections')
-            QgsProject.instance().addMapLayer(resultlayer)
+            resultlayermultipart = QgsVectorLayer(outputlocationmultipart, "Cross Sections multipart", "ogr")
 
-            i=[]
-            resultlayer.startEditing()
-            for feat1 in resultlayer.getFeatures():
-                for feat2 in self.dialog.RiverShapeBox.currentLayer().getFeatures():
-                    if not feat1.geometry().intersects(feat2.geometry()):
-                        i.append(1)
-                if len(i)==self.dialog.RiverShapeBox.currentLayer().featureCount():
-                    resultlayer.deleteFeature(feat1.id())
-                i=[]
-            resultlayer.commitChanges()
-            resultlayer.updateFields()
 
-        else:
-            QgsProject.instance().addMapLayer(resultlayer)
+
+            #multipart to singlepart
+            resultlayermultipart.startEditing()
+            outputlocationsinglepart = self.dialog.filename_edit.text() + "/crosssections.shp"
+            params2={ 'INPUT' : resultlayermultipart.dataProvider().dataSourceUri(), 'OUTPUT' : outputlocationsinglepart }
+            processing.run("qgis:multiparttosingleparts", params2)
+            resultlayermultipart.commitChanges()
+            resultlayermultipart.updateFields()
+
+            resultlayersinglepart=QgsVectorLayer(outputlocationsinglepart, "Cross Sections", "ogr")
+            QgsProject.instance().addMapLayer(resultlayersinglepart)
+            resultlayersinglepart.setName('Cross Sections')
+
+            #i=[]
+            #resultlayersinglepart.startEditing()
+            #for feat1 in resultlayersinglepart.getFeatures():
+            #   for feat2 in self.dialog.RiverShapeBox.currentLayer().getFeatures():
+            #       if not feat1.geometry().intersects(feat2.geometry()):
+            #           i.append(1)
+            #   if len(i)==self.dialog.RiverShapeBox.currentLayer().featureCount():
+            #       resultlayersinglepart.deleteFeature(feat1.id())
+            #resultlayersinglepart.commitChanges()
+            #resultlayersinglepart.updateFields()
+            #resultlayersinglepart.startEditing()
+
+
+            resultlayersinglepart.startEditing()
+            for feat in resultlayertemp.getFeatures():
+                for feature in resultlayersinglepart.getFeatures():
+                    if feat["ID"] == feature["ID"]:
+                        if feature.geometry().distance(feat.geometry())>1:
+                            resultlayersinglepart.deleteFeature(feature.id())
+            resultlayersinglepart.commitChanges()
+            resultlayersinglepart.updateFields()
+
+            resultlayer = resultlayersinglepart
+
+        QgsProject.instance().addMapLayer(resultlayer)
 
         try:
             resultlayer.renderer().symbol().setWidth(0.7)
