@@ -115,11 +115,14 @@ class CrossSectionCreator(object):
         self.cancel = True
 
     def quitDialog(self):
-        self.dialog.hide()
-        self.dialog = None
-        self.act.setEnabled(True)
-        self.cancel = False
 
+        try:
+            self.dialog.hide()
+            self.dialog = None
+            self.act.setEnabled(True)
+            self.cancel = False
+        except:
+            pass
 
     def WritePleaseWait(self):
         if type(self.dialog.RiverShapeBox.currentLayer()) == type(None):
@@ -156,6 +159,8 @@ class CrossSectionCreator(object):
         )
         QTimer.singleShot(100, self.Run)
 
+    resultlayer=[]
+
     def Run(self):
 
         if self.dialog.PolygonBox.isChecked():
@@ -174,7 +179,7 @@ class CrossSectionCreator(object):
         result =processing.run('saga:crossprofiles', params)
 
         try:
-            resultlayer = QgsVectorLayer(outputlocation, "Cross Sections", "ogr")
+            self.resultlayer = QgsVectorLayer(outputlocation, "Cross Sections", "ogr")
         except:
             self.iface.messageBar().pushCritical(
                 'Cross Section Creator',
@@ -182,30 +187,30 @@ class CrossSectionCreator(object):
             )
             return
 
-        resultlayer.setName('Cross Sections')
-        resultlayer.dataProvider().addAttributes(
+        self.resultlayer.setName('Cross Sections')
+        self.resultlayer.dataProvider().addAttributes(
             [QgsField("Stations", QVariant.Double), QgsField("Names", QVariant.String), QgsField("Type", QVariant.String)])
-        resultlayer.updateFields()
+        self.resultlayer.updateFields()
 
-        prov = resultlayer.dataProvider()
+        prov = self.resultlayer.dataProvider()
         # lookup index of fields using their names
-        ID = resultlayer.fields().lookupField('ID')
-        Stations = resultlayer.fields().lookupField('Stations')
-        Names = resultlayer.fields().lookupField('Names')
-        ProfileType = resultlayer.fields().lookupField('Type')
+        ID = self.resultlayer.fields().lookupField('ID')
+        Stations = self.resultlayer.fields().lookupField('Stations')
+        Names = self.resultlayer.fields().lookupField('Names')
+        ProfileType = self.resultlayer.fields().lookupField('Type')
 
 
-        Part=resultlayer.fields().lookupField('PART')
-        X000 = resultlayer.fields().lookupField('X000')
-        X001 = resultlayer.fields().lookupField('X001')
-        X002 = resultlayer.fields().lookupField('X002')
+        Part=self.resultlayer.fields().lookupField('PART')
+        X000 = self.resultlayer.fields().lookupField('X000')
+        X001 = self.resultlayer.fields().lookupField('X001')
+        X002 = self.resultlayer.fields().lookupField('X002')
 
         field_ids=[Part,X000,X001,X002]
-        resultlayer.dataProvider().deleteAttributes(field_ids)
-        resultlayer.updateFields()
+        self.resultlayer.dataProvider().deleteAttributes(field_ids)
+        self.resultlayer.updateFields()
 
-        resultlayer.startEditing()
-        for feat in resultlayer.getFeatures():
+        self.resultlayer.startEditing()
+        for feat in self.resultlayer.getFeatures():
             FeutureID=feat.attributes()[ID]
             atts = {Stations: self.dialog.DistanceBox.value()*FeutureID, Names: self.dialog.NameBox.text()+"_"+str(FeutureID), ProfileType: "river"}
             # call changeAttributeValues(), pass feature id and attribute dictionary
@@ -213,10 +218,10 @@ class CrossSectionCreator(object):
             feat['Stations'] = self.dialog.DistanceBox.value() * (-FeutureID)
             feat['Names'] = self.dialog.NameBox.text() + "_" + str(FeutureID)
             feat['Type'] = "river"
-            resultlayer.updateFeature(feat)
+            self.resultlayer.updateFeature(feat)
 
-        resultlayer.commitChanges()
-        resultlayer.updateFields()
+        self.resultlayer.commitChanges()
+        self.resultlayer.updateFields()
 
         if self.dialog.PolygonBox.isChecked():
             #create temporary layer for checking
@@ -230,7 +235,7 @@ class CrossSectionCreator(object):
             resultlayertemp.updateFields()
 
             outputlocationmultipart = tempfile.gettempdir() + "/crosssectionstemp2.shp"
-            params = { 'INPUT' : resultlayer.dataProvider().dataSourceUri(), 'INPUT_FIELDS' : [], 'OUTPUT' : outputlocationmultipart, 'OVERLAY' : self.dialog.PolygonLayerBox.currentLayer().dataProvider().dataSourceUri(), 'OVERLAY_FIELDS' : [], 'OVERLAY_FIELDS_PREFIX' : '' }
+            params = { 'INPUT' : self.resultlayer.dataProvider().dataSourceUri(), 'INPUT_FIELDS' : [], 'OUTPUT' : outputlocationmultipart, 'OVERLAY' : self.dialog.PolygonLayerBox.currentLayer().dataProvider().dataSourceUri(), 'OVERLAY_FIELDS' : [], 'OVERLAY_FIELDS_PREFIX' : '' }
             result = processing.run('qgis:intersection', params)
             resultlayermultipart = QgsVectorLayer(outputlocationmultipart, "Cross Sections multipart", "ogr")
 
@@ -248,18 +253,6 @@ class CrossSectionCreator(object):
             QgsProject.instance().addMapLayer(resultlayersinglepart)
             resultlayersinglepart.setName('Cross Sections')
 
-            #i=[]
-            #resultlayersinglepart.startEditing()
-            #for feat1 in resultlayersinglepart.getFeatures():
-            #   for feat2 in self.dialog.RiverShapeBox.currentLayer().getFeatures():
-            #       if not feat1.geometry().intersects(feat2.geometry()):
-            #           i.append(1)
-            #   if len(i)==self.dialog.RiverShapeBox.currentLayer().featureCount():
-            #       resultlayersinglepart.deleteFeature(feat1.id())
-            #resultlayersinglepart.commitChanges()
-            #resultlayersinglepart.updateFields()
-            #resultlayersinglepart.startEditing()
-
 
             resultlayersinglepart.startEditing()
             for feat in resultlayertemp.getFeatures():
@@ -270,37 +263,67 @@ class CrossSectionCreator(object):
             resultlayersinglepart.commitChanges()
             resultlayersinglepart.updateFields()
 
-            resultlayer = resultlayersinglepart
+            self.resultlayer = resultlayersinglepart
 
-        QgsProject.instance().addMapLayer(resultlayer)
+        QgsProject.instance().addMapLayer(self.resultlayer)
 
         try:
-            resultlayer.renderer().symbol().setWidth(0.7)
-            resultlayer.triggerRepaint()
+            self.resultlayer.renderer().symbol().setWidth(0.7)
+            self.resultlayer.triggerRepaint()
         except:
             pass
 
         if self.dialog.DeleteBox.isChecked():
-            id=[]
-            resultlayer.startEditing()
-
-            for f1 in resultlayer.getFeatures():
-                if f1.id() not in id:
-                    for f2 in resultlayer.getFeatures():
-                        if f1.geometry().intersects(f2.geometry()) and f1.id() != f2.id():
-                            resultlayer.deleteFeature(f1.id())
-                            id.append(f1.id())
-                            resultlayer.updateFields()
-            resultlayer.updateFields()
-            resultlayer.commitChanges()
-            resultlayer.updateFields()
+            QTimer.singleShot(100, self.DeleteIntersects)
+        else:
+            self.iface.messageBar().pushSuccess(
+                'Cross Section Creator',
+                'Operation finished successfully!'
+            )
+            self.quitDialog()
 
 
+
+
+    def DeleteIntersects(self):
+
+        self.resultlayer.startEditing()
+        for j in range(self.resultlayer.featureCount()):
+            id = []
+            for i in range(self.resultlayer.featureCount()):
+                id.append([])
+            i = 0
+            for f1 in self.resultlayer.getFeatures():
+                id[i].append(f1.id())
+                for f2 in self.resultlayer.getFeatures():
+                    if f1.geometry().distance(f2.geometry()) < 0.1 and f1.id() != f2.id():
+                        id[i].append(f2.id())
+                i = i + 1
+
+            maxlength = 0
+            count = 0
+            for list in id:
+                if len(list) >= maxlength:
+                    maxlength = len(list)
+                    maxcount = count
+                count = count + 1
+            if maxlength == 1:
+                break
+            featureidtoberemoved = id[maxcount][0]
+            self.resultlayer.deleteFeature(featureidtoberemoved)
+
+        self.resultlayer.updateFields()
+        self.resultlayer.commitChanges()
+        self.resultlayer.updateFields()
+        QTimer.singleShot(100, self.Success)
+
+    def Success(self):
         self.iface.messageBar().pushSuccess(
             'Cross Section Creator',
             'Operation finished successfully!'
         )
         self.quitDialog()
+
 
     #def execTool(self):
         #print("hello")
