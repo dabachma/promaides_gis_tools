@@ -215,7 +215,7 @@ class CrossSectionCreator(object):
             atts = {Stations: self.dialog.DistanceBox.value()*FeutureID, Names: self.dialog.NameBox.text()+"_"+str(FeutureID), ProfileType: "river"}
             # call changeAttributeValues(), pass feature id and attribute dictionary
             prov.changeAttributeValues({feat.id(): atts})
-            feat['Stations'] = self.dialog.DistanceBox.value() * (-FeutureID)
+            feat['Stations'] = self.dialog.StationingOffsetBox.value() + self.dialog.DistanceBox.value() * (-FeutureID)
             feat['Names'] = self.dialog.NameBox.text() + "_" + str(FeutureID)
             feat['Type'] = "river"
             self.resultlayer.updateFeature(feat)
