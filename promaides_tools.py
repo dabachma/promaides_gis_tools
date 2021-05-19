@@ -57,8 +57,9 @@ class PromaidesToolbox(object):
         self.cin_polygon = CINPolygonExport(self.iface)
 
         #General
-        self.db_exprt = DatabaseExport(self.iface)
         self.hello_world = HelloWorld(self.iface)
+        self.db_exprt = DatabaseExport(self.iface)
+
 
 
     def initGui(self):
@@ -67,8 +68,9 @@ class PromaidesToolbox(object):
         self.plugin_menu = QMenu('ProMaIDes Toolbox', self.iface.mainWindow())
         #Add a submenu
         self.submenu_general = self.plugin_menu.addMenu('General')
-        self.submenu_hyd = self.plugin_menu.addMenu('HYD')
         self.submenu_haz = self.plugin_menu.addMenu('HAZ')
+        self.submenu_hyd = self.plugin_menu.addMenu('HYD')
+
         self.submenu_dam = self.plugin_menu.addMenu('DAM')
         self.submenu_cin = self.plugin_menu.addMenu('CIN')
 
@@ -104,8 +106,9 @@ class PromaidesToolbox(object):
         self.cin_polygon.initGui(self.submenu_cin)
 
         #General
-        self.db_exprt.initGui(self.submenu_general)
         self.hello_world.initGui(self.submenu_general)
+        self.db_exprt.initGui(self.submenu_general)
+
 
 
         #Add about

@@ -6,6 +6,7 @@ import os
 import math
 from datetime import datetime
 import tempfile
+import webbrowser
 
 # QGIS modules
 from qgis.core import *
@@ -93,8 +94,10 @@ class PluginDialog(QDialog):
         self.label.setEnabled(False)
         self.label_12.setEnabled(False)
         self.label_21.setEnabled(False)
+        self.HelpButton.clicked.connect(self.Help)
 
-
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-38/DAM-Raster-export")
 
 
     def closeEvent(self, event):

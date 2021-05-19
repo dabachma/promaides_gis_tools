@@ -130,6 +130,9 @@
    </item>
    <item row="5" column="2">
     <widget class="QSpinBox" name="MaxLengthBox">
+     <property name="toolTip">
+      <string>Maximum length/width of the cross section vertical to the river line</string>
+     </property>
      <property name="minimum">
       <number>1</number>
      </property>
@@ -169,6 +172,9 @@
    </item>
    <item row="7" column="2">
     <widget class="QSpinBox" name="DistanceBox">
+     <property name="toolTip">
+      <string>Distance along the river line</string>
+     </property>
      <property name="minimum">
       <number>1</number>
      </property>
@@ -189,6 +195,9 @@
    </item>
    <item row="8" column="2">
     <widget class="QSpinBox" name="LengthBox">
+     <property name="toolTip">
+      <string>Width/Length of each cross section/river profile vertical to the river line</string>
+     </property>
      <property name="minimum">
       <number>1</number>
      </property>
@@ -223,7 +232,7 @@
       </sizepolicy>
      </property>
      <property name="toolTip">
-      <string>Set output folder</string>
+      <string>Set name scheme</string>
      </property>
      <property name="inputMask">
       <string/>
@@ -242,6 +251,9 @@
    </item>
    <item row="11" column="2">
     <widget class="QSpinBox" name="StationingOffsetBox">
+     <property name="toolTip">
+      <string>Set a stationing offset, e.g. for extracting long river in parts</string>
+     </property>
      <property name="minimum">
       <number>-9999999</number>
      </property>
@@ -256,7 +268,7 @@
    <item row="12" column="1" colspan="2">
     <widget class="QLineEdit" name="filename_edit">
      <property name="toolTip">
-      <string>Set the output file</string>
+      <string>Set the output folder</string>
      </property>
      <property name="placeholderText">
       <string>&lt;output file path&gt;</string>
@@ -298,12 +310,16 @@
       </sizepolicy>
      </property>
      <property name="toolTip">
-      <string>Layer to add</string>
+      <string>Layer to add; the river line</string>
      </property>
     </widget>
    </item>
    <item row="1" column="1" colspan="2">
-    <widget class="QgsMapLayerComboBox" name="ElevationBox"/>
+    <widget class="QgsMapLayerComboBox" name="ElevationBox">
+     <property name="toolTip">
+      <string>Elevation tiff for determine the main direction</string>
+     </property>
+    </widget>
    </item>
    <item row="4" column="1" colspan="2">
     <widget class="QgsMapLayerComboBox" name="PolygonLayerBox">
@@ -317,7 +333,7 @@
       </sizepolicy>
      </property>
      <property name="toolTip">
-      <string>Layer to add</string>
+      <string>Layer to add; polygon for determine the width of the cross section</string>
      </property>
     </widget>
    </item>

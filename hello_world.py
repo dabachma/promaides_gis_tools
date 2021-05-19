@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 # system modules
 import math
+import webbrowser
 
 # QGIS modules 
 from qgis.core import *
@@ -28,10 +29,14 @@ class PluginDialog(QDialog):
         uic.loadUi(UI_PATH, self)
 
         self.iface = iface
+        self.HelpButton.clicked.connect(self.Help)
 
 
 
 
+
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-52/Hello-World")
 
 
 class HelloWorld(object):
