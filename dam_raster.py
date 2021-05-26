@@ -650,24 +650,28 @@ class DAMRasterExport(object):
 
                 # writing a raster file as input for the mobile economic impacts.
                 # for that a user-chosen number is added to the land use id - by default this is 1000
-                out_raster.open(filename, input_layers, rastertype_2)
-                counter = 0
-                multiplier = 0
-                for i in range(int(out_raster.num_cells())):
-                    if i == multiplier * out_raster.nc:
-                        multiplier = multiplier + 1
-                        counter = out_raster.num_cells()-multiplier * out_raster.nc
+                if self.dialog.ecnDelta() > 0:
+                    # ecn > 0 is a simple solution to create not mobile damage raster. The user just indicates a
+                    # negative number or 0 for the delta and does turn off the generation of a mobile damage raster
+                    out_raster.open(filename, input_layers, rastertype_2)
+                    counter = 0
+                    multiplier = 0
+                    for i in range(int(out_raster.num_cells())):
+                        if i == multiplier * out_raster.nc :
 
-                    point = out_raster.cell_center(counter)
+                            multiplier = multiplier + 1
+                            counter = out_raster.num_cells()-multiplier * out_raster.nc
 
-                    values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
-                    mob_values[rastertype_0] = values[rastertype_0] + input_layers[rastertype_0]['deltaecn']  # adding the user chosen value to initial immob value
+                        point = out_raster.cell_center(counter)
 
-                    out_raster.write_cell(mob_values, rastertype_0)
-                    counter = counter + 1
-                    if progress:
-                        progress.setValue(progress.value() + 1)
-                out_raster.close()
+                        values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
+                        mob_values[rastertype_0] = values[rastertype_0] + input_layers[rastertype_0]['deltaecn']  # adding the user chosen value to initial immob value
+
+                        out_raster.write_cell(mob_values, rastertype_0)
+                        counter = counter + 1
+                        if progress:
+                            progress.setValue(progress.value() + 1)
+                    out_raster.close()
 
             elif data_name == 'pop' and self.dialog.mGroupBox_pop.isChecked():
                 rastertype_0 = 'pop'

@@ -269,19 +269,68 @@ class SimpleRasterWriter(object):
         self.prm.write('from a temporary layer\n')
         self.prm.write('#  based on DAM Exposure data raster {}  \n'.format(input_layers[typeref_short]['layer'].name()))
 
-        self.prm.write('# Comments are marked with #\n')
+        self.prm.write(
+            '# This file contains the data of an DAM-raster. The DAM-raster elements are always quadratic.\n')
+        self.prm.write('# In this file just one raster element information (value per element) is provided. \n')
+        self.prm.write(
+            '# The base syntax is similar to the Raster to ASCII of ArcGis (https://desktop.arcgis.com/en/arcmap/10.3/tools/conversion-toolbox/raster-to-ascii.htm).\n')
         self.prm.write('#\n')
-        self.prm.write('# Explanation of data (in one line):\n')
-        self.prm.write('#  !name            Name of this file\n')
-        self.prm.write('#  !type            Type of land use (e.g. pop_density, agriculture, etc.)\n')
-        self.prm.write('#  !ncols           Number of columns in raster (X-axis)\n')
-        self.prm.write('#  !nrows           Number of rows in raster (Y-axis)\n')
-        self.prm.write('#  !xllcorner       x-value of lower left corner of raster\n')
-        self.prm.write('#  !yllcorner       y-value of lower left corner of raster\n')
+        self.prm.write('# The first block contains the general raster information. This block begins with\n')
+        self.prm.write('# !$BEGIN_RASTERINFO and have to end with !$END_RASTERINFO.\n')
+        self.prm.write('# Explanation of raster information data:\n')
+        self.prm.write('#  !ncols           Number of columns in raster (x-axis) [-]\n')
+        self.prm.write('#  !nrows           Number of rows in raster (y-axis) [-]\n')
+        self.prm.write('#  !xllcorner       x-value of lower left corner of raster [m]\n')
+        self.prm.write('#  !yllcorner       y-value of lower left corner of raster [m]\n')
         self.prm.write('#  !cellsize        Squared edge side length [m]\n')
         self.prm.write('#  !NODATA_value    Value for an element with no information \n')
+        self.prm.write('#  !name            Name of this raster\n')
+        self.prm.write('#  !type            Type of the raster\n')
         self.prm.write('#\n')
-        self.prm.write('#########################################################################\n')
+        self.prm.write('#\n')
+        self.prm.write('# Following raster types, depending to the value per element, are possible:\n')
+        self.prm.write(
+            '#				- ecn_immob        : economical raster with the information about the immobile land-use type ID [-]\n')
+        self.prm.write(
+            '#				- ecn_mob          : economical raster with the information about the mobile land-use type ID [-]\n')
+        self.prm.write(
+            '#				- ecn_immob_stock  : economical raster with the information about the individual immobile stock-values [€/m²]\n')
+        self.prm.write(
+            '#				- ecn_mob_stock    : economical raster with the information about the individual mobile stock-values [€/m²]\n')
+        self.prm.write('#\n')
+        self.prm.write(
+            '#				- eco_btype        : ecological raster with the information about the biotope-type ID [-]\n')
+        self.prm.write(
+            '#				- eco_soil_cost    : ecological raster with the information about the soil-cost type ID [-]\n')
+        self.prm.write(
+            '#				- eco_soil_erosion : ecological raster with the information about the soil-erosion type ID [-]\n')
+        self.prm.write('#\n')
+        self.prm.write(
+            '#				- pop_dam_category : people2risk raster with the information about the damage category ID [-]\n')
+        self.prm.write(
+            '#				- pop_density      : people2risk raster with the information about the population density [P/m²]\n')
+        self.prm.write('#\n')
+        self.prm.write(
+            '# The second block contains the element information (value per element), e.g. the id of a landuse category.\n')
+        self.prm.write('# It begins with !$BEGIN_CHARAC and ends with !$END_CHARAC.\n')
+        self.prm.write('# The number of columns (!ncols) and the number of rows (!nrows) in this block must be\n')
+        self.prm.write('# identically to the defined information in the general raster information block.\n')
+        self.prm.write(
+            '# The orientation of the raster is as the values per element are written: first element in the last row is the lower left corner of the rectangular raster.\n')
+        self.prm.write('#\n')
+        self.prm.write('# Syntax:		- Comments are marked with: #\n')
+        self.prm.write('#				- keywords for the types are case-sensitive\n')
+        self.prm.write('#				- delimiter between values are whitespace(s) or tab(s)\n')
+        self.prm.write('#				- name can not include any whitespaces or tabs or any special characters\n')
+        self.prm.write('#\n')
+        self.prm.write('# Remarks to raster with multiple values per element :\n')
+        self.prm.write('#  In general multiple values per element are required in the analysis of consequences,\n')
+        self.prm.write('#  e.g. the landuse id for the immobile damages and landuse id for mobile damages,\n')
+        self.prm.write(
+            '#  please use identical rasters (same general raster information in the first block [also name], just the !type is different)\n')
+        self.prm.write('#  with different values per element (second block).\n')
+        self.prm.write('#\n')
+        self.prm.write('############################################################\n')
 
         self.prm.write('!$BEGIN_RASTERINFO\n')
         self.prm.write(' \t!name        %s\n' % self.item.text())
