@@ -225,6 +225,11 @@ class CrossSectionCreator(object):
 
         if self.dialog.PolygonBox.isChecked():
             #create temporary layer for checking
+            try:
+                if os.path.isfile(tempfile.gettempdir() + "/crosssectionstemp.shp"):
+                    os.remove(tempfile.gettempdir() + "/crosssectionstemp.shp")
+            except:
+                pass
             outputlocationtemp = tempfile.gettempdir() + "/crosssectionstemp.shp"
             paramstemp = {'DEM': self.dialog.ElevationBox.currentLayer().dataProvider().dataSourceUri(),
                           'DIST_LINE': self.dialog.DistanceBox.value(), 'DIST_PROFILE': 1,
@@ -233,6 +238,12 @@ class CrossSectionCreator(object):
             resulttemp = processing.run('saga:crossprofiles', paramstemp)
             resultlayertemp = QgsVectorLayer(outputlocationtemp, "Cross Sections temp", "ogr")
             resultlayertemp.updateFields()
+
+            try:
+                if os.path.isfile(tempfile.gettempdir() + "/crosssectionstemp2.shp"):
+                    os.remove(tempfile.gettempdir() + "/crosssectionstemp2.shp")
+            except:
+                pass
 
             outputlocationmultipart = tempfile.gettempdir() + "/crosssectionstemp2.shp"
             params = { 'INPUT' : self.resultlayer.dataProvider().dataSourceUri(), 'INPUT_FIELDS' : [], 'OUTPUT' : outputlocationmultipart, 'OVERLAY' : self.dialog.PolygonLayerBox.currentLayer().dataProvider().dataSourceUri(), 'OVERLAY_FIELDS' : [], 'OVERLAY_FIELDS_PREFIX' : '' }
@@ -244,6 +255,12 @@ class CrossSectionCreator(object):
             #multipart to singlepart
             resultlayermultipart.startEditing()
             outputlocationsinglepart = self.dialog.filename_edit.text() + "/crosssections.shp"
+
+            try:
+                if os.path.isfile(self.dialog.filename_edit.text() + "/crosssections.shp"):
+                    outputlocationsinglepart = outputlocationsinglepart.replace('.shp', '_new') + ".shp"
+            except:
+                pass
             params2={ 'INPUT' : resultlayermultipart.dataProvider().dataSourceUri(), 'OUTPUT' : outputlocationsinglepart }
             processing.run("qgis:multiparttosingleparts", params2)
             resultlayermultipart.commitChanges()
