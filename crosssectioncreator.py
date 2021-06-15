@@ -139,7 +139,7 @@ class CrossSectionCreator(object):
             )
             return
 
-        if type(self.dialog.PolygonLayerBox.currentLayer()) == type(None) and self.PolygonBox.isChecked():
+        if type(self.dialog.PolygonLayerBox.currentLayer()) == type(None) and self.dialog.PolygonBox.isChecked():
             self.iface.messageBar().pushCritical(
                 'Cross Section Creator',
                 'No River Shape Polygon Selected !'
