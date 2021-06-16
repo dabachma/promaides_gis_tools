@@ -205,19 +205,30 @@ class CrossSectionCreator(object):
         X001 = self.resultlayer.fields().lookupField('X001')
         X002 = self.resultlayer.fields().lookupField('X002')
 
-        field_ids=[Part,X000,X001,X002]
+        field_ids=[Part,X000,X001,X002,ID]
         self.resultlayer.dataProvider().deleteAttributes(field_ids)
+        self.resultlayer.updateFields()
+
+        self.resultlayer.dataProvider().addAttributes(
+            [QgsField("ID", QVariant.Double)])
         self.resultlayer.updateFields()
 
         self.resultlayer.startEditing()
         for feat in self.resultlayer.getFeatures():
-            FeutureID=feat.attributes()[ID]
-            atts = {Stations: self.dialog.DistanceBox.value()*FeutureID, Names: self.dialog.NameBox.text()+"_"+str(FeutureID), ProfileType: "river"}
+            FeutureID=feat.id()
+            atts = {ID: FeutureID, Stations: self.dialog.DistanceBox.value()*FeutureID, Names: self.dialog.NameBox.text()+"_"+str(FeutureID), ProfileType: "river"}
             # call changeAttributeValues(), pass feature id and attribute dictionary
             prov.changeAttributeValues({feat.id(): atts})
+            feat['ID'] = FeutureID
             feat['Stations'] = self.dialog.StationingOffsetBox.value() + self.dialog.DistanceBox.value() * (-FeutureID)
             feat['Names'] = self.dialog.NameBox.text() + "_" + str(FeutureID)
             feat['Type'] = "river"
+            self.resultlayer.updateFeature(feat)
+
+        for feat in self.resultlayer.getFeatures():
+            for field in feat.fields().names():
+                if feat[field] == None:
+                    feat[field] = '0'
             self.resultlayer.updateFeature(feat)
 
         self.resultlayer.commitChanges()
