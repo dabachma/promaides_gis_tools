@@ -282,7 +282,23 @@ class CrossSectionCreator(object):
 
             self.resultlayer = resultlayersinglepart
 
+
+
         QgsProject.instance().addMapLayer(self.resultlayer)
+
+        #reverse
+        self.resultlayer.startEditing()
+        for feature in self.resultlayer.getFeatures():
+            line = []
+            buff = feature.geometry()
+            for p in buff.vertices():
+                line.append(p)
+                line = list(reversed(line))
+            newgeom = QgsGeometry.fromPolyline(line)
+            self.resultlayer.changeGeometry(feature.id(), newgeom)
+        self.resultlayer.commitChanges()
+        self.resultlayer.updateFields()
+
 
         try:
             self.resultlayer.renderer().symbol().setWidth(0.7)
