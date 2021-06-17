@@ -194,9 +194,6 @@ class CrossSectionCreator(object):
 
         prov = self.resultlayer.dataProvider()
         # lookup index of fields using their names
-        ID = self.resultlayer.fields().lookupField('ID')
-        Stations = self.resultlayer.fields().lookupField('Stations')
-        Names = self.resultlayer.fields().lookupField('Names')
         ProfileType = self.resultlayer.fields().lookupField('Type')
 
 
@@ -205,30 +202,16 @@ class CrossSectionCreator(object):
         X001 = self.resultlayer.fields().lookupField('X001')
         X002 = self.resultlayer.fields().lookupField('X002')
 
-        field_ids=[Part,X000,X001,X002,ID]
+        field_ids=[Part,X000,X001,X002]
         self.resultlayer.dataProvider().deleteAttributes(field_ids)
-        self.resultlayer.updateFields()
-
-        self.resultlayer.dataProvider().addAttributes(
-            [QgsField("ID", QVariant.Double)])
         self.resultlayer.updateFields()
 
         self.resultlayer.startEditing()
         for feat in self.resultlayer.getFeatures():
-            FeutureID=feat.id()
-            atts = {ID: FeutureID, Stations: self.dialog.DistanceBox.value()*FeutureID, Names: self.dialog.NameBox.text()+"_"+str(FeutureID), ProfileType: "river"}
+            atts = {ProfileType: "river"}
             # call changeAttributeValues(), pass feature id and attribute dictionary
             prov.changeAttributeValues({feat.id(): atts})
-            feat['ID'] = FeutureID
-            feat['Stations'] = self.dialog.StationingOffsetBox.value() + self.dialog.DistanceBox.value() * (-FeutureID)
-            feat['Names'] = self.dialog.NameBox.text() + "_" + str(FeutureID)
             feat['Type'] = "river"
-            self.resultlayer.updateFeature(feat)
-
-        for feat in self.resultlayer.getFeatures():
-            for field in feat.fields().names():
-                if feat[field] == None:
-                    feat[field] = '0'
             self.resultlayer.updateFeature(feat)
 
         self.resultlayer.commitChanges()
@@ -293,9 +276,14 @@ class CrossSectionCreator(object):
 
             self.resultlayer = resultlayersinglepart
 
-
-
         QgsProject.instance().addMapLayer(self.resultlayer)
+
+        try:
+            self.resultlayer.renderer().symbol().setWidth(0.7)
+            self.resultlayer.triggerRepaint()
+        except:
+            pass
+
 
         #reverse
         self.resultlayer.startEditing()
@@ -304,64 +292,83 @@ class CrossSectionCreator(object):
             buff = feature.geometry()
             for p in buff.vertices():
                 line.append(p)
-                line = list(reversed(line))
+            line.reverse()
             newgeom = QgsGeometry.fromPolyline(line)
             self.resultlayer.changeGeometry(feature.id(), newgeom)
         self.resultlayer.commitChanges()
         self.resultlayer.updateFields()
 
-
-        try:
-            self.resultlayer.renderer().symbol().setWidth(0.7)
-            self.resultlayer.triggerRepaint()
-        except:
-            pass
-
-        if self.dialog.DeleteBox.isChecked():
-            QTimer.singleShot(100, self.DeleteIntersects)
-        else:
-            self.iface.messageBar().pushSuccess(
-                'Cross Section Creator',
-                'Operation finished successfully!'
-            )
-            self.quitDialog()
+        QTimer.singleShot(100, self.DeleteIntersects)
 
 
 
 
     def DeleteIntersects(self):
 
-        self.resultlayer.startEditing()
-        for j in range(self.resultlayer.featureCount()):
-            id = []
-            for i in range(self.resultlayer.featureCount()):
-                id.append([])
-            i = 0
-            for f1 in self.resultlayer.getFeatures():
-                id[i].append(f1.id())
-                for f2 in self.resultlayer.getFeatures():
-                    if f1.geometry().distance(f2.geometry()) < 0.1 and f1.id() != f2.id():
-                        id[i].append(f2.id())
-                i = i + 1
+        if self.dialog.DeleteBox.isChecked():
+            self.resultlayer.startEditing()
+            for j in range(self.resultlayer.featureCount()):
+                id = []
+                for i in range(self.resultlayer.featureCount()):
+                    id.append([])
+                i = 0
+                for f1 in self.resultlayer.getFeatures():
+                    id[i].append(f1.id())
+                    for f2 in self.resultlayer.getFeatures():
+                        if f1.geometry().distance(f2.geometry()) < 0.1 and f1.id() != f2.id():
+                            id[i].append(f2.id())
+                    i = i + 1
 
-            maxlength = 0
-            count = 0
-            for list in id:
-                if len(list) >= maxlength:
-                    maxlength = len(list)
-                    maxcount = count
-                count = count + 1
-            if maxlength == 1:
-                break
-            featureidtoberemoved = id[maxcount][0]
-            self.resultlayer.deleteFeature(featureidtoberemoved)
+                maxlength = 0
+                count = 0
+                for list in id:
+                    if len(list) >= maxlength:
+                        maxlength = len(list)
+                        maxcount = count
+                    count = count + 1
+                if maxlength == 1:
+                    break
+                featureidtoberemoved = id[maxcount][0]
+                self.resultlayer.deleteFeature(featureidtoberemoved)
 
-        self.resultlayer.updateFields()
-        self.resultlayer.commitChanges()
-        self.resultlayer.updateFields()
-        QTimer.singleShot(100, self.Success)
+            self.resultlayer.updateFields()
+            self.resultlayer.commitChanges()
+            self.resultlayer.updateFields()
+
+        QTimer.singleShot(20, self.Success)
 
     def Success(self):
+
+        self.resultlayer.startEditing()
+        prov = self.resultlayer.dataProvider()
+        ID = self.resultlayer.fields().lookupField('ID')
+        Stations = self.resultlayer.fields().lookupField('Stations')
+        Names = self.resultlayer.fields().lookupField('Names')
+        field_ids = [ID]
+        self.resultlayer.dataProvider().deleteAttributes(field_ids)
+        self.resultlayer.updateFields()
+
+        self.resultlayer.dataProvider().addAttributes(
+            [QgsField("ID", QVariant.Double)])
+        self.resultlayer.updateFields()
+        for feat in self.resultlayer.getFeatures():
+            FeutureID=feat.id()
+            atts = {ID: FeutureID,Stations: self.dialog.DistanceBox.value()*FeutureID, Names: self.dialog.NameBox.text() + "_" + str(FeutureID)}
+            prov.changeAttributeValues({feat.id(): atts})
+            feat['ID'] = FeutureID
+            feat['Stations'] = self.dialog.StationingOffsetBox.value() + self.dialog.DistanceBox.value() * (-FeutureID)
+            feat['Names'] = self.dialog.NameBox.text() + "_" + str(FeutureID)
+            self.resultlayer.updateFeature(feat)
+
+        for feat in self.resultlayer.getFeatures():
+            for field in feat.fields().names():
+                if feat[field] == None:
+                    feat[field] = '0'
+            self.resultlayer.updateFeature(feat)
+
+        self.resultlayer.commitChanges()
+        self.resultlayer.updateFields()
+
         self.iface.messageBar().pushSuccess(
             'Cross Section Creator',
             'Operation finished successfully!'
