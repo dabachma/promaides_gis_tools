@@ -98,6 +98,16 @@ class PluginDialog(QDialog):
         self.HelpButton.clicked.connect(self.Help)
         self.pickButton.setAutoDefault(False)
 
+        self.mGroupBox_4.setSaveCollapsedState(False)
+        self.mGroupBox_2.setSaveCollapsedState(False)
+        self.mGroupBox.setSaveCollapsedState(False)
+        self.mGroupBox_3.setSaveCollapsedState(False)
+
+        self.mGroupBox_4.setCollapsed(True)
+        self.mGroupBox_2.setCollapsed(True)
+        self.mGroupBox.setCollapsed(True)
+        self.mGroupBox_3.setCollapsed(True)
+        self.resize(1000, 500)
 
 
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)

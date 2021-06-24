@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>740</width>
-    <height>1065</height>
+    <height>1034</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
   <property name="maximumSize">
    <size>
     <width>16777215</width>
-    <height>16777215</height>
+    <height>1600000</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -54,7 +54,7 @@
       <bool>false</bool>
      </property>
      <property name="collapsed" stdset="0">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="1">
@@ -142,162 +142,83 @@
      </layout>
     </widget>
    </item>
-   <item row="5" column="0">
-    <widget class="QgsCollapsibleGroupBox" name="mGroupBox">
-     <property name="toolTip">
-      <string>Set here the raster with material-ids representing the roughness of the elements</string>
-     </property>
-     <property name="title">
-      <string>Roughness</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-     <property name="collapsed" stdset="0">
-      <bool>true</bool>
-     </property>
-     <layout class="QFormLayout" name="formLayout">
-      <property name="topMargin">
-       <number>20</number>
-      </property>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_9">
-        <property name="minimumSize">
-         <size>
-          <width>140</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>No Data Value</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QSpinBox" name="roughnessNaNBox">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-        <property name="maximum">
-         <number>999</number>
-        </property>
-        <property name="value">
-         <number>1</number>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_13">
-        <property name="text">
-         <string>Layer</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QgsMapLayerComboBox" name="roughnessLayerBox"/>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_14">
-        <property name="text">
-         <string>Band</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QSpinBox" name="roughnessBandBox">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
+   <item row="11" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <widget class="QCheckBox" name="ilmBox">
+       <property name="toolTip">
+        <string>A part of the .ilm file is created</string>
+       </property>
+       <property name="text">
+        <string>Create .ilm file</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_ok">
+       <property name="text">
+        <string>Ok</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_cancel">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
-   <item row="4" column="0">
-    <widget class="QgsCollapsibleGroupBox" name="mGroupBox_3">
-     <property name="toolTip">
-      <string>Set here the height raster for interpolation the z-coordinates of the elements</string>
+   <item row="2" column="0" alignment="Qt::AlignRight">
+    <widget class="QPushButton" name="HelpButton">
+     <property name="maximumSize">
+      <size>
+       <width>80</width>
+       <height>50</height>
+      </size>
      </property>
-     <property name="title">
-      <string>Elevation</string>
+     <property name="layoutDirection">
+      <enum>Qt::LeftToRight</enum>
      </property>
-     <property name="collapsed" stdset="0">
-      <bool>true</bool>
+     <property name="styleSheet">
+      <string notr="true">QPushButton {
+    color: #333;
+    border: 0px solid #555;
+    border-radius: 0px;
+    border-style: outset;
+    background: transparent;
+    padding: 5px;
+    }
+
+</string>
      </property>
-     <layout class="QFormLayout" name="formLayout_3">
-      <property name="topMargin">
-       <number>20</number>
-      </property>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_18">
-        <property name="text">
-         <string>No Data Value</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QDoubleSpinBox" name="demNaNBox">
-        <property name="minimum">
-         <double>-9999.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>9999.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>-9999.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_19">
-        <property name="text">
-         <string>Layer</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QgsMapLayerComboBox" name="demLayerBox"/>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_20">
-        <property name="text">
-         <string>Band</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QSpinBox" name="bandBox"/>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_10">
-        <property name="minimumSize">
-         <size>
-          <width>140</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="toolTip">
-         <string>Interpolation for downscaling (e.g. from 30 x 30 m to 10 x 10 m); Aggregation for upscaling (from 10 x 10 m to 30 x 30 m)</string>
-        </property>
-        <property name="text">
-         <string>Interpolation/Aggregation</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QComboBox" name="interpolationBox">
-        <property name="toolTip">
-         <string>Upscaling e.g. from 10 x 10 m to 30 x 30 m; downscaling e.g. from 30 x 30 m to 10 x 10 m</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>../icons/HelpButton.png</normaloff>../icons/HelpButton.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>25</width>
+       <height>25</height>
+      </size>
+     </property>
     </widget>
    </item>
    <item row="6" column="0">
@@ -387,6 +308,33 @@
      </layout>
     </widget>
    </item>
+   <item row="10" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLineEdit" name="folderEdit">
+       <property name="toolTip">
+        <string>Set output folder</string>
+       </property>
+       <property name="placeholderText">
+        <string>&lt;output folder&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="browseButton">
+       <property name="maximumSize">
+        <size>
+         <width>27</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
    <item row="1" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
@@ -396,10 +344,22 @@
        </property>
        <item>
         <widget class="QListWidget" name="listWidget">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="maximumSize">
           <size>
            <width>16777215</width>
-           <height>16777215</height>
+           <height>1670000</height>
           </size>
          </property>
          <property name="toolTip">
@@ -483,36 +443,10 @@
         <bool>false</bool>
        </property>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="2" column="0" colspan="2">
-         <widget class="QDoubleSpinBox" name="xllBox">
-          <property name="decimals">
-           <number>5</number>
-          </property>
-          <property name="minimum">
-           <double>-999999999.000000000000000</double>
-          </property>
+        <item row="7" column="0" colspan="2">
+         <widget class="QSpinBox" name="nrBox">
           <property name="maximum">
-           <double>999999999.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="0">
-         <widget class="QPushButton" name="ExportButton">
-          <property name="text">
-           <string>Export Area as Polygon...</string>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="2">
-         <widget class="QDoubleSpinBox" name="angleBox">
-          <property name="decimals">
-           <number>5</number>
-          </property>
-          <property name="minimum">
-           <double>-360.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>360.000000000000000</double>
+           <number>999999999</number>
           </property>
          </widget>
         </item>
@@ -529,10 +463,130 @@
           </property>
          </widget>
         </item>
+        <item row="4" column="0" colspan="2">
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Row Size [m]</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="2">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Number of Columns</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Lower Left X</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QDoubleSpinBox" name="yllBox">
+          <property name="decimals">
+           <number>5</number>
+          </property>
+          <property name="minimum">
+           <double>-999999999.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>999999999.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="2">
+         <widget class="QSpinBox" name="ncBox">
+          <property name="maximum">
+           <number>999999999</number>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="2">
+         <widget class="QgsMapLayerComboBox" name="AreaLayerBox"/>
+        </item>
+        <item row="5" column="2">
+         <widget class="QDoubleSpinBox" name="dcBox">
+          <property name="maximum">
+           <double>999999999.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>100.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="2">
+         <widget class="QDoubleSpinBox" name="xllBox">
+          <property name="decimals">
+           <number>5</number>
+          </property>
+          <property name="minimum">
+           <double>-999999999.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>999999999.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="2">
+         <widget class="QPushButton" name="ImportButton">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="text">
+           <string>Import Area with Polygon</string>
+          </property>
+          <property name="checkable">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="2">
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>Column Size [m]</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="2">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::MinimumExpanding</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>30</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
         <item row="6" column="0" colspan="2">
          <widget class="QLabel" name="label_4">
           <property name="text">
            <string>Number of Rows</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0" colspan="2">
+         <widget class="QDoubleSpinBox" name="drBox">
+          <property name="maximum">
+           <double>999999999.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>75.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="0">
+         <widget class="QPushButton" name="ExportButton">
+          <property name="text">
+           <string>Export Area as Polygon...</string>
           </property>
          </widget>
         </item>
@@ -553,94 +607,16 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="2">
-         <widget class="QLabel" name="label_7">
-          <property name="text">
-           <string>Column Size [m]</string>
+        <item row="8" column="2">
+         <widget class="QDoubleSpinBox" name="angleBox">
+          <property name="decimals">
+           <number>5</number>
           </property>
-         </widget>
-        </item>
-        <item row="10" column="2">
-         <widget class="QPushButton" name="ImportButton">
-          <property name="enabled">
-           <bool>true</bool>
+          <property name="minimum">
+           <double>-360.000000000000000</double>
           </property>
-          <property name="text">
-           <string>Import Area with Polygon</string>
-          </property>
-          <property name="checkable">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0" colspan="2">
-         <widget class="QDoubleSpinBox" name="drBox">
           <property name="maximum">
-           <double>999999999.000000000000000</double>
-          </property>
-          <property name="value">
-           <double>75.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="0" colspan="2">
-         <widget class="QSpinBox" name="nrBox">
-          <property name="maximum">
-           <number>999999999</number>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0" colspan="2">
-         <widget class="QLabel" name="label_6">
-          <property name="text">
-           <string>Row Size [m]</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0" colspan="2">
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Lower Left X</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="2">
-         <widget class="QLabel" name="label_5">
-          <property name="text">
-           <string>Number of Columns</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="2">
-         <widget class="QDoubleSpinBox" name="dcBox">
-          <property name="maximum">
-           <double>999999999.000000000000000</double>
-          </property>
-          <property name="value">
-           <double>100.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="2">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::MinimumExpanding</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>30</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="7" column="2">
-         <widget class="QSpinBox" name="ncBox">
-          <property name="maximum">
-           <number>999999999</number>
+           <double>360.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -651,131 +627,167 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="2">
-         <widget class="QDoubleSpinBox" name="yllBox">
-          <property name="decimals">
-           <number>5</number>
+        <item row="12" column="2">
+         <widget class="QgsCollapsibleGroupBox" name="mGroupBox">
+          <property name="toolTip">
+           <string>Set here the raster with material-ids representing the roughness of the elements</string>
           </property>
-          <property name="minimum">
-           <double>-999999999.000000000000000</double>
+          <property name="title">
+           <string>Roughness</string>
           </property>
-          <property name="maximum">
-           <double>999999999.000000000000000</double>
+          <property name="checkable">
+           <bool>true</bool>
           </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="collapsed" stdset="0">
+           <bool>true</bool>
+          </property>
+          <layout class="QFormLayout" name="formLayout">
+           <property name="topMargin">
+            <number>20</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_9">
+             <property name="minimumSize">
+              <size>
+               <width>140</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>No Data Value</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="roughnessNaNBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>999</number>
+             </property>
+             <property name="value">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>Layer</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QgsMapLayerComboBox" name="roughnessLayerBox"/>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_14">
+             <property name="text">
+              <string>Band</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="roughnessBandBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
-        </item>
-        <item row="11" column="2">
-         <widget class="QgsMapLayerComboBox" name="AreaLayerBox"/>
         </item>
        </layout>
       </widget>
      </item>
     </layout>
    </item>
-   <item row="11" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout_4">
-     <item>
-      <widget class="QCheckBox" name="ilmBox">
-       <property name="toolTip">
-        <string>A part of the .ilm file is created</string>
-       </property>
-       <property name="text">
-        <string>Create .ilm file</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pushButton_ok">
-       <property name="text">
-        <string>Ok</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pushButton_cancel">
-       <property name="text">
-        <string>Cancel</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="10" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QLineEdit" name="folderEdit">
-       <property name="toolTip">
-        <string>Set output folder</string>
-       </property>
-       <property name="placeholderText">
-        <string>&lt;output folder&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="browseButton">
-       <property name="maximumSize">
-        <size>
-         <width>27</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="text">
-        <string>...</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="2" column="0" alignment="Qt::AlignRight">
-    <widget class="QPushButton" name="HelpButton">
-     <property name="maximumSize">
-      <size>
-       <width>80</width>
-       <height>50</height>
-      </size>
+   <item row="3" column="0" rowspan="2">
+    <widget class="QgsCollapsibleGroupBox" name="mGroupBox_3">
+     <property name="toolTip">
+      <string>Set here the height raster for interpolation the z-coordinates of the elements</string>
      </property>
-     <property name="layoutDirection">
-      <enum>Qt::LeftToRight</enum>
+     <property name="title">
+      <string>Elevation</string>
      </property>
-     <property name="styleSheet">
-      <string notr="true">QPushButton {
-    color: #333;
-    border: 0px solid #555;
-    border-radius: 0px;
-    border-style: outset;
-    background: transparent;
-    padding: 5px;
-    }
-
-</string>
+     <property name="collapsed" stdset="0">
+      <bool>true</bool>
      </property>
-     <property name="text">
-      <string/>
-     </property>
-     <property name="icon">
-      <iconset>
-       <normaloff>../icons/HelpButton.png</normaloff>../icons/HelpButton.png</iconset>
-     </property>
-     <property name="iconSize">
-      <size>
-       <width>25</width>
-       <height>25</height>
-      </size>
-     </property>
+     <layout class="QFormLayout" name="formLayout_3">
+      <property name="topMargin">
+       <number>20</number>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_18">
+        <property name="text">
+         <string>No Data Value</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QDoubleSpinBox" name="demNaNBox">
+        <property name="minimum">
+         <double>-9999.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>9999.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>-9999.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_19">
+        <property name="text">
+         <string>Layer</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QgsMapLayerComboBox" name="demLayerBox"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_20">
+        <property name="text">
+         <string>Band</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QSpinBox" name="bandBox"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_10">
+        <property name="minimumSize">
+         <size>
+          <width>140</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Interpolation for downscaling (e.g. from 30 x 30 m to 10 x 10 m); Aggregation for upscaling (from 10 x 10 m to 30 x 30 m)</string>
+        </property>
+        <property name="text">
+         <string>Interpolation/Aggregation</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QComboBox" name="interpolationBox">
+        <property name="toolTip">
+         <string>Upscaling e.g. from 10 x 10 m to 30 x 30 m; downscaling e.g. from 30 x 30 m to 10 x 10 m</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>
