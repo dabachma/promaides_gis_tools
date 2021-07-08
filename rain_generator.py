@@ -954,7 +954,7 @@ class RainGenerator(object):
 
         Storm=[]
         StormConnectivity=[]
-        PreviousStorm=[]
+        PreviousStormConnectivity=[]
 
         #reading file
         filepath = os.path.join(tempfile.gettempdir(), "RainfallSpatialInterpolation" + '.txt')
@@ -997,8 +997,20 @@ class RainGenerator(object):
             if value > StormThreshhold:
                 count = count + 1
                 StormConnectivity[i] = count
-            ####################################################################################
+        ####################################################################################
         print(StormConnectivity,"connectivity2")
+        #find overlapping storms
+        for i, value in enumerate(StormConnectivity):
+            for j, previousvalue in enumerate(PreviousStormConnectivity):
+                if i==j and value>0 and previousvalue>0:
+                    for k, value2 in enumerate(StormConnectivity):
+                        if value2==value:
+                            StormConnectivity[k]=previousvalue
+       ######################################################################################
+
+        #for i, value in enumerate(StormConnectivity):
+            #for j, rain in enumerate(Storm):
+
 
 
 
