@@ -343,6 +343,8 @@ class RainGenerator(object):
 ##########################################################################
     # layer2 = spatial interpolation layer
     layer2 = QgsVectorLayer("Polygon", 'Generation_Area', 'memory')
+    nx=0
+    ny=0
 
     def CreateGenerationArea(self):
         if type(self.dialog.GenerationAreaLayer.currentLayer()) == type(None):
@@ -380,6 +382,9 @@ class RainGenerator(object):
         else:
             hspacing = self.dialog.dxBox.value()
             vspacing = self.dialog.dyBox.value()
+
+        self.nx = math.ceil((xmax-xmin)/hspacing)
+        self.ny = math.ceil((ymax-ymin)/vspacing)
 
         id = 0
         y = ymax
@@ -429,6 +434,12 @@ class RainGenerator(object):
         try:  # deletes previous files
             if os.path.isfile(filepath):
                 os.remove(filepath)
+        except:
+            pass
+
+        try:
+            file=open(filepath, 'w')
+            file.close()
         except:
             pass
 
@@ -489,9 +500,9 @@ class RainGenerator(object):
             if self.dialog.SpatialInterpolationMethodBox.currentText() == "Inversed Distance Weighting":
                 # writing the file
                 for i in range(len(generationlocations)):
-                    SpatialInterpolation.write('!BEGIN   #%s\n' % "raingaugename")
+                    SpatialInterpolation.write('BEGIN\n')
                     SpatialInterpolation.write(
-                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                        '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
                             str(i), str(min(rainlengths))))
                     counter = 0
                     n = self.dialog.ExponentFactorBox.value()  # exponent factor for the invert distance weighting formula
@@ -576,10 +587,10 @@ class RainGenerator(object):
 
                 # writing the file
                 for i in range(len(generationlocations)):
-                    SpatialInterpolation.write('!BEGIN   #%s\n' % "raingaugename")
+                    SpatialInterpolation.write('BEGIN\n')
                     SpatialInterpolation.write(
-                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
-                                str(i), str(min(rainlengths))))
+                        '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                            str(i), str(min(rainlengths))))
                     counter = 0
                     while counter + 1 <= min(rainlengths):
                         rainvalue = float(allrainvalues[counter][i])
@@ -655,10 +666,10 @@ class RainGenerator(object):
 
                 # writing the file
                 for i in range(len(generationlocations)):
-                    SpatialInterpolation.write('!BEGIN   #%s\n' % "raingaugename")
+                    SpatialInterpolation.write('BEGIN\n')
                     SpatialInterpolation.write(
-                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
-                                str(i), str(min(rainlengths))))
+                        '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                            str(i), str(min(rainlengths))))
                     counter = 0
                     while counter + 1 <= min(rainlengths):
                         rainvalue = float(allrainvalues[counter][i])
@@ -696,74 +707,348 @@ class RainGenerator(object):
             QgsProject.instance().addMapLayer(timeviewerlayer)
         ##########################################################
         if self.dialog.SaveSpatialInterpolationBox.isChecked():
-            shutil.copy(filepath, self.dialog.folderEdit_dataanalysis.text())
+            self.dialog.StatusIndicator.setText("Writing Spatial Interpolation Output...")
+            QTimer.singleShot(50, self.SpatialInterpolationforPromaides)
 
-####################################################################################
-####################################################################################
-####################################################################################
-####################################################################################
-####################################################################################
-####################################################################################
-####################################################################################
+        self.dialog.StatusIndicator.setText("Analyzing Storm Statistics...")
+        QTimer.singleShot(50, self.StormAnalysis)
 
 
 
 
+################################################################################################
+    def SpatialInterpolationforPromaides(self):
+        filepath = os.path.join(self.dialog.folderEdit_dataanalysis.text(), "RainfallSpatialInterpolation" + '.txt')
+        try:  # deletes previous files
+            if os.path.isfile(filepath):
+                os.remove(filepath)
+        except:
+            pass
 
+        with open(filepath, 'a') as generateddata:
+            generateddata.write('# comment\n')
+            generateddata.write('# !BEGIN\n')
+            generateddata.write('# number begining from 0 ++ number of points\n')
+            generateddata.write('# hour [h] discharge [m³/s]\n')
+            generateddata.write('# !END\n\n\n')
 
+            raingaugelocations = []
+            generationlocations = []
 
+            # getting the locations of raingauges
+            point_layer = self.dialog.RainGaugeLayer.currentLayer()
+            features = point_layer.getFeatures()
+            for feature in features:
+                buff = feature.geometry()
+                raingaugelocations.append(buff.asPoint())
 
+            # getting the generation locations
+            area_layer = self.layer2
+            features = area_layer.getFeatures()
+            for feature in features:
+                buff = feature.geometry()
+                generationlocations.append(buff.centroid().asPoint())
 
+            # calculate generation duration
+            rainlengths = []
+            for j in range(len(self.data)):
+                rainlengths.append(len(self.data[j][0]))
 
+            #################################################################################################
+            # Inversed Distance Weighting
+            if self.dialog.SpatialInterpolationMethodBox.currentText() == "Inversed Distance Weighting":
+                # writing the file
+                for i in range(len(generationlocations)):
+                    generateddata.write('!BEGIN   #%s\n' % "raingaugename")
+                    generateddata.write(
+                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                                str(i), str(min(rainlengths) * 2)))
+                    counter = 0
+                    n = self.dialog.ExponentFactorBox.value()  # exponent factor for the invert distance weighting formula
+                    while counter + 1 <= min(rainlengths):
+                        upperformula = 0
+                        lowerformula = 0
+                        for j in range(len(self.data)):
+                            distance = raingaugelocations[j].distance(generationlocations[i])
+                            upperformula = upperformula + ((1 / (distance ** n)) * float(self.data[j][1][counter]))
+                            lowerformula = lowerformula + (1 / (distance ** n))
+                        rainvalue = round((upperformula / lowerformula), 3)
+                        generateddata.write(
+                            '%s %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                        generateddata.write(
+                                '%s.99 %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                        if counter + 1 == min(rainlengths):
+                            generateddata.write('!END')
+                            generateddata.write('\n\n')
+                        counter = counter + 1
+            ######################################################################################################
+            # Trend Surface Analysis (Polynomial 1st Order)
+            elif self.dialog.SpatialInterpolationMethodBox.currentText() == "Trend Surface Analysis (Polynomial 1st Order)":
 
+                allrainvalues = []
+                for counter in range(min(rainlengths)):
+                    xs = []
+                    ys = []
+                    zs = []
+                    # putting all x and y and z values in seperate arrays
+                    for r, i in enumerate(raingaugelocations):
+                        xs.append(i.x())
+                        ys.append(i.y())
+                        zs.append(float(self.data[r][1][counter]))
 
+                    data = np.c_[xs, ys, zs]
 
+                    # grid covering the domain of the data
+                    # getting the minimum and maximum x and ys of generation area
+                    layer = self.dialog.GenerationAreaLayer.currentLayer()
+                    ex = layer.extent()
+                    xmax = ex.xMaximum()
+                    ymax = ex.yMaximum()
+                    xmin = ex.xMinimum()
+                    ymin = ex.yMinimum()
 
+                    X, Y = np.meshgrid(np.linspace(xmin, xmax, self.dialog.dxBox.value()),
+                                       np.linspace(ymin, ymax, self.dialog.dyBox.value()))
 
+                    order = 1  # 1: linear, 2: quadratic
+                    if order == 1:
+                        # best-fit linear plane
+                        A = np.c_[data[:, 0], data[:, 1], np.ones(data.shape[0])]
+                        C, _, _, _ = scipy.linalg.lstsq(A, data[:, 2])  # coefficients
 
+                        # formula
+                        # Z = C[0] * X + C[1] * Y + C[2]
 
+                    rainvaluesintimestep = []
+                    for i in generationlocations:
+                        value = (C[0] * i.x()) + (C[1] * i.y()) + C[2]
+                        rainvaluesintimestep.append(value)
+                    allrainvalues.append(rainvaluesintimestep)
 
+                # writing the file
+                for i in range(len(generationlocations)):
+                    generateddata.write('!BEGIN   #%s\n' % "raingaugename")
+                    generateddata.write(
+                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                                str(i), str(min(rainlengths) * 2)))
+                    counter = 0
+                    while counter + 1 <= min(rainlengths):
+                        rainvalue = float(allrainvalues[counter][i])
+                        generateddata.write(
+                            '%s %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                        generateddata.write(
+                                '%s.99 %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                        if counter + 1 == min(rainlengths):
+                            generateddata.write('!END')
+                            generateddata.write('\n\n')
+                        counter = counter + 1
+            ######################################################################################
+            elif self.dialog.SpatialInterpolationMethodBox.currentText() == "Trend Surface Analysis (Polynomial 2nd Order)":
 
+                allrainvalues = []
+                for counter in range(min(rainlengths)):
+                    xs = []
+                    ys = []
+                    zs = []
+                    # putting all x and y and z values in seperate arrays
+                    for r, i in enumerate(raingaugelocations):
+                        xs.append(i.x())
+                        ys.append(i.y())
+                        zs.append(float(self.data[r][1][counter]))
 
+                    data = np.c_[xs, ys, zs]
 
+                    # grid covering the domain of the data
+                    # getting the minimum and maximum x and ys of generation area
+                    layer = self.dialog.GenerationAreaLayer.currentLayer()
+                    ex = layer.extent()
+                    xmax = ex.xMaximum()
+                    ymax = ex.yMaximum()
+                    xmin = ex.xMinimum()
+                    ymin = ex.yMinimum()
 
+                    X, Y = np.meshgrid(np.linspace(xmin, xmax, self.dialog.dxBox.value()),
+                                       np.linspace(ymin, ymax, self.dialog.dyBox.value()))
 
+                    order = 2  # 2: quadratic
+                    if order == 2:
+                        # best-fit quadratic curve
+                        A = np.c_[
+                            np.ones(data.shape[0]), data[:, :2], np.prod(data[:, :2], axis=1), data[:, :2] ** 2]
+                        C, _, _, _ = scipy.linalg.lstsq(A, data[:, 2])
 
+                        # formula
+                        # Z = C[4]*X**2. + C[5]*Y**2. + C[3]*X*Y + C[1]*X + C[2]*Y + C[0]
 
+                    rainvaluesintimestep = []
+                    for i in generationlocations:
+                        value = C[4] * i.x() ** 2. + C[5] * i.y() ** 2. + C[3] * i.x() * i.y() + C[1] * i.x() + C[
+                            2] * i.y() + C[0]
+                        rainvaluesintimestep.append(value)
+                    allrainvalues.append(rainvaluesintimestep)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                # writing the file
+                for i in range(len(generationlocations)):
+                    generateddata.write('!BEGIN   #%s\n' % "raingaugename")
+                    generateddata.write(
+                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                                str(i), str(min(rainlengths) * 2)))
+                    counter = 0
+                    while counter + 1 <= min(rainlengths):
+                        rainvalue = float(allrainvalues[counter][i])
+                        generateddata.write(
+                            '%s %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                        generateddata.write(
+                                '%s.99 %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                        if counter + 1 == min(rainlengths):
+                            generateddata.write('!END')
+                            generateddata.write('\n\n')
+                        counter = counter + 1
 
 ###########################################################################################
+
+
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+
+
+
+    #data analysis
+
+
+    #shared arrays
+    StormVelocity=[]
+    StormVolume=[]
+    StormDirection=[]
+    StormDuration=[]
+    StormPeakDischarge=[]
+    StormSize=[]
+    NoStormDuration=[]
+    CellCoordinates=[]
+
+    for i in range(10000):
+        StormVelocity.append(0)
+        StormVolume.append(0)
+        StormDirection.append(0)
+        StormDuration.append(0)
+        StormPeakDischarge.append(0)
+        StormSize.append(0)
+
+    def StormAnalysis(self):
+
+        #getting the center x y of each square cell
+        for feature in self.layer2.getFeatures():
+            self.CellCoordinates.append(feature.geometry().centroid().asPoint())
+
+
+        print(self.nx)
+        print(self.ny)
+
+
+        count=0
+
+        Storm=[]
+        StormConnectivity=[]
+        PreviousStorm=[]
+
+        #reading file
+        filepath = os.path.join(tempfile.gettempdir(), "RainfallSpatialInterpolation" + '.txt')
+        f = open(filepath)
+        lines = f.readlines()
+        StartingLine = 2
+        for i in range(StartingLine,StartingLine+((self.nx*self.ny-1)*(len(self.data[0][0])+4))+1,len(self.data[0][0])+3+1):
+            Storm.append(lines[i].split(' ')[1])
+        for i in range(len(Storm)):
+            StormConnectivity.append(0)
+        Storm = [float(i) for i in Storm]
+
+
+        ###################################################################################
+        #storm cluster identification
+        count=0
+        StormThreshhold = self.dialog.StormThreshholdBox.value()
+        for i, value in enumerate(Storm):
+            try:
+                if Storm[i-1]>StormThreshhold and value>StormThreshhold and (i-1)>=0:
+                    StormConnectivity[i]=StormConnectivity[i-1]
+                    continue
+            except:
+                pass
+
+            try:
+                if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx)>=0:
+                    StormConnectivity[i] = StormConnectivity[i - self.nx]
+                    continue
+            except:
+                pass
+
+            try:
+                if Storm[i - self.nx-1] > StormThreshhold and value > StormThreshhold and (i - self.nx-1)>=0:
+                    StormConnectivity[i] = StormConnectivity[i - self.nx-1]
+                    continue
+            except:
+                pass
+
+            if value > StormThreshhold:
+                count = count + 1
+                StormConnectivity[i] = count
+            ####################################################################################
+        print(StormConnectivity,"connectivity2")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ###########################################################################################
     #old code
+
+
+
+
 
 
 
