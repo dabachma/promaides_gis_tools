@@ -128,17 +128,17 @@
          <bool>false</bool>
         </property>
         <layout class="QGridLayout" name="gridLayout">
-         <item row="1" column="1" colspan="4">
-          <widget class="QgsFieldExpressionWidget" name="DataAddressField" native="true">
-           <property name="toolTip">
-            <string/>
-           </property>
-          </widget>
-         </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_22">
            <property name="text">
             <string>Data locations</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1" colspan="4">
+          <widget class="QgsFieldExpressionWidget" name="DataAddressField" native="true">
+           <property name="toolTip">
+            <string/>
            </property>
           </widget>
          </item>
@@ -155,6 +155,16 @@
            </property>
           </widget>
          </item>
+         <item row="2" column="4">
+          <widget class="QComboBox" name="UntilBox"/>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_21">
+           <property name="text">
+            <string>Rain gauge locations</string>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="5">
           <widget class="QPushButton" name="CheckButton">
            <property name="toolTip">
@@ -165,58 +175,7 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_21">
-           <property name="text">
-            <string>Rain gauge locations</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="4">
-          <widget class="QComboBox" name="UntilBox"/>
-         </item>
-         <item row="2" column="1" colspan="5">
-          <widget class="QgsFieldExpressionWidget" name="RainGaugeNameField" native="true">
-           <property name="toolTip">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_28">
-           <property name="text">
-            <string>Rain gauge names</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QCheckBox" name="AnalyzeAllDataBox">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Analyze all data</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="3">
-          <widget class="QLabel" name="label_31">
-           <property name="text">
-            <string>Until</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QLabel" name="label_30">
-           <property name="text">
-            <string>From</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="5">
+         <item row="2" column="5">
           <widget class="QPushButton" name="CheckButton2">
            <property name="toolTip">
             <string/>
@@ -226,7 +185,21 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="0" colspan="2">
+         <item row="2" column="3">
+          <widget class="QLabel" name="label_31">
+           <property name="text">
+            <string>Until</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLabel" name="label_30">
+           <property name="text">
+            <string>From</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0" colspan="2">
           <widget class="QCheckBox" name="ManualStormThreshholdBox">
            <property name="toolTip">
             <string/>
@@ -242,7 +215,26 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="2">
+         <item row="2" column="0">
+          <widget class="QCheckBox" name="AnalyzeAllDataBox">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string>Analyze all data</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QComboBox" name="FromBox"/>
+         </item>
+         <item row="0" column="1" colspan="4">
+          <widget class="QgsMapLayerComboBox" name="RainGaugeLayer"/>
+         </item>
+         <item row="3" column="2">
           <widget class="QDoubleSpinBox" name="StormThreshholdBox">
            <property name="minimum">
             <double>0.010000000000000</double>
@@ -251,12 +243,6 @@
             <double>1.000000000000000</double>
            </property>
           </widget>
-         </item>
-         <item row="3" column="2">
-          <widget class="QComboBox" name="FromBox"/>
-         </item>
-         <item row="0" column="1" colspan="4">
-          <widget class="QgsMapLayerComboBox" name="RainGaugeLayer"/>
          </item>
         </layout>
        </widget>
