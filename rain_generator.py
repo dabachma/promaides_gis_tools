@@ -1048,50 +1048,48 @@ class RainGenerator(object):
                 for value in list(set(StormConnectivity)):
                     if value!=0:
                         self.StormDuration[value]=self.StormDuration[value]+1
-                    #peak intensity and storm area and velocity and direction
-                    rainintensities=[]
-                    currentstormcoordinates=[]
-                    previousstormcoordinates=[]
-                    stormarea=0
-                    for i, id in enumerate(StormConnectivity):
-                        if id==value and id!=0:
-                            rainintensities.append(Storm[i])
-                            currentstormcoordinates.append(self.CellCoordinates[i])
-                            stormarea=stormarea+1
+                        #peak intensity and storm area and velocity and direction
+                        rainintensities=[]
+                        currentstormcoordinates=[]
+                        previousstormcoordinates=[]
+                        stormarea=0
+                        for i, id in enumerate(StormConnectivity):
+                            if id==value and id!=0:
+                                rainintensities.append(Storm[i])
+                                currentstormcoordinates.append(self.CellCoordinates[i])
+                                stormarea=stormarea+1
 
-                    for i, id in enumerate(PreviousStormConnectivity):
-                        if id==value and id!=0:
-                            previousstormcoordinates.append(self.CellCoordinates[i])
+                        for i, id in enumerate(PreviousStormConnectivity):
+                            if id==value and id!=0:
+                                previousstormcoordinates.append(self.CellCoordinates[i])
 
-                    if value != 0:
-                        self.StormPeakIntensity[value]=max(rainintensities)
-                        self.StormSize[value]=stormarea
+                        if value != 0:
+                            self.StormPeakIntensity[value]=max(rainintensities)
+                            self.StormSize[value]=self.StormSize[value]+stormarea
 
+                        #traveled distance and direction
+                        if value != 0 and (value in PreviousStormConnectivity):
+                            currentstormcenterx=0
+                            currentstormcentery=0
+                            for xy in currentstormcoordinates:
+                                currentstormcenterx=currentstormcenterx+xy.x()
+                                currentstormcentery = currentstormcentery + xy.y()
+                            currentstormcenterx = currentstormcenterx/len(currentstormcoordinates)
+                            currentstormcentery = currentstormcentery/len(currentstormcoordinates)
 
+                            previousstormcenterx = 0
+                            previousstormcentery = 0
+                            for xy in previousstormcoordinates:
+                                previousstormcenterx = previousstormcenterx + xy.x()
+                                previousstormcentery = previousstormcentery + xy.y()
 
-                    #traveled distance and direction
-                    if value != 0 and (value in PreviousStormConnectivity):
-                        currentstormcenterx=0
-                        currentstormcentery=0
-                        for xy in currentstormcoordinates:
-                            currentstormcenterx=currentstormcenterx+xy.x()
-                            currentstormcentery = currentstormcentery + xy.y()
-                        currentstormcenterx = currentstormcenterx/len(currentstormcoordinates)
-                        currentstormcentery = currentstormcentery/len(currentstormcoordinates)
+                            if value !=1:
+                                previousstormcenterx = previousstormcenterx / len(previousstormcoordinates)
+                                previousstormcentery = previousstormcentery / len(previousstormcoordinates)
 
-                        previousstormcenterx = 0
-                        previousstormcentery = 0
-                        for xy in previousstormcoordinates:
-                            previousstormcenterx = previousstormcenterx + xy.x()
-                            previousstormcentery = previousstormcentery + xy.y()
-
-                        if value !=1:
-                            previousstormcenterx = previousstormcenterx / len(previousstormcoordinates)
-                            previousstormcentery = previousstormcentery / len(previousstormcoordinates)
-
-                        #both need averaging out
-                        self.StormTraveledDistance[value] = self.StormTraveledDistance[value] + math.sqrt((currentstormcenterx - previousstormcenterx)**2 + (currentstormcentery - previousstormcentery)**2)
-                        self.StormDirection[value] = self.StormDirection[value] + angle_between([previousstormcenterx,previousstormcentery], [currentstormcenterx,currentstormcentery])
+                            #both need averaging out
+                            self.StormTraveledDistance[value] = self.StormTraveledDistance[value] + math.sqrt((currentstormcenterx - previousstormcenterx)**2 + (currentstormcentery - previousstormcentery)**2)
+                            self.StormDirection[value] = self.StormDirection[value] + angle_between([previousstormcenterx,previousstormcentery], [currentstormcenterx,currentstormcentery])
 
             PreviousStormConnectivity=StormConnectivity
             Storm = []
