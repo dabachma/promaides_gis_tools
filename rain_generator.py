@@ -922,21 +922,22 @@ class RainGenerator(object):
 
 
     #shared arrays
-    StormVelocity=[]
+    StormTraveledDistance=[]
     StormVolume=[]
     StormDirection=[]
     StormDuration=[]
-    StormPeakDischarge=[]
+    StormPeakIntensity=[]
     StormSize=[]
     NoStormDuration=[]
     CellCoordinates=[]
+    StormCount=0
 
     for i in range(10000):
-        StormVelocity.append(0)
+        StormTraveledDistance.append(0)
         StormVolume.append(0)
         StormDirection.append(0)
         StormDuration.append(0)
-        StormPeakDischarge.append(0)
+        StormPeakIntensity.append(0)
         StormSize.append(0)
 
     def StormAnalysis(self):
@@ -945,12 +946,21 @@ class RainGenerator(object):
         for feature in self.layer2.getFeatures():
             self.CellCoordinates.append(feature.geometry().centroid().asPoint())
 
+        print(self.nx,"nx")
+        print(self.ny,"ny")
 
-        print(self.nx)
-        print(self.ny)
+        #calculates angle between two points clockwise
+        #east is 0
+        #north is 90
+        def angle_between(p1, p2):
+            ang1 = np.arctan2(*p1[::-1])
+            ang2 = np.arctan2(*p2[::-1])
+            return np.rad2deg((ang1 - ang2) % (2 * np.pi))
+
+        self.StormCount=0
+        nostormcount=0
 
 
-        count=0
 
         Storm=[]
         StormConnectivity=[]
@@ -961,55 +971,167 @@ class RainGenerator(object):
         f = open(filepath)
         lines = f.readlines()
         StartingLine = 2
-        for i in range(StartingLine,StartingLine+((self.nx*self.ny-1)*(len(self.data[0][0])+4))+1,len(self.data[0][0])+3+1):
-            Storm.append(lines[i].split(' ')[1])
-        for i in range(len(Storm)):
-            StormConnectivity.append(0)
-        Storm = [float(i) for i in Storm]
+        for linecount in range(len(self.data[0][0])):
+            print(StartingLine,"startingline")
+            for i in range(StartingLine,StartingLine+((self.nx*self.ny-1)*(len(self.data[0][0])+4))+1,len(self.data[0][0])+3+1):
+                Storm.append(lines[i].split(' ')[1])
+
+            #place to put test arrays
+
+            for i in range(len(Storm)):
+                StormConnectivity.append(0)
+            Storm = [float(i) for i in Storm]
+            StartingLine=StartingLine+1
+
+            ###################################################################################
+            #storm cluster identification
+            StormThreshhold = self.dialog.StormThreshholdBox.value()
+            for i, value in enumerate(Storm):
+                try:
+                    if Storm[i-1]>StormThreshhold and value>StormThreshhold and (i-1)>=0:
+                        StormConnectivity[i]=StormConnectivity[i-1]
+                        continue
+                except:
+                    pass
+
+                try:
+                    if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx)>=0:
+                        StormConnectivity[i] = StormConnectivity[i - self.nx]
+                        continue
+                except:
+                    pass
+
+                try:
+                    if Storm[i - self.nx-1] > StormThreshhold and value > StormThreshhold and (i - self.nx-1)>=0:
+                        StormConnectivity[i] = StormConnectivity[i - self.nx-1]
+                        continue
+                except:
+                    pass
+
+                if value > StormThreshhold:
+                    self.StormCount = self.StormCount + 1
+                    StormConnectivity[i] = self.StormCount
+            ####################################################################################
+            print(PreviousStormConnectivity,"previous connectivity1")
+            print(StormConnectivity, "storm connectivity1")
+            print(Storm, "storm")
+            #find overlapping storms
+            for i, value in enumerate(StormConnectivity):
+                for j, previousvalue in enumerate(PreviousStormConnectivity):
+                    if i==j and value>0 and previousvalue>0:
+                        for k, value2 in enumerate(StormConnectivity):
+                            if value2==value:
+                                StormConnectivity[k]=previousvalue
+           ######################################################################################
+
+            #getting storm statistics
+
+            if all(i <= self.dialog.StormThreshholdBox.value() for i in Storm):
+                nostormcount=nostormcount+1
+            else:
+                self.NoStormDuration.append(nostormcount)
+                nostormcount=0
+
+               #storm volume
+                for i, value in enumerate(StormConnectivity):
+                    if value>0:
+                        self.StormVolume[value]=self.StormVolume[value]+Storm[i]
+                #storm duration
+                print(StormConnectivity, "storm connectivity2")
+                for value in list(set(StormConnectivity)):
+                    print(value,"value")
+                    if value!=0:
+                        self.StormDuration[value]=self.StormDuration[value]+1
+                    #peak intensity and storm area and velocity and direction
+                    rainintensities=[]
+                    currentstormcoordinates=[]
+                    previousstormcoordinates=[]
+                    stormarea=0
+                    for i, id in enumerate(StormConnectivity):
+                        if id==value and id!=0:
+                            rainintensities.append(Storm[i])
+                            currentstormcoordinates.append(self.CellCoordinates[i])
+                            stormarea=stormarea+1
+
+                    for i, id in enumerate(PreviousStormConnectivity):
+                        if id==value and id!=0:
+                            previousstormcoordinates.append(self.CellCoordinates[i])
+
+                    if value != 0:
+                        self.StormPeakIntensity[value]=max(rainintensities)
+                        self.StormSize[value]=stormarea
 
 
-        ###################################################################################
-        #storm cluster identification
-        count=0
-        StormThreshhold = self.dialog.StormThreshholdBox.value()
-        for i, value in enumerate(Storm):
-            try:
-                if Storm[i-1]>StormThreshhold and value>StormThreshhold and (i-1)>=0:
-                    StormConnectivity[i]=StormConnectivity[i-1]
-                    continue
-            except:
-                pass
 
-            try:
-                if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx)>=0:
-                    StormConnectivity[i] = StormConnectivity[i - self.nx]
-                    continue
-            except:
-                pass
+                    #traveled distance and direction
+                    if value != 0 and (value in PreviousStormConnectivity):
+                        currentstormcenterx=0
+                        currentstormcentery=0
+                        for xy in currentstormcoordinates:
+                            currentstormcenterx=currentstormcenterx+xy.x()
+                            currentstormcentery = currentstormcentery + xy.y()
+                        currentstormcenterx = currentstormcenterx/len(currentstormcoordinates)
+                        currentstormcentery = currentstormcentery/len(currentstormcoordinates)
 
-            try:
-                if Storm[i - self.nx-1] > StormThreshhold and value > StormThreshhold and (i - self.nx-1)>=0:
-                    StormConnectivity[i] = StormConnectivity[i - self.nx-1]
-                    continue
-            except:
-                pass
+                        previousstormcenterx = 0
+                        previousstormcentery = 0
+                        for xy in previousstormcoordinates:
+                            previousstormcenterx = previousstormcenterx + xy.x()
+                            previousstormcentery = previousstormcentery + xy.y()
 
-            if value > StormThreshhold:
-                count = count + 1
-                StormConnectivity[i] = count
-        ####################################################################################
-        print(StormConnectivity,"connectivity2")
-        #find overlapping storms
-        for i, value in enumerate(StormConnectivity):
-            for j, previousvalue in enumerate(PreviousStormConnectivity):
-                if i==j and value>0 and previousvalue>0:
-                    for k, value2 in enumerate(StormConnectivity):
-                        if value2==value:
-                            StormConnectivity[k]=previousvalue
-       ######################################################################################
+                        if value !=1:
+                            previousstormcenterx = previousstormcenterx / len(previousstormcoordinates)
+                            previousstormcentery = previousstormcentery / len(previousstormcoordinates)
 
-        #for i, value in enumerate(StormConnectivity):
-            #for j, rain in enumerate(Storm):
+                        #both need averaging out
+                        self.StormTraveledDistance[value] = self.StormTraveledDistance[value] + math.sqrt((currentstormcenterx - previousstormcenterx)**2 + (currentstormcentery - previousstormcentery)**2)
+                        self.StormDirection[value] = self.StormDirection[value] + angle_between([previousstormcenterx,previousstormcentery], [currentstormcenterx,currentstormcentery])
+
+            PreviousStormConnectivity=StormConnectivity
+            Storm = []
+            StormConnectivity = []
+
+
+        print(self.StormPeakIntensity[:self.StormCount+1],"peak")
+        print(self.StormSize[:self.StormCount+1],"size")
+        print(self.StormDuration[:self.StormCount+1],"duration")
+        print(self.StormTraveledDistance[:self.StormCount+1],"distance")
+        print(self.StormDirection[:self.StormCount+1], "direction")
+
+
+        if self.dialog.SaveStormStatisticsBox.isChecked():
+            self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
+            QTimer.singleShot(50, self.WriteStormStatistics)
+
+
+
+    #function to write storm statistics to file
+    def WriteStormStatistics(self):
+        filepath = os.path.join(self.dialog.folderEdit_dataanalysis.text(), "StormStatistics" + '.txt')
+        try:  # deletes previous files
+            if os.path.isfile(filepath):
+                os.remove(filepath)
+        except:
+            pass
+
+        try:
+            file=open(filepath, 'w')
+            file.close()
+        except:
+            pass
+        with open(filepath, 'a') as StormStatistics:
+            StormStatistics.write('Storm_id Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea Storm_TraveledDistance StormTotalAngle\n')
+            for i in range(1,self.StormCount+1):
+                StormStatistics.write('%s %s %s %s %s %s %s\n' % (i, self.StormDuration[i],self.StormVolume[i],self.StormPeakIntensity[i], (self.StormSize[i]),(self.StormTraveledDistance[i]),(self.StormDirection[i])))
+
+
+
+
+
+
+
+
+
 
 
 
