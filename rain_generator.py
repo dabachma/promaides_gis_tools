@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import math
 import os
 import tempfile
+import pandas
 
 import numpy as np
 import scipy.linalg
@@ -48,6 +49,11 @@ class PluginDialog(QDialog):
         self.SpatialInterpolationMethodBox.addItem("Trend Surface Analysis (Polynomial 2nd Order)")
         #self.SpatialInterpolationMethodBox.setCurrentIndex(-1)
 
+        self.DelimiterBox.addItem("space")
+        self.DelimiterBox.addItem(",")
+        self.DelimiterBox.addItem("-")
+
+
         self.dxBox.setValue(5000)
         self.dyBox.setValue(5000)
 
@@ -64,6 +70,7 @@ class PluginDialog(QDialog):
         self.folderEdit_dataanalysis.setEnabled(False)
         self.browseButton_dataanalysis.setEnabled(False)
         self.ProcessButton.setEnabled(False)
+        self.CheckButton.setEnabled(False)
 
         self.ExponentFactorBox.setEnabled(False)
         self.label_32.setEnabled(False)
@@ -171,6 +178,7 @@ class RainGenerator(object):
         self.dialog.ProcessButton.clicked.connect(self.PreSpatialInterpolation)
         self.dialog.CheckButton2.clicked.connect(self.AnalyzeFromUntil)
 
+        self.dialog.UpdateButton.clicked.connect(self.PreCheckFiles)
 
     def scheduleAbort(self):
         self.cancel = True
@@ -194,6 +202,39 @@ class RainGenerator(object):
     ntimes = 0
     nrains = 0
 ############################################################
+    #updates the time and rain column values
+    def PreCheckFiles(self):
+
+        files, ok = QgsVectorLayerUtils.getValues(self.dialog.RainGaugeLayer.currentLayer(), self.dialog.DataAddressField.expression(), False)
+        if not ok:
+            pass
+        for i, locations in enumerate(files):
+            address = locations.replace("\\", "/")
+
+        self.dialog.TimeColumnBox.clear()
+        self.dialog.RainColumnBox.clear()
+        try:
+            if self.dialog.DelimiterBox.currentText()=="space":
+                df = pandas.read_csv(address.strip("\u202a"), delimiter=" ")
+            else:
+                df = pandas.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox.currentText())
+            for c in df.columns:
+                self.dialog.TimeColumnBox.addItem(c)
+                self.dialog.RainColumnBox.addItem(c)
+        except:
+            return
+
+        self.dialog.CheckButton.setEnabled(True)
+        self.dialog.FromBox.clear()
+        self.dialog.UntilBox.clear()
+        self.dialog.groupBox_2.setEnabled(False)
+        self.dialog.groupBox_3.setEnabled(False)
+        self.dialog.groupBox_5.setEnabled(False)
+        self.dialog.ProcessButton.setEnabled(False)
+        self.data = []
+
+
+
     def CheckFiles(self):
         self.data=[]
         files, ok = QgsVectorLayerUtils.getValues(self.dialog.RainGaugeLayer.currentLayer(), self.dialog.DataAddressField.expression(), False)
@@ -215,27 +256,40 @@ class RainGenerator(object):
                 return
 
             ###################################
-            f = open(address.strip("\u202a"), "r")
-            if self.dialog.HeaderBox.isChecked():
-                lines = f.readlines()[1:]
-            else:
-                lines = f.readlines()
-            times = []
-            rains = []
-            for x in lines:
-                times.append(x.split(' ')[0])
-                rains.append(x.split(' ')[1])
-            f.close()
-            if len(times) >= numberoftimes:
-                numberoftimes = len(times)
-            if len(rains) >= numberofrains:
-                numberofrains = len(rains)
+            #f = open(address.strip("\u202a"), "r")
+            #if self.dialog.HeaderBox.isChecked():
+            #    lines = f.readlines()[1:]
+            #else:
+            #    lines = f.readlines()
+            #times = []
+            #rains = []
+            #for x in lines:
+            #    times.append(x.split(' ')[0])
+            #    rains.append(x.split(' ')[1])
+            #f.close()
+            #if len(times) >= numberoftimes:
+            #    numberoftimes = len(times)
+            #if len(rains) >= numberofrains:
+            #    numberofrains = len(rains)
             #######################################
-            #df = pandas.read_csv(address.strip("\u202a"),delimiter=',')
-            #times=df["Time"].tolist()
-            #rains=df["Value"]
-            #for c in df.columns:
-            #    print(c)
+            try:
+                if self.dialog.DelimiterBox.currentText() == "space":
+                    df = pandas.read_csv(address.strip("\u202a"), delimiter=" ")
+                else:
+                    df = pandas.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox.currentText())
+                times=df[self.dialog.TimeColumnBox.currentText()].tolist()
+                rains=df[self.dialog.RainColumnBox.currentText()].tolist()
+
+                if len(times) >= numberoftimes:
+                  numberoftimes = len(times)
+                if len(rains) >= numberofrains:
+                  numberofrains = len(rains)
+            except:
+                self.iface.messageBar().pushCritical(
+                    'Rain Generator',
+                    'Could not read Files!'
+                )
+                return
 
             #######################################
 
@@ -254,25 +308,26 @@ class RainGenerator(object):
 
         for i, locations in enumerate(files):
             address = locations.replace("\\", "/")
-            f = open(address.strip("\u202a"), "r")
-            if self.dialog.HeaderBox.isChecked():
-                lines = f.readlines()[1:]
+            if self.dialog.DelimiterBox.currentText() == "space":
+                df = pandas.read_csv(address.strip("\u202a"), delimiter=" ")
             else:
-                lines = f.readlines()
-            for x in lines:
-                x=x.replace('\n','')
-                self.data[i][0].append((x.split(' ')[0]).strip("\\n"))
-                self.data[i][1].append((x.split(' ')[1]).strip("\\n"))
-            f.close()
+                df = pandas.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox.currentText())
+            times = df[self.dialog.TimeColumnBox.currentText()].tolist()
+            rains = df[self.dialog.RainColumnBox.currentText()].tolist()
+            for j in range(len(times)):
+                self.data[i][0].append(times[j])
+                self.data[i][1].append(rains[j])
         print(self.data)
 
         #filling the for and until boxes
+        self.dialog.FromBox.clear()
+        self.dialog.UntilBox.clear()
         lengths=[]
         for j in range(len(self.data)):
             lengths.append(len(self.data[j][0]))
         for k in self.data[lengths.index(max(lengths))][0]: #adds the time values for the shortest time series
-            self.dialog.FromBox.addItem(k)
-            self.dialog.UntilBox.addItem(k)
+            self.dialog.FromBox.addItem(str(k))
+            self.dialog.UntilBox.addItem(str(k))
         #self.dialog.FromBox.currentIndex(0)
         #self.dialog.UntilBoxBox.currentIndex(min(lengths)-1)
         if self.dialog.AnalyzeAllDataBox.isChecked():
@@ -294,15 +349,15 @@ class RainGenerator(object):
                 tempdata[x].append([])
 
         for i in range(len(self.data)):
-            if self.dialog.FromBox.currentText() not in self.data[i][0] or self.dialog.UntilBox.currentText() not in self.data[i][0]:
+            if self.dialog.FromBox.currentText() not in str(self.data[i][0]) or self.dialog.UntilBox.currentText() not in str(self.data[i][0]):
                 self.iface.messageBar().pushCritical(
                     'Rain Generator',
                     'Entered Values Dont Exist in Atleast One of the Input Files  !'
                 )
                 return
 
-            fromindex=self.data[i][0].index(self.dialog.FromBox.currentText())
-            untilindex = self.data[i][0].index(self.dialog.UntilBox.currentText())
+            fromindex = str(self.data[i][0]).index(self.dialog.FromBox.currentText())
+            untilindex = str(self.data[i][0]).index(self.dialog.UntilBox.currentText())
 
             if fromindex >= untilindex:
                 self.iface.messageBar().pushCritical(
@@ -312,12 +367,13 @@ class RainGenerator(object):
                 return
 
         for i in range(len(self.data)):
-            for j in range(self.data[i][0].index(self.dialog.FromBox.currentText()),self.data[i][0].index(self.dialog.UntilBox.currentText())+1):
+            for j in range(str(self.data[i][0]).index(self.dialog.FromBox.currentText()),str(self.data[i][0]).index(self.dialog.UntilBox.currentText())+1):
                 tempdata[i][0].append(self.data[i][0][j])
                 tempdata[i][1].append(self.data[i][1][j])
 
         self.data=tempdata
         self.dialog.groupBox_2.setEnabled(True)
+        print(self.data)
 
 
 
