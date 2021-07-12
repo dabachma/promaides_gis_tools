@@ -5,8 +5,6 @@ from __future__ import absolute_import
 import math
 import os
 import tempfile
-import statistics
-import shutil
 
 import numpy as np
 import scipy.linalg
@@ -21,9 +19,7 @@ from PyQt5.QtCore import *
 
 from .environment import get_ui_path
 
-
 UI_PATH = get_ui_path('ui_rain_generator.ui')
-
 
 class PluginDialog(QDialog):
 
@@ -47,14 +43,10 @@ class PluginDialog(QDialog):
         self.RainGaugeLayer.setLayer(None)
         self.GenerationAreaLayer.setLayer(None)
 
-        #self.DataTypeBox.addItem('minutely')
-        #self.DataTypeBox.addItem('Hourly')
-        #self.DataTypeBox.addItem('Daily')
-
         self.SpatialInterpolationMethodBox.addItem("Inversed Distance Weighting")
         self.SpatialInterpolationMethodBox.addItem("Trend Surface Analysis (Polynomial 1st Order)")
         self.SpatialInterpolationMethodBox.addItem("Trend Surface Analysis (Polynomial 2nd Order)")
-        self.SpatialInterpolationMethodBox.setCurrentIndex(-1)
+        #self.SpatialInterpolationMethodBox.setCurrentIndex(-1)
 
         self.dxBox.setValue(5000)
         self.dyBox.setValue(5000)
@@ -906,7 +898,6 @@ class RainGenerator(object):
 
 ###########################################################################################
 
-
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -914,11 +905,8 @@ class RainGenerator(object):
 ####################################################################################
 ####################################################################################
 ####################################################################################
-
-
 
     #data analysis
-
 
     #shared arrays
     StormTraveledDistance=[]
@@ -961,7 +949,7 @@ class RainGenerator(object):
         self.StormSize = []
         self.NoStormDuration = []
 
-        for i in range(200000):
+        for i in range(100000):
             self.StormTraveledDistance.append(0)
             self.StormVolume.append(0)
             self.StormDirection.append(0)
