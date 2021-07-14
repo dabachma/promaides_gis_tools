@@ -132,43 +132,6 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="2" colspan="7">
-          <widget class="QgsFieldExpressionWidget" name="DataAddressField" native="true">
-           <property name="toolTip">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="label_24">
-           <property name="text">
-            <string>Delimeter</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QComboBox" name="DelimiterBox"/>
-         </item>
-         <item row="3" column="3">
-          <widget class="QLabel" name="label_28">
-           <property name="text">
-            <string>Time</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="4" colspan="2">
-          <widget class="QComboBox" name="TimeColumnBox"/>
-         </item>
-         <item row="3" column="6">
-          <widget class="QLabel" name="label_34">
-           <property name="text">
-            <string>Rain</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="7" colspan="2">
-          <widget class="QComboBox" name="RainColumnBox"/>
-         </item>
          <item row="3" column="9">
           <widget class="QPushButton" name="CheckButton">
            <property name="toolTip">
@@ -257,7 +220,48 @@
             <string/>
            </property>
            <property name="text">
-            <string>Update</string>
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../icons/UpdateIcon.png</normaloff>../icons/UpdateIcon.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="8">
+          <widget class="QComboBox" name="DelimiterBox"/>
+         </item>
+         <item row="2" column="7">
+          <widget class="QLabel" name="label_24">
+           <property name="text">
+            <string>Delimeter</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2" colspan="5">
+          <widget class="QgsFieldExpressionWidget" name="DataAddressField" native="true">
+           <property name="toolTip">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_28">
+           <property name="text">
+            <string>Time</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1" colspan="3">
+          <widget class="QComboBox" name="TimeColumnBox"/>
+         </item>
+         <item row="3" column="6" colspan="3">
+          <widget class="QComboBox" name="RainColumnBox"/>
+         </item>
+         <item row="3" column="5">
+          <widget class="QLabel" name="label_34">
+           <property name="text">
+            <string>Rain</string>
            </property>
           </widget>
          </item>

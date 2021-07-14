@@ -205,9 +205,16 @@ class RainGenerator(object):
     #updates the time and rain column values
     def PreCheckFiles(self):
 
+        if type(self.dialog.RainGaugeLayer.currentLayer()) == type(None):
+            self.dialog.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'No Layer Selected !'
+            )
+            return
+
         files, ok = QgsVectorLayerUtils.getValues(self.dialog.RainGaugeLayer.currentLayer(), self.dialog.DataAddressField.expression(), False)
         if not ok:
-            pass
+            return
         for i, locations in enumerate(files):
             address = locations.replace("\\", "/")
 
@@ -348,6 +355,9 @@ class RainGenerator(object):
             for y in range(2):
                 tempdata[x].append([])
 
+        fromindex=0
+        untilindex=0
+
         for i in range(len(self.data)):
             if self.dialog.FromBox.currentText() not in str(self.data[i][0]) or self.dialog.UntilBox.currentText() not in str(self.data[i][0]):
                 self.iface.messageBar().pushCritical(
@@ -356,20 +366,23 @@ class RainGenerator(object):
                 )
                 return
 
-            fromindex = str(self.data[i][0]).index(self.dialog.FromBox.currentText())
-            untilindex = str(self.data[i][0]).index(self.dialog.UntilBox.currentText())
+            for j in range(len(self.data[i][0])):
+                if str(self.data[i][0][j])==self.dialog.FromBox.currentText():
+                    fromindex = j
 
-            if fromindex >= untilindex:
+                if str(self.data[i][0][j])==self.dialog.UntilBox.currentText():
+                    untilindex = j
+
+            if fromindex > untilindex:
                 self.iface.messageBar().pushCritical(
                     'Rain Generator',
                     'The Values Entered Are Not Valid  !'
                 )
                 return
 
-        for i in range(len(self.data)):
-            for j in range(str(self.data[i][0]).index(self.dialog.FromBox.currentText()),str(self.data[i][0]).index(self.dialog.UntilBox.currentText())+1):
-                tempdata[i][0].append(self.data[i][0][j])
-                tempdata[i][1].append(self.data[i][1][j])
+            for k in range(fromindex, untilindex+1):
+                tempdata[i][0].append(self.data[i][0][k])
+                tempdata[i][1].append(self.data[i][1][k])
 
         self.data=tempdata
         self.dialog.groupBox_2.setEnabled(True)
