@@ -5,7 +5,14 @@ from __future__ import absolute_import
 import math
 import os
 import tempfile
-import pandas
+import pandas as pd
+from numpy import random
+from random import sample
+import matplotlib.pyplot as plt
+from scipy import stats
+import math
+
+
 
 import numpy as np
 import scipy.linalg
@@ -222,9 +229,9 @@ class RainGenerator(object):
         self.dialog.RainColumnBox.clear()
         try:
             if self.dialog.DelimiterBox.currentText()=="space":
-                df = pandas.read_csv(address.strip("\u202a"), delimiter=" ")
+                df = pd.read_csv(address.strip("\u202a"), delimiter=" ")
             else:
-                df = pandas.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox.currentText())
+                df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox.currentText())
             for c in df.columns:
                 self.dialog.TimeColumnBox.addItem(c)
                 self.dialog.RainColumnBox.addItem(c)
@@ -281,9 +288,9 @@ class RainGenerator(object):
             #######################################
             try:
                 if self.dialog.DelimiterBox.currentText() == "space":
-                    df = pandas.read_csv(address.strip("\u202a"), delimiter=" ")
+                    df = pd.read_csv(address.strip("\u202a"), delimiter=" ")
                 else:
-                    df = pandas.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox.currentText())
+                    df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox.currentText())
                 times=df[self.dialog.TimeColumnBox.currentText()].tolist()
                 rains=df[self.dialog.RainColumnBox.currentText()].tolist()
 
@@ -316,9 +323,9 @@ class RainGenerator(object):
         for i, locations in enumerate(files):
             address = locations.replace("\\", "/")
             if self.dialog.DelimiterBox.currentText() == "space":
-                df = pandas.read_csv(address.strip("\u202a"), delimiter=" ")
+                df = pd.read_csv(address.strip("\u202a"), delimiter=" ")
             else:
-                df = pandas.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox.currentText())
+                df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox.currentText())
             times = df[self.dialog.TimeColumnBox.currentText()].tolist()
             rains = df[self.dialog.RainColumnBox.currentText()].tolist()
             for j in range(len(times)):
@@ -469,7 +476,6 @@ class RainGenerator(object):
             QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
         self.layer2.updateExtents()
         QgsProject.instance().addMapLayer(self.layer2)
-        self.dialog.groupBox_3.setEnabled(True)
         self.dialog.groupBox_5.setEnabled(True)
         self.dialog.ProcessButton.setEnabled(True)
 
@@ -1021,7 +1027,7 @@ class RainGenerator(object):
         for i in range(100000):
             self.StormTraveledDistance.append(0)
             self.StormVolume.append(0)
-            self.StormDirection.append(0)
+            self.StormDirection.append([])
             self.StormDuration.append(0)
             self.StormPeakIntensity.append(0)
             self.StormSize.append(0)
@@ -1146,7 +1152,25 @@ class RainGenerator(object):
 
                             #both need averaging out
                             self.StormTraveledDistance[value] = self.StormTraveledDistance[value] + math.sqrt((currentstormcenterx - previousstormcenterx)**2 + (currentstormcentery - previousstormcentery)**2)
-                            self.StormDirection[value] = self.StormDirection[value] + angle_between([previousstormcenterx,previousstormcentery], [currentstormcenterx,currentstormcentery])
+                            angle=angle_between([previousstormcenterx,previousstormcentery], [currentstormcenterx,currentstormcentery])
+                            if 0<angle<22.5 or 337.5<angle<360:
+                                direction="E"
+                            elif 22.5 <= angle <= 67.5:
+                                direction = "NE"
+                            elif 67.5 <= angle <= 112.5:
+                                direction = "N"
+                            elif 112.5 <= angle <= 157.5:
+                                direction = "NW"
+                            elif 157.5 <= angle <= 202.5:
+                                direction = "W"
+                            elif 202.5 <= angle <= 247.5:
+                                direction = "SW"
+                            elif 247.5 <= angle <= 292.5:
+                                direction = "S"
+                            elif 292.5 <= angle <= 337.5:
+                                direction = "W"
+                            print(direction)
+                            self.StormDirection[value].append(direction)
 
             PreviousStormConnectivity=StormConnectivity
             Storm = []
@@ -1157,12 +1181,25 @@ class RainGenerator(object):
         #print(self.StormSize[:self.StormCount+1],"size")
         #print(self.StormDuration[:self.StormCount+1],"duration")
         #print(self.StormTraveledDistance[:self.StormCount+1],"distance")
-        #print(self.StormDirection[:self.StormCount+1], "direction")
+        print(self.StormDirection[:self.StormCount+1], "direction")
 
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
             self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
             QTimer.singleShot(50, self.WriteStormStatistics)
+
+
+        N=0
+        for i in self.StormDuration:
+            if i>0:
+                N=N+1
+        self.dialog.StatusIndicator.setText("Processing Complete, %s Storms Identified" % (N))
+        self.iface.messageBar().pushSuccess(
+
+            'Rain Generator',
+            'Processing Complete !'
+        )
+        self.dialog.groupBox_3.setEnabled(True)
 
 
 
@@ -1191,3 +1228,40 @@ class RainGenerator(object):
     
     def execTool(self):
         print("hello")
+
+
+
+
+#############################################################################################
+#############################################################################################
+#############################################################################################
+#############################################################################################
+#############################################################################################
+#############################################################################################
+#copula class
+#https://github.com/ashiq24/Copula
+#multivariate Gaussian copulas
+
+class Copula():
+    def __init__(self,data):
+        self.data = np.array(data)
+        if(len(data)<2):
+            raise  Exception('input data must have multiple samples')
+        if not isinstance(data[0], list):
+            raise  Exception('input data must be a 2D array')
+        self.cov = np.cov(self.data.T)
+        if 0 in self.cov:
+            raise  Exception('Data not suitable for Copula. Covarience of two column is 0')
+        self.normal = stats.multivariate_normal([0 for i in range(len(data[0]))], self.cov,allow_singular=True)
+        self.norm = stats.norm()
+        self.var = []
+        self.cdfs = []
+    def gendata(self,num):
+        self.var = random.multivariate_normal([0 for i in range(len(self.cov[0]))], self.cov,num)
+
+        for i in self.var:
+            for j in range(len(i)):
+                i[j]= i[j]/math.sqrt(self.cov[j][j])
+        self.cdfs = self.norm.cdf(self.var)
+        data = [ [ np.percentile(self.data[:,j],100*i[j]) for j in range(len(i))] for i in self.cdfs ]
+        return data
