@@ -58,12 +58,6 @@ class PluginDialog(QDockWidget):
 
         self.Displayer.setText("Hello!")
             
-        def saveframeclicked(state):
-            if state > 0:
-                self.SaveBox.setEnabled(True)
-
-            else:
-                self.SaveBox.setEnabled(False)
 
         self.SaveBox.setEnabled(False)
         self.folderEdit.setEnabled(False)
@@ -87,12 +81,19 @@ class PluginDialog(QDockWidget):
         self.PauseButton.clicked.connect(self.PausePlay)
         self.StopButton.clicked.connect(self.StopPlay)
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
-        self.SaveFrameBox.stateChanged.connect(saveframeclicked)
+        self.SaveFrameBox.stateChanged.connect(self.saveframeclicked)
         self.ExportVideoButton.clicked.connect(self.OpenVideoExportDialog)
         self.SavePreferenceButton.clicked.connect(self.SaveSettings)
         self.RestorePreferenceButton.clicked.connect(self.ReadSettings)
         self.HelpButton.clicked.connect(self.Help)
         self.browseButton.setAutoDefault(False)
+
+    def saveframeclicked(state):
+        if state > 0:
+            self.SaveBox.setEnabled(True)
+
+        else:
+            self.SaveBox.setEnabled(False)
 
     def Help(self):
         webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-3/TimeViewer")
@@ -317,7 +318,11 @@ class PluginDialog(QDockWidget):
         self.InitialFilters=[]
         if type(self.InputLayerBox.currentLayer()) != type(None):
             for layer in self.layers:
-                self.InitialFilters.append(layer.subsetString())
+                field = self.FieldIDBox.currentText()
+                if field in layer.subsetString():
+                    self.InitialFilters.append("")
+                else:
+                    self.InitialFilters.append(layer.subsetString())
 
         if type(self.InputLayerBox.currentLayer()) != type(None) and len(self.FrameIDs)>0:
             for n, layer in enumerate(self.layers):
@@ -331,9 +336,6 @@ class PluginDialog(QDockWidget):
     def ReadFrameIDs(self):
         self.FrameIDs = []
         for layer in self.layers:
-            #InitialFilter = layer.subsetString()
-            #self.InitialFilters.append(layer.subsetString())
-            #layer.setSubsetString(InitialFilter)
             field = self.FieldIDBox.currentText()
             idx = layer.fields().indexOf('{index}'.format(index=field))
             if idx==-1:
