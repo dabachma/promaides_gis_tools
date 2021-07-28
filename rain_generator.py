@@ -1135,7 +1135,7 @@ class RainGenerator(object):
                             currentstormcenterx=0
                             currentstormcentery=0
                             for xy in currentstormcoordinates:
-                                currentstormcenterx=currentstormcenterx+xy.x()
+                                currentstormcenterx = currentstormcenterx + xy.x()
                                 currentstormcentery = currentstormcentery + xy.y()
                             currentstormcenterx = currentstormcenterx/len(currentstormcoordinates)
                             currentstormcentery = currentstormcentery/len(currentstormcoordinates)
@@ -1146,7 +1146,7 @@ class RainGenerator(object):
                                 previousstormcenterx = previousstormcenterx + xy.x()
                                 previousstormcentery = previousstormcentery + xy.y()
 
-                            if value !=1:
+                            if len(previousstormcoordinates)>0:
                                 previousstormcenterx = previousstormcenterx / len(previousstormcoordinates)
                                 previousstormcentery = previousstormcentery / len(previousstormcoordinates)
 
@@ -1169,7 +1169,6 @@ class RainGenerator(object):
                                 direction = "S"
                             elif 292.5 <= angle <= 337.5:
                                 direction = "W"
-                            print(direction)
                             self.StormDirection[value].append(direction)
 
             PreviousStormConnectivity=StormConnectivity
