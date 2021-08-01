@@ -5,16 +5,17 @@ from __future__ import absolute_import
 import math
 import os
 import tempfile
-import collections
-import statistics
-import random
-import pandas
-import csv
+import pandas as pd
+from numpy import random
+from random import sample
+import matplotlib.pyplot as plt
+from scipy import stats
+import math
+
+
 
 import numpy as np
-import scipy.stats as stats
 import scipy.linalg
-from scipy.optimize import curve_fit
 
 # QGIS modules
 from qgis.core import *
@@ -23,13 +24,10 @@ from qgis.PyQt.QtWidgets import *
 from qgis.PyQt import uic
 from PyQt5.QtCore import *
 
-from shapely.geometry import MultiLineString, mapping, shape
 
 from .environment import get_ui_path
 
-
 UI_PATH = get_ui_path('ui_rain_generator.ui')
-
 
 class PluginDialog(QDialog):
 
@@ -46,47 +44,66 @@ class PluginDialog(QDialog):
 
         self.RainGaugeLayer.layerChanged.connect(self.UpdateFields)
         self.AnalyzeAllDataBox.stateChanged.connect(self.UpdateUntilFromBoxes)
-        self.SpatialInterpolationOnlyBox.stateChanged.connect(self.UpdateOutputOptions)
         self.SpatialInterpolationMethodBox.activated.connect(self.UpdateExponentFactorField)
+        self.SaveSpatialInterpolationBox.stateChanged.connect(self.UpdateOutputLocation)
+        self.SaveStormStatisticsBox.stateChanged.connect(self.UpdateOutputLocation)
 
         self.RainGaugeLayer.setLayer(None)
         self.GenerationAreaLayer.setLayer(None)
 
-        #self.DataTypeBox.addItem('minutely')
-        self.DataTypeBox.addItem('Hourly')
-        #self.DataTypeBox.addItem('Daily')
-
         self.SpatialInterpolationMethodBox.addItem("Inversed Distance Weighting")
         self.SpatialInterpolationMethodBox.addItem("Trend Surface Analysis (Polynomial 1st Order)")
         self.SpatialInterpolationMethodBox.addItem("Trend Surface Analysis (Polynomial 2nd Order)")
-        self.SpatialInterpolationMethodBox.setCurrentIndex(-1)
+        #self.SpatialInterpolationMethodBox.setCurrentIndex(-1)
+
+        self.DelimiterBox.addItem("space")
+        self.DelimiterBox.addItem(",")
+        self.DelimiterBox.addItem("-")
+
 
         self.dxBox.setValue(5000)
         self.dyBox.setValue(5000)
 
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
+        self.browseButton_dataanalysis.clicked.connect(self.onBrowseButtonClicked_dataanalysis)
         self.browseButton.setAutoDefault(False)
+        self.browseButton_dataanalysis.setAutoDefault(False)
 
         self.FromBox.setEnabled(False)
         self.UntilBox.setEnabled(False)
         self.CheckButton2.setEnabled(False)
         self.label_30.setEnabled(False)
         self.label_31.setEnabled(False)
+        self.folderEdit_dataanalysis.setEnabled(False)
+        self.browseButton_dataanalysis.setEnabled(False)
+        self.ProcessButton.setEnabled(False)
+        self.CheckButton.setEnabled(False)
 
         self.ExponentFactorBox.setEnabled(False)
         self.label_32.setEnabled(False)
 
         self.groupBox_2.setEnabled(False)
         self.groupBox_3.setEnabled(False)
+        self.groupBox_5.setEnabled(False)
 
 
     def UpdateFields(self, layer):
         self.DataAddressField.setLayer(self.RainGaugeLayer.currentLayer())
-        self.RainGaugeNameField.setLayer(self.RainGaugeLayer.currentLayer())
         self.FromBox.clear()
         self.UntilBox.clear()
         self.groupBox_2.setEnabled(False)
         self.groupBox_3.setEnabled(False)
+        self.groupBox_5.setEnabled(False)
+        self.ProcessButton.setEnabled(False)
+
+
+    def UpdateOutputLocation(self):
+        if self.SaveSpatialInterpolationBox.isChecked() or self.SaveStormStatisticsBox.isChecked():
+            self.folderEdit_dataanalysis.setEnabled(True)
+            self.browseButton_dataanalysis.setEnabled(True)
+        else:
+            self.folderEdit_dataanalysis.setEnabled(False)
+            self.browseButton_dataanalysis.setEnabled(False)
 
     def UpdateExponentFactorField(self):
         if self.SpatialInterpolationMethodBox.currentText()=="Inversed Distance Weighting":
@@ -113,16 +130,6 @@ class PluginDialog(QDialog):
             self.groupBox_2.setEnabled(False)
             self.groupBox_3.setEnabled(False)
 
-    def UpdateOutputOptions(self):
-        if self.SpatialInterpolationOnlyBox.isChecked():
-            self.label_27.setEnabled(False)
-            self.RequestedGenerationDurationBox.setEnabled(False)
-            self.SaveRainGaugePRPBox.setEnabled(False)
-        else:
-            self.label_27.setEnabled(True)
-            self.RequestedGenerationDurationBox.setEnabled(True)
-            self.SaveRainGaugePRPBox.setEnabled(True)
-
 
     def onBrowseButtonClicked(self):
         currentFolder = self.folderEdit.text()
@@ -130,6 +137,13 @@ class PluginDialog(QDialog):
         if folder != '':
             self.folderEdit.setText(folder)
             self.folderEdit.editingFinished.emit()
+
+    def onBrowseButtonClicked_dataanalysis(self):
+        currentFolder = self.folderEdit_dataanalysis.text()
+        folder = QFileDialog.getExistingDirectory(self.iface.mainWindow(), 'Rain Generator', currentFolder)
+        if folder != '':
+            self.folderEdit_dataanalysis.setText(folder)
+            self.folderEdit_dataanalysis.editingFinished.emit()
 
 
 
@@ -168,9 +182,10 @@ class RainGenerator(object):
 
         self.dialog.ProcessAreaButton.clicked.connect(self.CreateGenerationArea)
         self.dialog.CheckButton.clicked.connect(self.CheckFiles)
-        self.dialog.GenerateButton.clicked.connect(self.DataAnalysis)
+        self.dialog.ProcessButton.clicked.connect(self.PreSpatialInterpolation)
         self.dialog.CheckButton2.clicked.connect(self.AnalyzeFromUntil)
 
+        self.dialog.UpdateButton.clicked.connect(self.PreCheckFiles)
 
     def scheduleAbort(self):
         self.cancel = True
@@ -180,8 +195,223 @@ class RainGenerator(object):
         self.act.setEnabled(True)
         self.cancel = False
 
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+    #checking files
+
+    data = []
+    ngauges = 0
+    ntimes = 0
+    nrains = 0
+############################################################
+    #updates the time and rain column values
+    def PreCheckFiles(self):
+
+        if type(self.dialog.RainGaugeLayer.currentLayer()) == type(None):
+            self.dialog.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'No Layer Selected !'
+            )
+            return
+
+        files, ok = QgsVectorLayerUtils.getValues(self.dialog.RainGaugeLayer.currentLayer(), self.dialog.DataAddressField.expression(), False)
+        if not ok:
+            return
+        for i, locations in enumerate(files):
+            address = locations.replace("\\", "/")
+
+        self.dialog.TimeColumnBox.clear()
+        self.dialog.RainColumnBox.clear()
+        try:
+            if self.dialog.DelimiterBox.currentText()=="space":
+                df = pd.read_csv(address.strip("\u202a"), delimiter=" ")
+            else:
+                df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox.currentText())
+            for c in df.columns:
+                self.dialog.TimeColumnBox.addItem(c)
+                self.dialog.RainColumnBox.addItem(c)
+        except:
+            return
+
+        self.dialog.CheckButton.setEnabled(True)
+        self.dialog.FromBox.clear()
+        self.dialog.UntilBox.clear()
+        self.dialog.groupBox_2.setEnabled(False)
+        self.dialog.groupBox_3.setEnabled(False)
+        self.dialog.groupBox_5.setEnabled(False)
+        self.dialog.ProcessButton.setEnabled(False)
+        self.data = []
+
+
+
+    def CheckFiles(self):
+        self.data=[]
+        files, ok = QgsVectorLayerUtils.getValues(self.dialog.RainGaugeLayer.currentLayer(), self.dialog.DataAddressField.expression(), False)
+        if not ok:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'Invalid File Locations!'
+            )
+            return
+        numberoftimes = 0
+        numberofrains = 0
+        for i, locations in enumerate(files):
+            address=locations.replace("\\","/")
+            if not os.path.isfile(address.strip("\u202a")):
+                self.iface.messageBar().pushCritical(
+                    'Rain Generator',
+                    'File Does Not Exist!'
+                )
+                return
+
+            ###################################
+            #f = open(address.strip("\u202a"), "r")
+            #if self.dialog.HeaderBox.isChecked():
+            #    lines = f.readlines()[1:]
+            #else:
+            #    lines = f.readlines()
+            #times = []
+            #rains = []
+            #for x in lines:
+            #    times.append(x.split(' ')[0])
+            #    rains.append(x.split(' ')[1])
+            #f.close()
+            #if len(times) >= numberoftimes:
+            #    numberoftimes = len(times)
+            #if len(rains) >= numberofrains:
+            #    numberofrains = len(rains)
+            #######################################
+            try:
+                if self.dialog.DelimiterBox.currentText() == "space":
+                    df = pd.read_csv(address.strip("\u202a"), delimiter=" ")
+                else:
+                    df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox.currentText())
+                times=df[self.dialog.TimeColumnBox.currentText()].tolist()
+                rains=df[self.dialog.RainColumnBox.currentText()].tolist()
+
+                if len(times) >= numberoftimes:
+                  numberoftimes = len(times)
+                if len(rains) >= numberofrains:
+                  numberofrains = len(rains)
+            except:
+                self.iface.messageBar().pushCritical(
+                    'Rain Generator',
+                    'Could not read Files!'
+                )
+                return
+
+            #######################################
+
+        #puttin data in an array
+        self.ngauges = len(files)
+        self.ntimes = numberoftimes
+        self.nrains = numberofrains
+
+
+        for x in range(self.ngauges):
+            self.data.append([])
+            for y in range(2):
+                self.data[x].append([])
+                #for z in range(nrains):
+                    #data[x][y].append(0)
+
+        for i, locations in enumerate(files):
+            address = locations.replace("\\", "/")
+            if self.dialog.DelimiterBox.currentText() == "space":
+                df = pd.read_csv(address.strip("\u202a"), delimiter=" ")
+            else:
+                df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox.currentText())
+            times = df[self.dialog.TimeColumnBox.currentText()].tolist()
+            rains = df[self.dialog.RainColumnBox.currentText()].tolist()
+            for j in range(len(times)):
+                self.data[i][0].append(times[j])
+                self.data[i][1].append(rains[j])
+        print(self.data)
+
+        #filling the for and until boxes
+        self.dialog.FromBox.clear()
+        self.dialog.UntilBox.clear()
+        lengths=[]
+        for j in range(len(self.data)):
+            lengths.append(len(self.data[j][0]))
+        for k in self.data[lengths.index(max(lengths))][0]: #adds the time values for the shortest time series
+            self.dialog.FromBox.addItem(str(k))
+            self.dialog.UntilBox.addItem(str(k))
+        #self.dialog.FromBox.currentIndex(0)
+        #self.dialog.UntilBoxBox.currentIndex(min(lengths)-1)
+        if self.dialog.AnalyzeAllDataBox.isChecked():
+            self.dialog.groupBox_2.setEnabled(True)
+
+        self.iface.messageBar().pushSuccess(
+            'Rain Generator',
+            'Files seem ok !'
+        )
+
+
+##################################################################################
+    def AnalyzeFromUntil(self):
+        #checks if the values in the from and until boxes are correct and puts them in self.data
+        tempdata=[]
+        for x in range(len(self.data)):
+            tempdata.append([])
+            for y in range(2):
+                tempdata[x].append([])
+
+        fromindex=0
+        untilindex=0
+
+        for i in range(len(self.data)):
+            if self.dialog.FromBox.currentText() not in str(self.data[i][0]) or self.dialog.UntilBox.currentText() not in str(self.data[i][0]):
+                self.iface.messageBar().pushCritical(
+                    'Rain Generator',
+                    'Entered Values Dont Exist in Atleast One of the Input Files  !'
+                )
+                return
+
+            for j in range(len(self.data[i][0])):
+                if str(self.data[i][0][j])==self.dialog.FromBox.currentText():
+                    fromindex = j
+
+                if str(self.data[i][0][j])==self.dialog.UntilBox.currentText():
+                    untilindex = j
+
+            if fromindex > untilindex:
+                self.iface.messageBar().pushCritical(
+                    'Rain Generator',
+                    'The Values Entered Are Not Valid  !'
+                )
+                return
+
+            for k in range(fromindex, untilindex+1):
+                tempdata[i][0].append(self.data[i][0][k])
+                tempdata[i][1].append(self.data[i][1][k])
+
+        self.data=tempdata
+        self.dialog.groupBox_2.setEnabled(True)
+        print(self.data)
+
+
+
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+
+    #spatial interpolation
+
 ##########################################################################
+    # layer2 = spatial interpolation layer
     layer2 = QgsVectorLayer("Polygon", 'Generation_Area', 'memory')
+    nx=0
+    ny=0
 
     def CreateGenerationArea(self):
         if type(self.dialog.GenerationAreaLayer.currentLayer()) == type(None):
@@ -220,6 +450,9 @@ class RainGenerator(object):
             hspacing = self.dialog.dxBox.value()
             vspacing = self.dialog.dyBox.value()
 
+        self.nx = math.ceil((xmax-xmin)/hspacing)
+        self.ny = math.ceil((ymax-ymin)/vspacing)
+
         id = 0
         y = ymax
         while y >= ymin:
@@ -239,584 +472,63 @@ class RainGenerator(object):
                 id += 1
             y = y - vspacing
 
-        # feat = QgsFeature()
-        # feat.setGeometry(QgsGeometry.fromRect(layer.extent()))
-        # prov.addFeatures([feat])
-        self.layer2.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
+        self.layer2.setCrs(
+            QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
         self.layer2.updateExtents()
         QgsProject.instance().addMapLayer(self.layer2)
-        self.dialog.groupBox_3.setEnabled(True)
+        self.dialog.groupBox_5.setEnabled(True)
+        self.dialog.ProcessButton.setEnabled(True)
 
 ####################################################################
 
-    data = []
-    ngauges = 0
-    ntimes = 0
-    nrains = 0
-############################################################
-    def CheckFiles(self):
-        self.data=[]
-        files, ok = QgsVectorLayerUtils.getValues(self.dialog.RainGaugeLayer.currentLayer(), self.dialog.DataAddressField.expression(), False)
-        if not ok:
-            self.iface.messageBar().pushCritical(
-                'Rain Generator',
-                'Invalid File Locations!'
-            )
-            return
-        numberoftimes = 0
-        numberofrains = 0
-        for i, locations in enumerate(files):
-            address=locations.replace("\\","/")
-            if not os.path.isfile(address.strip("\u202a")):
-                self.iface.messageBar().pushCritical(
-                    'Rain Generator',
-                    'File Does Not Exist!'
-                )
-                return
-
-            ###################################
-            f = open(address.strip("\u202a"), "r")
-            if self.dialog.HeaderBox.isChecked():
-                lines = f.readlines()[1:]
-            else:
-                lines = f.readlines()
-            times = []
-            rains = []
-            for x in lines:
-                times.append(x.split(' ')[0])
-                rains.append(x.split(' ')[1])
-            f.close()
-            if len(times) >= numberoftimes:
-                numberoftimes = len(times)
-            if len(rains) >= numberofrains:
-                numberofrains = len(rains)
-            #######################################
-            #df = pandas.read_csv(address.strip("\u202a"),delimiter=',')
-            #times=df["Time"].tolist()
-            #rains=df["Value"]
-            #for c in df.columns:
-            #    print(c)
-
-            #######################################
-
-        #puttin data in an array
-        self.ngauges = len(files)
-        self.ntimes = numberoftimes
-        self.nrains = numberofrains
-
-
-        for x in range(self.ngauges):
-            self.data.append([])
-            for y in range(2):
-                self.data[x].append([])
-                #for z in range(nrains):
-                    #data[x][y].append(0)
-
-        for i, locations in enumerate(files):
-            address = locations.replace("\\", "/")
-            f = open(address.strip("\u202a"), "r")
-            if self.dialog.HeaderBox.isChecked():
-                lines = f.readlines()[1:]
-            else:
-                lines = f.readlines()
-            for x in lines:
-                x=x.replace('\n','')
-                self.data[i][0].append((x.split(' ')[0]).strip("\\n"))
-                self.data[i][1].append((x.split(' ')[1]).strip("\\n"))
-            f.close()
-        print(self.data)
-
-        #filling the for and until boxes
-        lengths=[]
-        for j in range(len(self.data)):
-            lengths.append(len(self.data[j][0]))
-        for k in self.data[lengths.index(max(lengths))][0]: #adds the time values for the shortest time series
-            self.dialog.FromBox.addItem(k)
-            self.dialog.UntilBox.addItem(k)
-        #self.dialog.FromBox.currentIndex(0)
-        #self.dialog.UntilBoxBox.currentIndex(min(lengths)-1)
-        if self.dialog.AnalyzeAllDataBox.isChecked():
-            self.dialog.groupBox_2.setEnabled(True)
-
-        self.iface.messageBar().pushSuccess(
-            'Rain Generator',
-            'Files seem ok !'
-        )
-
-###########################################################
-    rainstorm=[]
-    norainduration=[] #rain is based on one dry timestep
-    rainduration=[]
-    storms=[] #storm is based on calculated dpdmin. this is only storm statistics
-    nostormsduration=[] #storm is based on calculated dpdmin
-
-###########################################################
-    def DataAnalysis(self):
-
-        if self.dialog.SpatialInterpolationOnlyBox.isChecked():
-            self.PreSpatialInterpolation()
-            return
-
-        filename = self.dialog.folderEdit.text()
-        if not filename:
-            self.iface.messageBar().pushCritical(
-                'Rain Generator',
-                'No output folder given!'
-            )
-            return
-        filepath = os.path.join(self.dialog.folderEdit.text(), "GeneratedDataforRainGauges" + '.txt')
-        try: #deletes previous files
-            if os.path.isfile(filepath):
-                os.remove(filepath)
-        except:
-            pass
-
-        with open(filepath, 'a') as raingaugegenerateddata:
-            raingaugegenerateddata.write('# comment\n')
-            raingaugegenerateddata.write('# !BEGIN\n')
-            raingaugegenerateddata.write('# number begining from 0 ++ number of points\n')
-            raingaugegenerateddata.write('# hour [h] discharge [m³/s]\n')
-            raingaugegenerateddata.write('# !END\n\n\n')
-
-
-    ##########################################################
-    #calculates if there is rain or no rain periods and their duration
-        for x in range(self.ngauges):
-            #self.rainstorm.append([])
-            self.norainduration.append([])
-            #self.rainduration.append([])
-            for y in range(1):
-                #self.rainstorm[x].append([])
-                self.norainduration[x].append([])
-                #self.rainduration[x].append([])
-
-        for i in range(len(self.data)):
-            raincount = 0
-            noraincount = 0
-            rain = False
-            norain = False
-            for k, value in enumerate(self.data[i][1]):
-                j=float(value)
-                if j>0:
-                    raincount = raincount + 1
-                    rain=True
-                if j==0:
-                    noraincount = noraincount + 1
-                    norain=True
-                if j>0 and norain==True:
-                    self.norainduration[i][0].append(noraincount)
-                    noraincount=0
-                    #self.rainstorm[i][0].append("nostorm")
-                    rain=True
-                    norain=False
-                if j==0 and rain==True:
-                    #self.rainduration[i][0].append(raincount)
-                    raincount=0
-                    #self.rainstorm[i][0].append("storm")
-                    rain=False
-                    norain=True
-                if j>0 and k==len(self.data[i][1])-1:
-                    #self.rainduration[i][0].append(raincount)
-                    #self.rainstorm[i][0].append("storm")
-                    rain=True
-                    norain=False
-                if j==0 and k==len(self.data[i][1])-1:
-                    self.norainduration[i][0].append(noraincount)
-                    #self.rainstorm[i][0].append("nostorm")
-                    rain=False
-                    norain=True
-
-
-        #print(self.rainstorm)
-        print(self.norainduration,"noraindurations")
-
-        #######################################################################
-        dpdmins=[]
-        #calculates minimum dry period duration
-        for i in range(len(self.norainduration)):
-            noraindurations=self.norainduration[i][0]
-            noraindurations.sort()
-            for j in range(len(noraindurations)-1):
-                sdnorain = statistics.stdev(noraindurations) #standard deviation of norain durations
-                meannorain = statistics.mean(noraindurations) #mean of norain durations
-                cv = sdnorain/meannorain #coefficient of variation
-                if cv<=1:
-                    cv1=cv
-                    dpd1= noraindurations[0]  #dpd = dry period duration
-                if cv>=1:   #what if no positive cv happens?
-                    cv2=cv
-                    dpd2 = noraindurations[0]
-                del noraindurations[0]
-                try:
-                    cv1
-                    try:
-                        cv2
-                        dpdmin = ((1 - cv1) * ((dpd2 - dpd1) / (cv2 - cv1))) + dpd1 #minimum dry period duration
-                        dpdmins.append(dpdmin)
-                        del cv1
-                        del cv2
-                        break
-                    except UnboundLocalError:
-                        pass
-                except UnboundLocalError:
-                    pass
-        print(dpdmins,"dpdmins") ###### final product!!!!!
-        if len(dpdmins)<len(self.norainduration):
-            self.iface.messageBar().pushCritical(
-                'Rain Generator',
-                'The Input Time series for atleast one of the rain gauges is not long enough !'
-            )
-            return
-
-        ##########################################################
-        # calculates storm and no storm statistics
-        for x in range(self.ngauges):
-            self.storms.append([])
-            self.nostormsduration.append([])
-            #for y in range(1):
-                #self.storms[x].append([])
-                #self.nostormsduration[x].append([])
-
-        for i in range(len(self.data)): #loops over raingauges
-            raincount = 0
-            noraincount = 0
-            idpd = 0 #innerstorm dpd
-            stormintensity = 0 #strom volume divided by number of timesteps in storm including innerstrom dpd
-            stormvolume = 0
-            counter = 0
-
-            storm = False
-            nostorm = False
-
-            for k, value in enumerate(self.data[i][1]):
-                j=float(value)
-                counter = counter + 1
-                if j > 0:
-                    if storm==False:
-                        idpd=0
-                        stormvolume = 0
-                        stormintensity = 0
-                    storm=True
-                    stormvolume = stormvolume + j
-                    raincount = raincount + 1
-                    if noraincount>dpdmins[i]:
-                        self.nostormsduration[i].append(noraincount)
-                        counter=1
-                    if k == len(self.data[i][1])-1: #if the last value is positive
-                        stormintensity = stormvolume / counter
-                        self.storms[i].append([stormvolume, stormintensity, counter, idpd])
-                    noraincount=0
-                if j==0:
-                    noraincount = noraincount + 1
-                    raincount=0
-                    if noraincount<dpdmins[i]:
-                        storm=True
-                    if storm==True and noraincount<dpdmins[i]:
-                        idpd=idpd+1
-                    elif storm==True and noraincount>=dpdmins[i]:
-                        storm=False
-                        idpd = idpd - (noraincount - 1)
-                        counter=counter-noraincount
-                        stormintensity=stormvolume/counter
-                        self.storms[i].append([stormvolume,stormintensity,counter,idpd]) #storm volume, storm mean intensity, storm duration, interstorm dpd
-                        counter=noraincount
-                        stormvolume=0
-                        stormintensity=0
-                        idpd=0
-                    if k == len(self.data[i][1])-1: #if the last value is 0
-                        if noraincount<dpdmins[i]:
-                            idpd = idpd - (noraincount - 1)
-                            counter = counter
-                            stormintensity = stormvolume / counter
-                            self.storms[i].append([stormvolume, stormintensity, counter, idpd])
-                        if noraincount>=dpdmins[i]:
-                            self.nostormsduration[i].append(noraincount)
-
-
-
-            print(self.nostormsduration, "nostormsduration after loop") #finalproduct!!
-            print(self.storms, "storms after loop") #finalproduct!!
-            #################################################################
-            #making an array for randomly chosing storm or dpd (isnt required anymore)
-            #stormordpd=[]
-            #for j in range(len(self.storms[i])):
-                #stormordpd.append("storm")
-            #for j in range(len(self.nostormsduration[i])):
-                #stormordpd.append("dpd")
-            #print(stormordpd)
-            #################################################################
-            #classifying the storms into 4 catagories based on duration
-            allstormdurations = []
-            for value in self.storms[i]:
-                allstormdurations.append(value[2])
-            classificationtimestep=(max(allstormdurations)-min(allstormdurations))/4
-
-            class1intensities = []
-            class2intensities = []
-            class3intensities = []
-            class4intensities = []
-            class1durations = []
-            class2durations = []
-            class3durations = []
-            class4durations = []
-
-
-            ###################################################################
-            #calculating the means
-            sumvolume=0
-            sumintensity=0
-            sumstormduration=0
-            suminterstormdpd=0
-            sumdpd=0
-
-            #for storms
-            for value in self.storms[i]:
-                sumvolume=sumvolume+value[0]
-                sumintensity=sumintensity+value[1]
-                sumstormduration=sumstormduration+value[2]
-                suminterstormdpd=suminterstormdpd+value[3]
-                #getting the intensities of each storm duration class
-                if min(allstormdurations) <= value[2] < min(allstormdurations) + classificationtimestep:
-                    class1intensities.append(value[1])
-                    class1durations.append(value[2])
-                elif min(allstormdurations) + classificationtimestep <= value[2] < min(allstormdurations) + (2 * classificationtimestep):
-                    class2intensities.append(value[1])
-                    class2durations.append(value[2])
-                elif min(allstormdurations) + (2 * classificationtimestep) <= value[2] < min(allstormdurations) + (3 * classificationtimestep):
-                    class3intensities.append(value[1])
-                    class3durations.append(value[2])
-                elif min(allstormdurations) + (3 * classificationtimestep) <= value[2] <= min(allstormdurations) + (4 * classificationtimestep):
-                    class4intensities.append(value[1])
-                    class4durations.append(value[2])
-
-            print(class1intensities,"class1 mean intensities")
-            print(class2intensities, "class2 mean intensities")
-            print(class3intensities, "class3 mean intensities")
-            print(class4intensities, "class4 mean intensities")
-            print(class1durations, "class1 durations")
-            print(class2durations, "class2 durations")
-            print(class3durations, "class3 durations")
-            print(class4durations, "class4 durations")
-
-            #########################################################
-            #fitting mean intensities and durations for each class to the gamma distribution and getting alpha and beta
-            #fit_alpha, fit_loc, fit_beta = stats.gamma.fit(class2intensities)
-            #print(fit_alpha, fit_loc, fit_beta,"fit")
-            #print(self.GammaFunction(2, fit_alpha, fit_beta), "random 2")
-
-            #theta=1/beta (scale)
-            #alpha is the k (shape)
-            #print(np.random.gamma(fit_alpha,scale=np.var(class2intensities)/(sum(class2intensities)/len(class2intensities))),"random 1")
-
-            #pars, cov = curve_fit(f=self.GammaFunction, xdata=class2durations, ydata=class2intensities, p0=[0, 0], bounds=(0, max(class2durations)), maxfev=5000)
-            #print(self.GammaFunction(53,pars[0],pars[1]),"random 2")
-            ########################################################
-
-            #storm statistics
-            meanvolume=sumvolume/len(self.storms[i])
-            meanintensity=sumintensity/len(self.storms[i])
-            meanstormduration=sumstormduration/len(self.storms[i])
-            meaninterstormdpd=suminterstormdpd/len(self.storms[i])
-
-            #storm class itensities
-            class1meanintensity= sum(class1intensities)/len(class1intensities)
-            class2meanintensity = sum(class2intensities) / len(class2intensities)
-            class3meanintensity = sum(class3intensities) / len(class3intensities)
-            class4meanintensity = sum(class4intensities) / len(class4intensities)
-
-            print(class1meanintensity,class2meanintensity,class3meanintensity,class4meanintensity,"storm duration class mean intensities")
-            print(meanvolume,meanintensity,meanstormduration,meaninterstormdpd,"storm means")
-
-            #for dry periods
-            for value in self.nostormsduration[i]:
-                sumdpd=sumdpd+value
-            meandpd=sumdpd/len(self.nostormsduration[i])
-            print(meandpd,"meandpd")
-
-
-            #####################################################################
-            raingaugenames, ok = QgsVectorLayerUtils.getValues(self.dialog.RainGaugeLayer.currentLayer(), self.dialog.RainGaugeNameField.expression(), selectedOnly = False)
-            if not ok:
-                self.iface.messageBar().pushCritical(
-                    'Rain Generator',
-                    'Invalid Expression for Names!'
-                )
-                return
-
-            prpdata=[]
-            prpstorms=[]
-
-            #writing the file
-            with open(filepath, 'a') as raingaugegenerateddata:
-                raingaugegenerateddata.write('!BEGIN   #%s\n' % raingaugenames[i])
-                raingaugegenerateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i),str(self.dialog.RequestedGenerationDurationBox.value())))
-
-                counter=1
-                stormstatus="dpd"
-                while(counter <= self.dialog.RequestedGenerationDurationBox.value()):
-                    #randomchoice = random.choice(stormordpd)
-                    ############################################################
-                    #dry period
-                    if stormstatus == "dpd":
-                        roundeddpd = 0
-                        while(roundeddpd<dpdmin):  #check for the generated dpd to be bigger than dpdmin
-                            dpd = np.random.exponential(meandpd) #chooses the dpd based on an exponentail distribution
-                            roundeddpd = round(dpd)
-                        for j in range(roundeddpd): #writes the time steps
-                            raingaugegenerateddata.write('%s %s\n' % (str(counter), str(0)))
-                            prpdata.append(0)
-                            counter=counter+1
-                            if counter>self.dialog.RequestedGenerationDurationBox.value(): #get out of for loop
-                                break
-                        if counter > self.dialog.RequestedGenerationDurationBox.value(): #get out of while loop
-                            raingaugegenerateddata.write('\n\n')
-                            break
-                        stormstatus = "storm"
-                    ##############################################################
-                    #storm
-                    if stormstatus == "storm":
-                        currentstorm=[]
-                        stormduration = np.random.exponential(meanstormduration)
-                        roundedstormduration=math.ceil(stormduration) #storm duration
-                        ##########################################################
-                        #not sure of the mean intensity calculation
-                        #getting storm mean intensity
-                        # first duration class
-                        if min(allstormdurations) <= roundedstormduration < min(allstormdurations) + classificationtimestep:
-                            fit_alpha = (sum(class1intensities) / len(class1intensities)) ** 2 / np.var(
-                                class1intensities)
-                            meanintensity=(np.random.gamma(fit_alpha, scale=np.var(class1intensities) / (
-                                        sum(class1intensities) / len(class1intensities))))
-                        # second duration class
-                        elif min(allstormdurations) + classificationtimestep <= roundedstormduration < min(allstormdurations) + (
-                                2 * classificationtimestep):
-                            fit_alpha = (sum(class2intensities) / len(class2intensities)) ** 2 / np.var(
-                                class2intensities)
-                            meanintensity = (np.random.gamma(fit_alpha, scale=np.var(class2intensities) / (
-                                    sum(class2intensities) / len(class2intensities))))
-                        # third duration class
-                        elif min(allstormdurations) + (2 * classificationtimestep) <= roundedstormduration < min(
-                                allstormdurations) + (3 * classificationtimestep):
-                            fit_alpha = (sum(class3intensities) / len(class3intensities)) ** 2 / np.var(
-                                class3intensities)
-                            meanintensity = (np.random.gamma(fit_alpha, scale=np.var(class3intensities) / (
-                                    sum(class3intensities) / len(class3intensities))))
-                        # fourth duration class
-                        elif min(allstormdurations) + (3 * classificationtimestep) <= roundedstormduration <= min(
-                                allstormdurations) + (4 * classificationtimestep):
-                            fit_alpha = (sum(class4intensities) / len(class4intensities)) ** 2 / np.var(
-                                class4intensities)
-                            meanintensity = (np.random.gamma(fit_alpha, scale=np.var(class4intensities) / (
-                                    sum(class4intensities) / len(class4intensities))))
-                        ########################################################################
-                        for j in range(roundedstormduration): #writes the time steps
-                            raingaugegenerateddata.write(
-                                '%s %s   #%s mm/h\n' % (str(counter), str(meanintensity / 3600000), str(meanintensity)))
-                            currentstorm.append(meanintensity)
-                            prpdata.append(meanintensity)
-                            counter=counter+1
-                            if counter>self.dialog.RequestedGenerationDurationBox.value(): #get out of for loop
-                                prpstorms.append(currentstorm)
-                                break
-                        stormstatus = "dpd"
-                        prpstorms.append(currentstorm)
-                        if counter > self.dialog.RequestedGenerationDurationBox.value(): #get out of while loop
-                            raingaugegenerateddata.write('\n\n')
-                            break
-
-                print(prpdata,"prpdata")
-                print(prpstorms,"prpstorms")
-                print(i,"i")
-
-
-##############################################################################
-    def GammaFunction(self,x,alpha,beta):
-        return ((beta**alpha)*(x**(alpha-1))*np.exp(-beta*x))/math.gamma(alpha) #math.factorial doesnt work for integral numbers therfor we use math.gamma instead and math.gamma(a+1)=math.factorial(a)
-
-##############################################################################
-    def AnalyzeFromUntil(self):
-        #checks if the values in the from and until boxes are correct and puts them in self.data
-        tempdata=[]
-        for x in range(len(self.data)):
-            tempdata.append([])
-            for y in range(2):
-                tempdata[x].append([])
-
-        for i in range(len(self.data)):
-            if self.dialog.FromBox.currentText() not in self.data[i][0] or self.dialog.UntilBox.currentText() not in self.data[i][0]:
-                self.iface.messageBar().pushCritical(
-                    'Rain Generator',
-                    'Entered Values Dont Exist in Atleast One of the Input Files  !'
-                )
-                return
-
-            fromindex=self.data[i][0].index(self.dialog.FromBox.currentText())
-            untilindex = self.data[i][0].index(self.dialog.UntilBox.currentText())
-
-            if fromindex >= untilindex:
-                self.iface.messageBar().pushCritical(
-                    'Rain Generator',
-                    'The Values Entered Are Not Valid  !'
-                )
-                return
-
-        for i in range(len(self.data)):
-            for j in range(self.data[i][0].index(self.dialog.FromBox.currentText()),self.data[i][0].index(self.dialog.UntilBox.currentText())+1):
-                tempdata[i][0].append(self.data[i][0][j])
-                tempdata[i][1].append(self.data[i][1][j])
-
-        self.data=tempdata
-        self.dialog.groupBox_2.setEnabled(True)
-####################################################################################
     def PreSpatialInterpolation(self):
-        self.iface.messageBar().pushInfo(
-            'Rain Generator',
-            'Performing Spatial Interpolation, Please Wait !'
-        )
-        QTimer.singleShot(500, self.SpatialInterpolation) #waits half a second for the message to be displayed
-#################################################################################
+        self.dialog.StatusIndicator.setText("Performing Spatial Interpolation...")
+        QTimer.singleShot(50, self.SpatialInterpolation)  # waits half a second for the message to be displayed
+
+#############################################################################################
     def SpatialInterpolation(self):
-        filename = self.dialog.folderEdit.text()
-        if not filename:
-            self.iface.messageBar().pushCritical(
-                'Rain Generator',
-                'No output folder given!'
-            )
-            return
-        filepath = os.path.join(self.dialog.folderEdit.text(), "GeneratedRainfall" + '.txt')
-        try: #deletes previous files
+        foldername = self.dialog.folderEdit_dataanalysis.text()
+        if self.dialog.SaveSpatialInterpolationBox.isChecked() or self.dialog.SaveStormStatisticsBox.isChecked():
+            if not foldername:
+                self.iface.messageBar().pushCritical(
+                    'Rain Generator',
+                    'No output folder given!'
+                )
+                return
+        filepath = os.path.join(tempfile.gettempdir(), "RainfallSpatialInterpolation" + '.txt')
+
+        try:  # deletes previous files
             if os.path.isfile(filepath):
                 os.remove(filepath)
         except:
             pass
 
-        with open(filepath, 'a') as generateddata:
-            generateddata.write('# comment\n')
-            generateddata.write('# !BEGIN\n')
-            generateddata.write('# number begining from 0 ++ number of points\n')
-            generateddata.write('# hour [h] discharge [m³/s]\n')
-            generateddata.write('# !END\n\n\n')
+        try:
+            file=open(filepath, 'w')
+            file.close()
+        except:
+            pass
 
-            raingaugelocations=[]
-            generationlocations=[]
+        with open(filepath, 'a') as SpatialInterpolation:
+            raingaugelocations = []
+            generationlocations = []
 
-            #getting the locations of raingauges
-            point_layer=self.dialog.RainGaugeLayer.currentLayer()
+            # getting the locations of raingauges
+            point_layer = self.dialog.RainGaugeLayer.currentLayer()
             features = point_layer.getFeatures()
             for feature in features:
                 buff = feature.geometry()
                 raingaugelocations.append(buff.asPoint())
 
-            #getting the generation locations
-            area_layer=self.layer2
+            # getting the generation locations
+            area_layer = self.layer2
             features = area_layer.getFeatures()
             for feature in features:
                 buff = feature.geometry()
                 generationlocations.append(buff.centroid().asPoint())
 
-
-            #calculate generation duration
-            rainlengths=[]
+            # calculate generation duration
+            rainlengths = []
             for j in range(len(self.data)):
                 rainlengths.append(len(self.data[j][0]))
 
@@ -832,14 +544,14 @@ class RainGenerator(object):
                 attr = layer.dataProvider().fields().toList()
                 timeviewerlayer_data.addAttributes(attr)
                 timeviewerlayer.dataProvider().addAttributes(
-                [QgsField("Boundary Value", QVariant.Double), QgsField("date_time", QVariant.Double)])
+                    [QgsField("Boundary Value", QVariant.Double), QgsField("date_time", QVariant.Double)])
                 for i in range(min(rainlengths)):
                     timeviewerlayer_data.addFeatures(feats)
 
-                fieldids=[]
+                fieldids = []
                 fields = timeviewerlayer.dataProvider().fields()
-                #deleting extra fields
-                fieldstodelete=["XMIN","XMAX","YMIN","YMAX"]
+                # deleting extra fields
+                fieldstodelete = ["XMIN", "XMAX", "YMIN", "YMAX"]
                 for field in fields:
                     if field.name() in fieldstodelete:
                         fieldids.append(fields.indexFromName(field.name()))
@@ -849,59 +561,57 @@ class RainGenerator(object):
                     QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
                 timeviewerlayer.updateFields()
             ##################################################################
-#################################################################################################
-            #Inversed Distance Weighting
-            if self.dialog.SpatialInterpolationMethodBox.currentText()=="Inversed Distance Weighting":
-                #writing the file
+            #################################################################################################
+            # Inversed Distance Weighting
+            if self.dialog.SpatialInterpolationMethodBox.currentText() == "Inversed Distance Weighting":
+                # writing the file
                 for i in range(len(generationlocations)):
-                    generateddata.write('!BEGIN   #%s\n' % "raingaugename")
-                    if self.dialog.SquareRainPulseBox.isChecked():
-                        generateddata.write(
-                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
-                            str(i), str(min(rainlengths)*2)))
-                    else:
-                        generateddata.write('%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (str(i), str(min(rainlengths))))
+                    SpatialInterpolation.write('BEGIN\n')
+                    SpatialInterpolation.write(
+                        '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                            str(i), str(min(rainlengths))))
                     counter = 0
-                    n = self.dialog.ExponentFactorBox.value() #exponent factor for the invert distance weighting formula
-                    while counter+1<=min(rainlengths):
-                        upperformula=0
-                        lowerformula=0
+                    n = self.dialog.ExponentFactorBox.value()  # exponent factor for the invert distance weighting formula
+                    while counter + 1 <= min(rainlengths):
+                        upperformula = 0
+                        lowerformula = 0
                         for j in range(len(self.data)):
-                            distance=raingaugelocations[j].distance(generationlocations[i])
-                            upperformula = upperformula + ((1 / (distance**n)) * float(self.data[j][1][counter]))
-                            lowerformula=lowerformula+(1/(distance**n))
-                        rainvalue= round((upperformula/lowerformula),3)
-                        generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str(rainvalue/3600000) , str(rainvalue)))
-                        if self.dialog.SquareRainPulseBox.isChecked():
-                            generateddata.write(
-                                '%s.99 %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                            distance = raingaugelocations[j].distance(generationlocations[i])
+                            upperformula = upperformula + ((1 / (distance ** n)) * float(self.data[j][1][counter]))
+                            lowerformula = lowerformula + (1 / (distance ** n))
+                        rainvalue = round((upperformula / lowerformula), 3)
+                        SpatialInterpolation.write(
+                            '%s %s   #%s mm/h\n' % (str(counter), str(rainvalue), str(rainvalue)))
                         ###############################################
                         # time viewer layer
                         if self.dialog.TImeVieweLayerBox.isChecked():
                             fields = timeviewerlayer.dataProvider().fields()
-                            datetimefieldid=fields.indexFromName("date_time")
-                            rainvaluefieldid=fields.indexFromName("Boundary Value")
-                            idfieldid=fields.indexFromName("ID")
-                            featureids=[]
+                            datetimefieldid = fields.indexFromName("date_time")
+                            rainvaluefieldid = fields.indexFromName("Boundary Value")
+                            idfieldid = fields.indexFromName("ID")
+                            featureids = []
                             for feature in timeviewerlayer.getFeatures():
                                 if float(feature.attributes()[idfieldid]) == float(i):
                                     featureids.append(feature.id())
                             try:
-                                atts = {datetimefieldid: float(self.data[rainlengths.index(min(rainlengths))][0][counter]), rainvaluefieldid: rainvalue}
+                                atts = {
+                                    datetimefieldid: float(self.data[rainlengths.index(min(rainlengths))][0][counter]),
+                                    rainvaluefieldid: rainvalue}
                             except:
-                                atts = {datetimefieldid: self.data[rainlengths.index(min(rainlengths))][0][counter], rainvaluefieldid: rainvalue}
+                                atts = {datetimefieldid: self.data[rainlengths.index(min(rainlengths))][0][counter],
+                                        rainvaluefieldid: rainvalue}
                             timeviewerlayer.dataProvider().changeAttributeValues({featureids[counter]: atts})
                         ###############################################
 
-                        if counter+1==min(rainlengths):
-                            generateddata.write('!END')
-                            generateddata.write('\n\n')
-                        counter=counter+1
-######################################################################################################
-            #Trend Surface Analysis (Polynomial 1st Order)
-            elif self.dialog.SpatialInterpolationMethodBox.currentText()=="Trend Surface Analysis (Polynomial 1st Order)":
+                        if counter + 1 == min(rainlengths):
+                            SpatialInterpolation.write('!END')
+                            SpatialInterpolation.write('\n\n')
+                        counter = counter + 1
+            ######################################################################################################
+            # Trend Surface Analysis (Polynomial 1st Order)
+            elif self.dialog.SpatialInterpolationMethodBox.currentText() == "Trend Surface Analysis (Polynomial 1st Order)":
 
-                allrainvalues=[]
+                allrainvalues = []
                 for counter in range(min(rainlengths)):
                     xs = []
                     ys = []
@@ -933,36 +643,31 @@ class RainGenerator(object):
                         C, _, _, _ = scipy.linalg.lstsq(A, data[:, 2])  # coefficients
 
                         # formula
-                        #Z = C[0] * X + C[1] * Y + C[2]
+                        # Z = C[0] * X + C[1] * Y + C[2]
 
-                    rainvaluesintimestep=[]
+                    rainvaluesintimestep = []
                     for i in generationlocations:
-                        value=(C[0] * i.x()) + (C[1] * i.y()) + C[2]
+                        value = (C[0] * i.x()) + (C[1] * i.y()) + C[2]
                         rainvaluesintimestep.append(value)
                     allrainvalues.append(rainvaluesintimestep)
 
-                #writing the file
+                # writing the file
                 for i in range(len(generationlocations)):
-                    generateddata.write('!BEGIN   #%s\n' % "raingaugename")
-                    if self.dialog.SquareRainPulseBox.isChecked():
-                        generateddata.write(
-                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
-                                str(i), str(min(rainlengths) * 2)))
-                    else:
-                        generateddata.write(
-                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                    SpatialInterpolation.write('BEGIN\n')
+                    SpatialInterpolation.write(
+                        '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
                             str(i), str(min(rainlengths))))
                     counter = 0
-                    while counter+1<=min(rainlengths):
-                        rainvalue= float(allrainvalues[counter][i])
+                    while counter + 1 <= min(rainlengths):
+                        rainvalue = float(allrainvalues[counter][i])
                         ###############################################
                         # time viewer layer
                         if self.dialog.TImeVieweLayerBox.isChecked():
                             fields = timeviewerlayer.dataProvider().fields()
-                            datetimefieldid=fields.indexFromName("date_time")
-                            rainvaluefieldid=fields.indexFromName("Boundary Value")
-                            idfieldid=fields.indexFromName("ID")
-                            featureids=[]
+                            datetimefieldid = fields.indexFromName("date_time")
+                            rainvaluefieldid = fields.indexFromName("Boundary Value")
+                            idfieldid = fields.indexFromName("ID")
+                            featureids = []
                             for feature in timeviewerlayer.getFeatures():
                                 if float(feature.attributes()[idfieldid]) == float(i):
                                     featureids.append(feature.id())
@@ -975,15 +680,13 @@ class RainGenerator(object):
                                         rainvaluefieldid: rainvalue}
                             timeviewerlayer.dataProvider().changeAttributeValues({featureids[counter]: atts})
                         ###############################################
-                        generateddata.write('%s %s   #%s mm/h\n' % (str(counter), str(rainvalue/3600000) , str(rainvalue)))
-                        if self.dialog.SquareRainPulseBox.isChecked():
-                            generateddata.write(
-                                '%s.99 %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
-                        if counter+1==min(rainlengths):
-                            generateddata.write('!END')
-                            generateddata.write('\n\n')
-                        counter=counter+1
- ######################################################################################
+                        SpatialInterpolation.write(
+                            '%s %s   #%s mm/h\n' % (str(counter), str(rainvalue), str(rainvalue)))
+                        if counter + 1 == min(rainlengths):
+                            SpatialInterpolation.write('!END')
+                            SpatialInterpolation.write('\n\n')
+                        counter = counter + 1
+            ######################################################################################
             elif self.dialog.SpatialInterpolationMethodBox.currentText() == "Trend Surface Analysis (Polynomial 2nd Order)":
 
                 allrainvalues = []
@@ -1022,20 +725,16 @@ class RainGenerator(object):
 
                     rainvaluesintimestep = []
                     for i in generationlocations:
-                        value = C[4]*i.x()**2. + C[5]*i.y()**2. + C[3]*i.x()*i.y() + C[1]*i.x() + C[2]*i.y() + C[0]
+                        value = C[4] * i.x() ** 2. + C[5] * i.y() ** 2. + C[3] * i.x() * i.y() + C[1] * i.x() + C[
+                            2] * i.y() + C[0]
                         rainvaluesintimestep.append(value)
                     allrainvalues.append(rainvaluesintimestep)
 
                 # writing the file
                 for i in range(len(generationlocations)):
-                    generateddata.write('!BEGIN   #%s\n' % "raingaugename")
-                    if self.dialog.SquareRainPulseBox.isChecked():
-                        generateddata.write(
-                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
-                                str(i), str(min(rainlengths) * 2)))
-                    else:
-                        generateddata.write(
-                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                    SpatialInterpolation.write('BEGIN\n')
+                    SpatialInterpolation.write(
+                        '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
                             str(i), str(min(rainlengths))))
                     counter = 0
                     while counter + 1 <= min(rainlengths):
@@ -1060,10 +759,212 @@ class RainGenerator(object):
                                         rainvaluefieldid: rainvalue}
                             timeviewerlayer.dataProvider().changeAttributeValues({featureids[counter]: atts})
                         ###############################################
+                        SpatialInterpolation.write(
+                            '%s %s   #%s mm/h\n' % (str(counter), str(rainvalue), str(rainvalue)))
+                        if counter + 1 == min(rainlengths):
+                            SpatialInterpolation.write('!END')
+                            SpatialInterpolation.write('\n\n')
+                        counter = counter + 1
+
+        ##########################################################
+        # time viewer layer
+        if self.dialog.TImeVieweLayerBox.isChecked():
+            timeviewerlayer.updateFields()
+            QgsProject.instance().addMapLayer(timeviewerlayer)
+        ##########################################################
+        if self.dialog.SaveSpatialInterpolationBox.isChecked():
+            self.dialog.StatusIndicator.setText("Writing Spatial Interpolation Output...")
+            QTimer.singleShot(50, self.SpatialInterpolationforPromaides)
+
+        self.dialog.StatusIndicator.setText("Analyzing Storm Statistics...")
+        QTimer.singleShot(50, self.StormAnalysis)
+
+
+
+
+################################################################################################
+    def SpatialInterpolationforPromaides(self):
+        filepath = os.path.join(self.dialog.folderEdit_dataanalysis.text(), "RainfallSpatialInterpolation" + '.txt')
+        try:  # deletes previous files
+            if os.path.isfile(filepath):
+                os.remove(filepath)
+        except:
+            pass
+
+        with open(filepath, 'a') as generateddata:
+            generateddata.write('# comment\n')
+            generateddata.write('# !BEGIN\n')
+            generateddata.write('# number begining from 0 ++ number of points\n')
+            generateddata.write('# hour [h] discharge [m³/s]\n')
+            generateddata.write('# !END\n\n\n')
+
+            raingaugelocations = []
+            generationlocations = []
+
+            # getting the locations of raingauges
+            point_layer = self.dialog.RainGaugeLayer.currentLayer()
+            features = point_layer.getFeatures()
+            for feature in features:
+                buff = feature.geometry()
+                raingaugelocations.append(buff.asPoint())
+
+            # getting the generation locations
+            area_layer = self.layer2
+            features = area_layer.getFeatures()
+            for feature in features:
+                buff = feature.geometry()
+                generationlocations.append(buff.centroid().asPoint())
+
+            # calculate generation duration
+            rainlengths = []
+            for j in range(len(self.data)):
+                rainlengths.append(len(self.data[j][0]))
+
+            #################################################################################################
+            # Inversed Distance Weighting
+            if self.dialog.SpatialInterpolationMethodBox.currentText() == "Inversed Distance Weighting":
+                # writing the file
+                for i in range(len(generationlocations)):
+                    generateddata.write('!BEGIN   #%s\n' % "raingaugename")
+                    generateddata.write(
+                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                                str(i), str(min(rainlengths) * 2)))
+                    counter = 0
+                    n = self.dialog.ExponentFactorBox.value()  # exponent factor for the invert distance weighting formula
+                    while counter + 1 <= min(rainlengths):
+                        upperformula = 0
+                        lowerformula = 0
+                        for j in range(len(self.data)):
+                            distance = raingaugelocations[j].distance(generationlocations[i])
+                            upperformula = upperformula + ((1 / (distance ** n)) * float(self.data[j][1][counter]))
+                            lowerformula = lowerformula + (1 / (distance ** n))
+                        rainvalue = round((upperformula / lowerformula), 3)
                         generateddata.write(
                             '%s %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
-                        if self.dialog.SquareRainPulseBox.isChecked():
-                            generateddata.write(
+                        generateddata.write(
+                                '%s.99 %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                        if counter + 1 == min(rainlengths):
+                            generateddata.write('!END')
+                            generateddata.write('\n\n')
+                        counter = counter + 1
+            ######################################################################################################
+            # Trend Surface Analysis (Polynomial 1st Order)
+            elif self.dialog.SpatialInterpolationMethodBox.currentText() == "Trend Surface Analysis (Polynomial 1st Order)":
+
+                allrainvalues = []
+                for counter in range(min(rainlengths)):
+                    xs = []
+                    ys = []
+                    zs = []
+                    # putting all x and y and z values in seperate arrays
+                    for r, i in enumerate(raingaugelocations):
+                        xs.append(i.x())
+                        ys.append(i.y())
+                        zs.append(float(self.data[r][1][counter]))
+
+                    data = np.c_[xs, ys, zs]
+
+                    # grid covering the domain of the data
+                    # getting the minimum and maximum x and ys of generation area
+                    layer = self.dialog.GenerationAreaLayer.currentLayer()
+                    ex = layer.extent()
+                    xmax = ex.xMaximum()
+                    ymax = ex.yMaximum()
+                    xmin = ex.xMinimum()
+                    ymin = ex.yMinimum()
+
+                    X, Y = np.meshgrid(np.linspace(xmin, xmax, self.dialog.dxBox.value()),
+                                       np.linspace(ymin, ymax, self.dialog.dyBox.value()))
+
+                    order = 1  # 1: linear, 2: quadratic
+                    if order == 1:
+                        # best-fit linear plane
+                        A = np.c_[data[:, 0], data[:, 1], np.ones(data.shape[0])]
+                        C, _, _, _ = scipy.linalg.lstsq(A, data[:, 2])  # coefficients
+
+                        # formula
+                        # Z = C[0] * X + C[1] * Y + C[2]
+
+                    rainvaluesintimestep = []
+                    for i in generationlocations:
+                        value = (C[0] * i.x()) + (C[1] * i.y()) + C[2]
+                        rainvaluesintimestep.append(value)
+                    allrainvalues.append(rainvaluesintimestep)
+
+                # writing the file
+                for i in range(len(generationlocations)):
+                    generateddata.write('!BEGIN   #%s\n' % "raingaugename")
+                    generateddata.write(
+                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                                str(i), str(min(rainlengths) * 2)))
+                    counter = 0
+                    while counter + 1 <= min(rainlengths):
+                        rainvalue = float(allrainvalues[counter][i])
+                        generateddata.write(
+                            '%s %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                        generateddata.write(
+                                '%s.99 %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                        if counter + 1 == min(rainlengths):
+                            generateddata.write('!END')
+                            generateddata.write('\n\n')
+                        counter = counter + 1
+            ######################################################################################
+            elif self.dialog.SpatialInterpolationMethodBox.currentText() == "Trend Surface Analysis (Polynomial 2nd Order)":
+
+                allrainvalues = []
+                for counter in range(min(rainlengths)):
+                    xs = []
+                    ys = []
+                    zs = []
+                    # putting all x and y and z values in seperate arrays
+                    for r, i in enumerate(raingaugelocations):
+                        xs.append(i.x())
+                        ys.append(i.y())
+                        zs.append(float(self.data[r][1][counter]))
+
+                    data = np.c_[xs, ys, zs]
+
+                    # grid covering the domain of the data
+                    # getting the minimum and maximum x and ys of generation area
+                    layer = self.dialog.GenerationAreaLayer.currentLayer()
+                    ex = layer.extent()
+                    xmax = ex.xMaximum()
+                    ymax = ex.yMaximum()
+                    xmin = ex.xMinimum()
+                    ymin = ex.yMinimum()
+
+                    X, Y = np.meshgrid(np.linspace(xmin, xmax, self.dialog.dxBox.value()),
+                                       np.linspace(ymin, ymax, self.dialog.dyBox.value()))
+
+                    order = 2  # 2: quadratic
+                    if order == 2:
+                        # best-fit quadratic curve
+                        A = np.c_[
+                            np.ones(data.shape[0]), data[:, :2], np.prod(data[:, :2], axis=1), data[:, :2] ** 2]
+                        C, _, _, _ = scipy.linalg.lstsq(A, data[:, 2])
+
+                        # formula
+                        # Z = C[4]*X**2. + C[5]*Y**2. + C[3]*X*Y + C[1]*X + C[2]*Y + C[0]
+
+                    rainvaluesintimestep = []
+                    for i in generationlocations:
+                        value = C[4] * i.x() ** 2. + C[5] * i.y() ** 2. + C[3] * i.x() * i.y() + C[1] * i.x() + C[
+                            2] * i.y() + C[0]
+                        rainvaluesintimestep.append(value)
+                    allrainvalues.append(rainvaluesintimestep)
+
+                # writing the file
+                for i in range(len(generationlocations)):
+                    generateddata.write('!BEGIN   #%s\n' % "raingaugename")
+                    generateddata.write(
+                            '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
+                                str(i), str(min(rainlengths) * 2)))
+                    counter = 0
+                    while counter + 1 <= min(rainlengths):
+                        rainvalue = float(allrainvalues[counter][i])
+                        generateddata.write(
+                            '%s %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
+                        generateddata.write(
                                 '%s.99 %s   #%s mm/h\n' % (str(counter), str(rainvalue / 3600000), str(rainvalue)))
                         if counter + 1 == min(rainlengths):
                             generateddata.write('!END')
@@ -1071,47 +972,295 @@ class RainGenerator(object):
                         counter = counter + 1
 
 ###########################################################################################
-            self.iface.messageBar().pushSuccess(
-                'Rain Generator',
-                'Generation Successful !'
-            )
-        ##########################################################
-        #time viewer layer
-        if self.dialog.TImeVieweLayerBox.isChecked():
-            timeviewerlayer.updateFields()
-            QgsProject.instance().addMapLayer(timeviewerlayer)
-        ##########################################################
+
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+
+    #data analysis
+
+    #shared arrays
+    StormTraveledDistance=[]
+    StormVolume=[]
+    StormDirection=[]
+    StormDuration=[]
+    StormPeakIntensity=[]
+    StormSize=[]
+    NoStormDuration=[]
+    CellCoordinates=[]
+    StormCount=0
+
+
+    def StormAnalysis(self):
+
+        #getting the center x y of each square cell
+        for feature in self.layer2.getFeatures():
+            self.CellCoordinates.append(feature.geometry().centroid().asPoint())
+
+        print(self.nx,"nx")
+        print(self.ny,"ny")
+
+        #calculates angle between two points clockwise
+        #east is 0
+        #north is 90
+        def angle_between(p1, p2):
+            ang1 = np.arctan2(*p1[::-1])
+            ang2 = np.arctan2(*p2[::-1])
+            return np.rad2deg((ang1 - ang2) % (2 * np.pi))
+
+        self.StormCount=0
+        nostormcount=0
+
+        #reset
+        self.StormTraveledDistance = []
+        self.StormVolume = []
+        self.StormDirection = []
+        self.StormDuration = []
+        self.StormPeakIntensity = []
+        self.StormSize = []
+        self.NoStormDuration = []
+
+        for i in range(100000):
+            self.StormTraveledDistance.append(0)
+            self.StormVolume.append(0)
+            self.StormDirection.append([])
+            self.StormDuration.append(0)
+            self.StormPeakIntensity.append(0)
+            self.StormSize.append(0)
+
+        Storm=[]
+        StormConnectivity=[]
+        PreviousStormConnectivity=[]
+
+        #reading file
+        filepath = os.path.join(tempfile.gettempdir(), "RainfallSpatialInterpolation" + '.txt')
+        f = open(filepath)
+        lines = f.readlines()
+        StartingLine = 2
+        for linecount in range(len(self.data[0][0])):
+            print(StartingLine,"startingline")
+            for i in range(StartingLine,StartingLine+((self.nx*self.ny-1)*(len(self.data[0][0])+4))+1,len(self.data[0][0])+3+1):
+                Storm.append(lines[i].split(' ')[1])
+
+            #place to put test arrays
+
+            for i in range(len(Storm)):
+                StormConnectivity.append(0)
+            Storm = [float(i) for i in Storm]
+            StartingLine=StartingLine+1
+
+            ###################################################################################
+            #storm cluster identification
+            StormThreshhold = self.dialog.StormThreshholdBox.value()
+            for i, value in enumerate(Storm):
+                try:
+                    if Storm[i-1]>StormThreshhold and value>StormThreshhold and (i-1)>=0:
+                        StormConnectivity[i]=StormConnectivity[i-1]
+                        continue
+                except:
+                    pass
+
+                try:
+                    if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx)>=0:
+                        StormConnectivity[i] = StormConnectivity[i - self.nx]
+                        continue
+                except:
+                    pass
+
+                try:
+                    if Storm[i - self.nx-1] > StormThreshhold and value > StormThreshhold and (i - self.nx-1)>=0:
+                        StormConnectivity[i] = StormConnectivity[i - self.nx-1]
+                        continue
+                except:
+                    pass
+
+                if value > StormThreshhold:
+                    self.StormCount = self.StormCount + 1
+                    StormConnectivity[i] = self.StormCount
+            ####################################################################################
+            print(PreviousStormConnectivity,"previous connectivity1")
+            print(StormConnectivity, "storm connectivity1")
+            print(Storm, "storm")
+            #find overlapping storms
+            for i, value in enumerate(StormConnectivity):
+                for j, previousvalue in enumerate(PreviousStormConnectivity):
+                    if i==j and value>0 and previousvalue>0:
+                        for k, value2 in enumerate(StormConnectivity):
+                            if value2==value:
+                                StormConnectivity[k]=previousvalue
+           ######################################################################################
+
+            #getting storm statistics
+
+            if all(i <= self.dialog.StormThreshholdBox.value() for i in Storm):
+                nostormcount=nostormcount+1
+            else:
+                self.NoStormDuration.append(nostormcount)
+                nostormcount=0
+
+               #storm volume
+                for i, value in enumerate(StormConnectivity):
+                    if value>0:
+                        self.StormVolume[value]=self.StormVolume[value]+Storm[i]
+                #storm duration
+                print(StormConnectivity, "storm connectivity2")
+                for value in list(set(StormConnectivity)):
+                    if value!=0:
+                        self.StormDuration[value]=self.StormDuration[value]+1
+                        #peak intensity and storm area and velocity and direction
+                        rainintensities=[]
+                        currentstormcoordinates=[]
+                        previousstormcoordinates=[]
+                        stormarea=0
+                        for i, id in enumerate(StormConnectivity):
+                            if id==value and id!=0:
+                                rainintensities.append(Storm[i])
+                                currentstormcoordinates.append(self.CellCoordinates[i])
+                                stormarea=stormarea+1
+
+                        for i, id in enumerate(PreviousStormConnectivity):
+                            if id==value and id!=0:
+                                previousstormcoordinates.append(self.CellCoordinates[i])
+
+                        if value != 0:
+                            self.StormPeakIntensity[value]=max(rainintensities)
+                            self.StormSize[value]=self.StormSize[value]+stormarea
+
+                        #traveled distance and direction
+                        if value != 0 and (value in PreviousStormConnectivity):
+                            currentstormcenterx=0
+                            currentstormcentery=0
+                            for xy in currentstormcoordinates:
+                                currentstormcenterx = currentstormcenterx + xy.x()
+                                currentstormcentery = currentstormcentery + xy.y()
+                            currentstormcenterx = currentstormcenterx/len(currentstormcoordinates)
+                            currentstormcentery = currentstormcentery/len(currentstormcoordinates)
+
+                            previousstormcenterx = 0
+                            previousstormcentery = 0
+                            for xy in previousstormcoordinates:
+                                previousstormcenterx = previousstormcenterx + xy.x()
+                                previousstormcentery = previousstormcentery + xy.y()
+
+                            if len(previousstormcoordinates)>0:
+                                previousstormcenterx = previousstormcenterx / len(previousstormcoordinates)
+                                previousstormcentery = previousstormcentery / len(previousstormcoordinates)
+
+                            #both need averaging out
+                            self.StormTraveledDistance[value] = self.StormTraveledDistance[value] + math.sqrt((currentstormcenterx - previousstormcenterx)**2 + (currentstormcentery - previousstormcentery)**2)
+                            angle=angle_between([previousstormcenterx,previousstormcentery], [currentstormcenterx,currentstormcentery])
+                            if 0<angle<22.5 or 337.5<angle<360:
+                                direction="E"
+                            elif 22.5 <= angle <= 67.5:
+                                direction = "NE"
+                            elif 67.5 <= angle <= 112.5:
+                                direction = "N"
+                            elif 112.5 <= angle <= 157.5:
+                                direction = "NW"
+                            elif 157.5 <= angle <= 202.5:
+                                direction = "W"
+                            elif 202.5 <= angle <= 247.5:
+                                direction = "SW"
+                            elif 247.5 <= angle <= 292.5:
+                                direction = "S"
+                            elif 292.5 <= angle <= 337.5:
+                                direction = "W"
+                            self.StormDirection[value].append(direction)
+
+            PreviousStormConnectivity=StormConnectivity
+            Storm = []
+            StormConnectivity = []
+
+
+        #print(self.StormPeakIntensity[:self.StormCount+1],"peak")
+        #print(self.StormSize[:self.StormCount+1],"size")
+        #print(self.StormDuration[:self.StormCount+1],"duration")
+        #print(self.StormTraveledDistance[:self.StormCount+1],"distance")
+        print(self.StormDirection[:self.StormCount+1], "direction")
+
+
+        if self.dialog.SaveStormStatisticsBox.isChecked():
+            self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
+            QTimer.singleShot(50, self.WriteStormStatistics)
+
+
+        N=0
+        for i in self.StormDuration:
+            if i>0:
+                N=N+1
+        self.dialog.StatusIndicator.setText("Processing Complete, %s Storms Identified" % (N))
+        self.iface.messageBar().pushSuccess(
+
+            'Rain Generator',
+            'Processing Complete !'
+        )
+        self.dialog.groupBox_3.setEnabled(True)
 
 
 
-    #use poisson.pmf(k,lambd) from the library scipy.stats
-    #k=np.arange(0,1000)
-    #distribution = np.zeros(k_axis.shape[0])
-    #for i in range(k_axis.shape[0]):
-        #distribution[i] = poisson.pmf(i, lambd)
-    #plt.bar(k_axis, distribution)
-    
-    #numpy.random.choice(numpy.arange(1, 7), p=[0.1, 0.05, 0.05, 0.2, 0.4, 0.2])
-    
-    
-    def poisson_distribution(k, lambd):
-        return (lambd ** k * np.exp(-lambd)) / np.math.factorial(k)
+    #function to write storm statistics to file
+    def WriteStormStatistics(self):
+        filepath = os.path.join(self.dialog.folderEdit_dataanalysis.text(), "StormStatistics" + '.txt')
+        try:  # deletes previous files
+            if os.path.isfile(filepath):
+                os.remove(filepath)
+        except:
+            pass
 
-    ###################################################################
-        #not needed
-        #print(len(self.norainduration),"len")
-        #for i in range(len(self.norainduration)):
-            #print(i,"i")
-            #print(self.norainduration[i][0],"array")
-            #countofnoraindurations = collections.Counter(self.norainduration[i][0])
-            #print(countofnoraindurations.keys()) #dpd values
-            #print(countofnoraindurations.values()) #dpd frequencies
-            #sortedcountofnoraindurations=sorted(countofnoraindurations.items(), key=lambda i: i[1]) #sort in ascending order based on frequency
-            #print(sortedcountofnoraindurations,"sorted")
-####################################################################
+        try:
+            file=open(filepath, 'w')
+            file.close()
+        except:
+            pass
+        with open(filepath, 'a') as StormStatistics:
+            StormStatistics.write('Storm_id Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea Storm_TraveledDistance StormTotalAngle\n')
+            for i in range(1,self.StormCount+1):
+                StormStatistics.write('%s %s %s %s %s %s %s\n' % (i, self.StormDuration[i],self.StormVolume[i],self.StormPeakIntensity[i], (self.StormSize[i]),(self.StormTraveledDistance[i]),(self.StormDirection[i])))
 
-#####################################################################
+
+
 
     
     def execTool(self):
         print("hello")
+
+
+
+
+#############################################################################################
+#############################################################################################
+#############################################################################################
+#############################################################################################
+#############################################################################################
+#############################################################################################
+#copula class
+#https://github.com/ashiq24/Copula
+#multivariate Gaussian copulas
+
+class Copula():
+    def __init__(self,data):
+        self.data = np.array(data)
+        if(len(data)<2):
+            raise  Exception('input data must have multiple samples')
+        if not isinstance(data[0], list):
+            raise  Exception('input data must be a 2D array')
+        self.cov = np.cov(self.data.T)
+        if 0 in self.cov:
+            raise  Exception('Data not suitable for Copula. Covarience of two column is 0')
+        self.normal = stats.multivariate_normal([0 for i in range(len(data[0]))], self.cov,allow_singular=True)
+        self.norm = stats.norm()
+        self.var = []
+        self.cdfs = []
+    def gendata(self,num):
+        self.var = random.multivariate_normal([0 for i in range(len(self.cov[0]))], self.cov,num)
+
+        for i in self.var:
+            for j in range(len(i)):
+                i[j]= i[j]/math.sqrt(self.cov[j][j])
+        self.cdfs = self.norm.cdf(self.var)
+        data = [ [ np.percentile(self.data[:,j],100*i[j]) for j in range(len(i))] for i in self.cdfs ]
+        return data
