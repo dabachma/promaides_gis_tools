@@ -253,13 +253,19 @@
           <height>0</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>If a layer is selected = no Data value; if no layer is selected = unique value</string>
+        </property>
         <property name="text">
-         <string>No Data Value</string>
+         <string>No Data / unique Value</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QDoubleSpinBox" name="initNaNBox">
+        <property name="toolTip">
+         <string>If a layer is selected = no Data value; if no layer is selected = unique value</string>
+        </property>
         <property name="suffix">
          <string/>
         </property>
@@ -745,13 +751,19 @@
           <height>0</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>If a layer is selected = no Data value; if no layer is selected = unique value</string>
+        </property>
         <property name="text">
-         <string>No Data Value</string>
+         <string>No Data / unique Value</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QSpinBox" name="roughnessNaNBox">
+        <property name="toolTip">
+         <string>If a layer is selected = no Data value; if no layer is selected = unique value</string>
+        </property>
         <property name="minimum">
          <number>1</number>
         </property>
