@@ -668,6 +668,9 @@ class DAMRasterExport(object):
 
                         if(values[rastertype_0] != self.dialog.ecnNaNBox.value()):
                             mob_values[rastertype_0] = values[rastertype_0] + input_layers[rastertype_0]['deltaecn']  # adding the user chosen value to initial immob value
+                        else:
+                            mob_values[rastertype_0] = values[rastertype_0]
+
 
                         out_raster.write_cell(mob_values, rastertype_0)
                         counter = counter + 1
