@@ -665,7 +665,9 @@ class DAMRasterExport(object):
                         point = out_raster.cell_center(counter)
 
                         values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
-                        mob_values[rastertype_0] = values[rastertype_0] + input_layers[rastertype_0]['deltaecn']  # adding the user chosen value to initial immob value
+
+                        if(values[rastertype_0] != self.dialog.ecnNaNBox.value()):
+                            mob_values[rastertype_0] = values[rastertype_0] + input_layers[rastertype_0]['deltaecn']  # adding the user chosen value to initial immob value
 
                         out_raster.write_cell(mob_values, rastertype_0)
                         counter = counter + 1
