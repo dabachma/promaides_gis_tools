@@ -49,21 +49,20 @@ class RasterInterpolator(object):
             self.myExtent = self.dataProv.extent()
             self.theWidth = self.dataProv.xSize()
             self.theHeight = self.dataProv.ySize()
-
-            if method == 'nearest neighbor (downscaling/upscaling)' or 'nearest neighbor':
+            if 'nearest' in method:
                 self.interpolate = lambda point: self._nearest(point)
-            elif method == 'bi-linear (downscaling)':
+            elif "linear" in method:
                 self.interpolate = lambda point: self._linear(point)
-            elif method == 'bi-cubic (downscaling)':
+            elif "cubic" in method:
                 self.interpolate = lambda point : self._bicubic(point)
-            elif method == 'average (upscaling)':
+            elif "average" in method:
                 self.interpolate = lambda point : self._average(point)
-            elif method == 'max (upscaling)':
+            elif "max" in method:
                 self.interpolate = lambda point : self._max(point)
-            elif method == 'min (upscaling)':
+            elif "min" in method:
                 self.interpolate = lambda point : self._min(point)
             else:
-                raise ValueError('unsupported interpolation method "{}"'.format(method))
+                raise ValueError('unsupported interpolation method "{}"'.format(methodhi))
         else:
             self.interpolate = lambda p: nan
 
