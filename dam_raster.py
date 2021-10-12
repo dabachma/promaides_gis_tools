@@ -668,9 +668,6 @@ class DAMRasterExport(object):
 
                         if(values[rastertype_0] != self.dialog.ecnNaNBox.value()):
                             mob_values[rastertype_0] = values[rastertype_0] + input_layers[rastertype_0]['deltaecn']  # adding the user chosen value to initial immob value
-                        else:
-                            mob_values[rastertype_0] = values[rastertype_0]
-
 
                         out_raster.write_cell(mob_values, rastertype_0)
                         counter = counter + 1
@@ -693,7 +690,12 @@ class DAMRasterExport(object):
                     point = out_raster.cell_center(counter)
                     values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
                     # values multiplied with correction value entered from user. With this factor the input values are supposed to be transformed to people/m²
-                    corrected_values[rastertype_0] = values[rastertype_0] * input_layers[rastertype_0]['pop_unittrans']
+
+                    if values[rastertype_0] == self.dialog.popNaN():
+                        corrected_values[rastertype_0] = values[rastertype_0]
+                    else:
+                        corrected_values[rastertype_0] = values[rastertype_0] * input_layers[rastertype_0]['pop_unittrans']
+
                     out_raster.write_cell_float(corrected_values, rastertype_0)
                     counter = counter + 1
                     if progress:
