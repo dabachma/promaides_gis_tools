@@ -975,6 +975,8 @@ class RainGenerator(object):
     StormDirection = []
     StormDuration = []
     StormPeakIntensity = []
+    StormPeakIntensityTimestep = []
+    StormPeakIntensityLocation = []
     StormSize = []
     NoStormDuration = []
     CellCoordinates = []
@@ -1019,6 +1021,8 @@ class RainGenerator(object):
             self.StormLocations.append([])
             self.StormDuration.append(0)
             self.StormPeakIntensity.append(0)
+            self.StormPeakIntensityTimestep.append(0)
+            self.StormPeakIntensityLocation.append(0)
             self.StormSize.append(0)
 
         Storm = []
@@ -1133,8 +1137,12 @@ class RainGenerator(object):
                                 previousstormcoordinates.append(self.CellCoordinates[i])
 
                         if value != 0:
-                            self.StormPeakIntensity[value] = max(rainintensities)
+                            if max(rainintensities) > self.StormPeakIntensity[value]:
+                                self.StormPeakIntensity[value] = max(rainintensities)
+                                self.StormPeakIntensityTimestep[value] = StartingLine
+                                self.StormPeakIntensityLocation[value] = rainintensities.index(max(rainintensities))
                             self.StormSize[value] = self.StormSize[value] + stormarea
+
 
                         # traveled distance and direction
                         if value != 0 and (value in PreviousStormConnectivity):
@@ -1189,8 +1197,10 @@ class RainGenerator(object):
         # print(self.StormDuration[:self.StormCount+1],"duration")
         # print(self.StormTraveledDistance[:self.StormCount+1],"distance")
         #print(self.StormDirection[:self.StormCount + 1], "direction")
-        print(self.StormLocations,"locations")
+        #print(self.StormLocations,"locations")
         #print(self.StormIDs,"stormids")
+        #print(self.StormPeakIntensityTimestep,"timestep")
+        #print(self.StormPeakIntensityLocation,"location")
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
             self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
