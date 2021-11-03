@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>367</width>
-    <height>391</height>
+    <width>468</width>
+    <height>307</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,22 +28,12 @@
    <item row="1" column="0" colspan="3">
     <widget class="QGroupBox" name="groupBox">
      <property name="toolTip">
-      <string>Set the attributes of the critical infrastructure network point elements; Click the '?' for more detailed tips!</string>
+      <string>Set the name of the observation points; just a string attribute is allowed!</string>
      </property>
      <property name="title">
-      <string>Critical Infrastructure - Point Properties</string>
+      <string>Critical Infrastructure - Polygon Properties</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
-       <widget class="QLabel" name="Label">
-        <property name="text">
-         <string>Name</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QgsFieldExpressionWidget" name="expression_field_names" native="true"/>
-      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="Label_2">
         <property name="text">
@@ -54,6 +44,23 @@
       <item row="1" column="1">
        <widget class="QgsFieldExpressionWidget" name="expression_field_ids" native="true"/>
       </item>
+      <item row="2" column="1">
+       <widget class="QgsFieldExpressionWidget" name="expression_field_sectors" native="true"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="Label_3">
+        <property name="text">
+         <string>Number of End Users</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="Label">
+        <property name="text">
+         <string>Name</string>
+        </property>
+       </widget>
+      </item>
       <item row="2" column="0">
        <widget class="QLabel" name="Label_5">
         <property name="text">
@@ -61,79 +68,11 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
-       <widget class="QgsFieldExpressionWidget" name="expression_field_sectors" native="true"/>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="Label_3">
-        <property name="text">
-         <string>Level</string>
-        </property>
-       </widget>
-      </item>
       <item row="3" column="1">
-       <widget class="QgsFieldExpressionWidget" name="expression_field_levels" native="true"/>
+       <widget class="QgsFieldExpressionWidget" name="expression_field_endusers" native="true"/>
       </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="Label_4">
-        <property name="text">
-         <string>Treshold</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QgsFieldExpressionWidget" name="expression_field_thresholds" native="true"/>
-      </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="Label_10">
-        <property name="text">
-         <string>Recovery Time</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QgsFieldExpressionWidget" name="expression_field_recoverys" native="true">
-        <property name="contextMenuPolicy">
-         <enum>Qt::DefaultContextMenu</enum>
-        </property>
-        <property name="inputMethodHints">
-         <set>Qt::ImhDigitsOnly</set>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="Label_9">
-        <property name="text">
-         <string>Regular</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="QgsFieldExpressionWidget" name="expression_field_regulars" native="true">
-        <property name="contextMenuPolicy">
-         <enum>Qt::DefaultContextMenu</enum>
-        </property>
-        <property name="inputMethodHints">
-         <set>Qt::ImhDigitsOnly</set>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0">
-       <widget class="QLabel" name="Label_11">
-        <property name="text">
-         <string>Activation Time</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="1">
-       <widget class="QgsFieldExpressionWidget" name="expression_field_actives" native="true">
-        <property name="contextMenuPolicy">
-         <enum>Qt::DefaultContextMenu</enum>
-        </property>
-        <property name="inputMethodHints">
-         <set>Qt::ImhDigitsOnly</set>
-        </property>
-       </widget>
+      <item row="0" column="1">
+       <widget class="QgsFieldExpressionWidget" name="expression_field_names" native="true"/>
       </item>
      </layout>
     </widget>
@@ -162,6 +101,9 @@
        <width>80</width>
        <height>50</height>
       </size>
+     </property>
+     <property name="layoutDirection">
+      <enum>Qt::LeftToRight</enum>
      </property>
      <property name="styleSheet">
       <string notr="true">QPushButton {

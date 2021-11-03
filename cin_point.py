@@ -11,13 +11,18 @@ from qgis.PyQt import uic
 from .interpolate import RasterInterpolator
 from .environment import get_ui_path
 
+# system modules
+import webbrowser
+
 #general
 from datetime import datetime
 from .version import *
 
-UI_PATH = get_ui_path('ui_cin_2promaides_point.ui ')
+import operator
 
-# This plugin exports the observations point file for the HYD-module of ProMaIdes from a point shape file;
+UI_PATH = get_ui_path('ui_cin_2promaides_point.ui')
+
+# This plugin exports the CIs point element file for the DAM-CI-module of ProMaIdes from a point shape file;
 # A name field (string) is required within the point layer
 class PluginDialog(QDialog):
 
@@ -27,6 +32,7 @@ class PluginDialog(QDialog):
         self.iface = iface
         self.input_layer = None
         self.browse_button.clicked.connect(self.onBrowseButtonClicked)
+        self.HelpButton.clicked.connect(self.Help)
         self.iface.currentLayerChanged.connect(self.setInputLayer)
         self.setInputLayer(self.iface.activeLayer())
 
@@ -35,10 +41,13 @@ class PluginDialog(QDialog):
 
     def onBrowseButtonClicked(self):
         current_filename = self.filename_edit.text()
-        new_filename, __ = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'CIN Point Export', current_filename)
+        new_filename, __ = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'CIN Points Export', current_filename)
         if new_filename != '':
             self.filename_edit.setText(new_filename)
             self.filename_edit.editingFinished.emit()
+            
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-63/DAM-CI---Point-Export")
 
     def setInputLayer(self, layer):
         """
@@ -73,19 +82,33 @@ class PluginDialog(QDialog):
                 self.input_label.setText('<i>Selected layer "{}" is not a vector layer.<br>'
                                          'Please select a polypoint layer.</i>'
                                          .format(layer_name))
-        self.expression_field_names.setExpression("name")
-        self.expression_field_ids.setExpression("osm_id")
-        self.expression_field_sectors.setExpression("sector")
-        self.expression_field_levels.setExpression("level")
-        self.expression_field_thresholds.setExpression("threshold")
-        self.expression_field_finals.setExpression("final")
+
+        self.expression_field_ids.setExpression("point_id")
+        self.expression_field_names.setExpression("point_name")
+        self.expression_field_sectors.setExpression("sec_id")
+        self.expression_field_levels.setExpression("sec_level")
+        self.expression_field_thresholds.setExpression("boundary_v")
+        self.expression_field_regulars.setExpression("regular_fl")
+        self.expression_field_recoverys.setExpression("recovery_t")
+        self.expression_field_actives.setExpression("activation")
+
+        # self.expression_field_ids.setExpression("id")
+        # self.expression_field_names.setExpression("name")
+        # self.expression_field_sectors.setExpression("sector")
+        # self.expression_field_levels.setExpression("level")
+        # self.expression_field_thresholds.setExpression("threshold")
+        # self.expression_field_regulars.setExpression("regular")
+        # self.expression_field_recoverys.setExpression("recovery")
+        # self.expression_field_actives.setExpression("active")
 
         self.expression_field_names.setLayer(self.input_layer)
         self.expression_field_ids.setLayer(self.input_layer)
         self.expression_field_sectors.setLayer(self.input_layer)
         self.expression_field_levels.setLayer(self.input_layer)
         self.expression_field_thresholds.setLayer(self.input_layer)
-        self.expression_field_finals.setLayer(self.input_layer)
+        self.expression_field_regulars.setLayer(self.input_layer)
+        self.expression_field_recoverys.setLayer(self.input_layer)
+        self.expression_field_actives.setLayer(self.input_layer)
 
         self.updateButtonBox()
 
@@ -126,12 +149,14 @@ class CINPointExport(object):
         self.dialog.setModal(False)
         self.act.setEnabled(False)
         # add a filter to the combo box of the filed selection; for "Name" just a string filed make sense
-        self.dialog.expression_field_ids.setFilters(QgsFieldProxyModel.String)
+        self.dialog.expression_field_ids.setFilters(QgsFieldProxyModel.Int | QgsFieldProxyModel.LongLong)
         self.dialog.expression_field_names.setFilters(QgsFieldProxyModel.String)
-        self.dialog.expression_field_sectors.setFilters(QgsFieldProxyModel.String)
-        self.dialog.expression_field_levels.setFilters(QgsFieldProxyModel.Int)
+        self.dialog.expression_field_sectors.setFilters(QgsFieldProxyModel.Int | QgsFieldProxyModel.LongLong)
+        self.dialog.expression_field_levels.setFilters(QgsFieldProxyModel.Int | QgsFieldProxyModel.LongLong)
         self.dialog.expression_field_thresholds.setFilters(QgsFieldProxyModel.Double)
-        self.dialog.expression_field_finals.setFilters(QgsFieldProxyModel.Int) # try to change this to boolean in QT
+        self.dialog.expression_field_regulars.setFilters(QgsFieldProxyModel.String) # try to change this to boolean in QT
+        self.dialog.expression_field_recoverys.setFilters(QgsFieldProxyModel.Double)
+        self.dialog.expression_field_actives.setFilters(QgsFieldProxyModel.Double)
         self.dialog.show()
 
     def scheduleAbort(self):
@@ -151,22 +176,23 @@ class CINPointExport(object):
             )
             self.quitDialog()
             return
-
         point_layer = self.dialog.input_layer
+
         if point_layer.selectedFeatureCount():
             only_selected = True
             features = point_layer.selectedFeatures()
             feature_count = point_layer.selectedFeatureCount()
+
         else:
             only_selected = False
             features = point_layer.getFeatures()
             feature_count = point_layer.featureCount()
 
-
         # labeling the input layer attributes to variables
         # the variable name is plural because all names are contained
         names, ok = QgsVectorLayerUtils.getValues(point_layer, self.dialog.expression_field_names.expression(),
                                                    only_selected)
+        names = [x.replace(" ", "_") for x in names]  # replacing empty spaces in name
         ids, ok = QgsVectorLayerUtils.getValues(point_layer, self.dialog.expression_field_ids.expression(),
                                                   only_selected)
         sectors, ok = QgsVectorLayerUtils.getValues(point_layer, self.dialog.expression_field_sectors.expression(),
@@ -175,9 +201,12 @@ class CINPointExport(object):
                                                    only_selected)
         thresholds, ok = QgsVectorLayerUtils.getValues(point_layer, self.dialog.expression_field_thresholds.expression(),
                                                    only_selected)
-        finals, ok = QgsVectorLayerUtils.getValues(point_layer, self.dialog.expression_field_finals.expression(),
+        regulars, ok = QgsVectorLayerUtils.getValues(point_layer, self.dialog.expression_field_regulars.expression(),
                                                    only_selected)
-        attributes = [names, ids, sectors, levels, thresholds, finals]
+        recoverys, ok = QgsVectorLayerUtils.getValues(point_layer, self.dialog.expression_field_recoverys.expression(),
+                                                   only_selected)
+        actives, ok = QgsVectorLayerUtils.getValues(point_layer, self.dialog.expression_field_actives.expression(),
+                                                   only_selected)
 
         if not ok: #  add loop through all atts
             self.iface.messageBar().pushCritical(
@@ -187,117 +216,110 @@ class CINPointExport(object):
             self.quitDialog()
             return
 
-        progress = QProgressDialog('Exporting Observation point ...', 'Abort', 0, feature_count, self.iface.mainWindow())
+        progress = QProgressDialog('Exporting CIN point ...', 'Abort', 0, feature_count, self.iface.mainWindow())
         progress.setWindowTitle('CIN Point Export')
         progress.canceled.connect(self.scheduleAbort)
         progress.show()
 
         # iterate over polyline features
-        with open(filename, 'w') as observationpoint_file:
+        with open(filename, 'w') as cin_point_file:
 
-            observationpoint_file.write('########################################################################\n')
-            observationpoint_file.write('# This file was automatically generated by "Point Export for ProMaiDes CIN module'
-                                        'Export-QGIS-Plugin Version {version_1} \n'.format(version_1=VERSION))
+            cin_point_file.write('########################################################################\n')
+            cin_point_file.write('# This file was automatically generated by "Point Export for ProMaiDes CIN Module"')
+            cin_point_file.write('Export-QGIS-Plugin Version {version_1} \n'.format(version_1=VERSION))
             #date and time output
             now = datetime.now()
             dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-            observationpoint_file.write('# Generated at {dt_string_1} '.format(dt_string_1=dt_string))
-            observationpoint_file.write('from layer {filename_1} \n'.format(filename_1=point_layer.sourceName()))
-            observationpoint_file.write('# Comments are marked with #\n')
-            observationpoint_file.write('# There are three CI-elements:\n')
-            observationpoint_file.write('# 1. Points; as in this file)\n')
-            observationpoint_file.write('# 2. Connectors; linking Points with each other, multiple connectors in '
+            cin_point_file.write('# Generated at {dt_string_1} '.format(dt_string_1=dt_string))
+            cin_point_file.write('from layer {filename_1} \n'.format(filename_1=point_layer.sourceName()))
+            cin_point_file.write('# Comments are marked with #\n')
+            cin_point_file.write('# There are three CI-elements:\n')
+            cin_point_file.write('# 1. Points; as in this file)\n')
+            cin_point_file.write('# 2. Connectors; linking Points with each other, multiple connectors in '
                                         'several directions are possible) \n')
-            observationpoint_file.write('# 3. Polygons; mostly final elements\n')
-            observationpoint_file.write('#\n')
-            observationpoint_file.write('# Explanation of data:\n')
-            observationpoint_file.write('#  Start the CI-points with !BEGIN and end it with !END; in between are:\n')
-            observationpoint_file.write('#  NumberOfPoints\n')
-            observationpoint_file.write('#  id(unique) x-coordinate y-coordinate name(without_whitepace) sector'
-                                        '[fixed_strings_abreviations?] level threshold_[m_-9999_nofailure] '
-                                        'final(true:=final_false:=not_final)\n')
-            observationpoint_file.write('#\n')
-            observationpoint_file.write('# Infos to the sectors:\n')
-            observationpoint_file.write('# - elect 	    := 1 = Electricity '
-                                        '(e.g. Power Plants,High Voltage Transmitters, Low Voltage Transmitters)\n')
-            observationpoint_file.write('# - infotec	:= 2 = Information technology '
-                                        '(e.g. Radio Station, Landline, Mobile network Station)\n')
-            observationpoint_file.write('# - eme_ser 	:= 3 = (Medical service, Police, Fire Brigade)\n')
-            observationpoint_file.write('# - water_sup 	:= 4 = Water supply '
-                                        '(e.g. Water Treatment System, Water Sources)\n')
-            observationpoint_file.write('# - logi	    := 5 = Transport and logistics '
-                                        '(Important traffic nodes, Harbors, Airports, Trainstations)\n')
-            observationpoint_file.write('# - health	    := 6 = Health System '
-                                        '(Hospitals, Doctors, Carement centers)\n')
-            observationpoint_file.write('# - off_gov	:= 7 = Official and Governmental Institutions '
-                                        '(Ministries, Town Halls, Prisons)\n')
-            observationpoint_file.write('# - haz_mat	:= 8 = Hazardous Materials '
-                                        '(e.g. Fuel Station, Storage for radioactive or toxic Waster)\n')
-            observationpoint_file.write('# - prod 	    := 9 = Industry and Production sites '
-                                        '(e.g. Factories, Mines)\n')
-            observationpoint_file.write('# - culture	:= 0 = Cultural or Religious sites '
-                                        '(Temples, Mosques, Churches etc.)\n')
-            observationpoint_file.write('# \n')
-            observationpoint_file.write('########################################################################\n\n')
+            cin_point_file.write('# 3. Polygons; mostly final elements\n')
+            cin_point_file.write('#\n')
+            cin_point_file.write('# Explanation of data:\n')
+            cin_point_file.write('#  Start the CI-points with !BEGIN and end it with !END; in between are:\n')
+            cin_point_file.write('#  NumberOfPoints\n')
+            cin_point_file.write('#  id(unique) x-coordinate y-coordinate name(without_whitepace) sector_id level threshold_[m_-9999_nofailure] recovery_time_[d] regular_flag_[-] activation_time_[d]\n')
+            cin_point_file.write('#\n')
+            cin_point_file.write('# Infos to the id: this id is connected within the connections data#\n')
+            cin_point_file.write('# Infos to the sectors:\n')
+            cin_point_file.write('# 1-4 are sectors for network points supplying other points and sectors!\n')
+            cin_point_file.write('# - 1 = Electricity (e.g. Power Plants,High Voltage Transmitters, Low Voltage Transmitters)\n')
+            cin_point_file.write('# - 2 = Information technology (e.g. Radio Station, Landline, Mobile network Station)\n')
+            cin_point_file.write('# - 3 = Water supply (e.g.Water Sources)\n')
+            cin_point_file.write('# - 4 = Water treatment(e.g. Water Treatment System)\n')
+            cin_point_file.write('# 10 - 19 are sectors endpoints!\n')
+            cin_point_file.write('# - 10 = Emergency service (e.g Medical service, Police, Fire Brigade)\n')
+            cin_point_file.write('# - 11 = Health and Care System (Hospitals, Doctors, Carement centers, home for elderly people)\n')
+            cin_point_file.write('# - 12 = Transport and logistics goods (Important traffic nodes, Harbors, Airports, Trainstations)\n')
+            cin_point_file.write('# - 13 = Transport and logistics person (Important traffic nodes, Harbors, Airports, Trainstations)\n')
+            cin_point_file.write('# - 14 = Official and Governmental Institutions (Ministries, Town Halls, Prisons)\n')
+            cin_point_file.write('# - 15 = Hazardous Materials (e.g. Fuel Station, Storage for radioactive or toxic Waster)\n')
+            cin_point_file.write('# - 16 = Industry and Production sites (e.g. Factories, Mines)\n')
+            cin_point_file.write('# - 17 = Cultural or Religious sites (Temples, Mosques, Churches etc.)\n')
+            cin_point_file.write('# - 18 = Education (School, University, kindergarten etc.)\n')
+            cin_point_file.write('\n')
+            cin_point_file.write('# Infos to the level: it shows the importance of the infrastructure (level with high value:=high importance e.g. 20; level with low value:=low importance e.g. 1);\n')
+            cin_point_file.write('# Infos to threshold [m]: it is a water level; if this water level is reached the structure will fail to 100%; -9999 no direct failure through water is possible\n')
+            cin_point_file.write('# Infos to recovery_time [d]: it is the number of days needed until the structure is to 100% recovered after it failed by a direct water impact\n')
+            cin_point_file.write('# Infos to regular_flag [-]: If the structure is regular (true) or a emergency structure (false) (e.g. emergency generator); an emergency structure must be direct coupled to an enduser; it has no incomings\n')
+            cin_point_file.write('# Infos to activation_time [d]: This number is used in case on an emergency structure; it is the time until the structure is active\n')
+            cin_point_file.write('# \n')
+            cin_point_file.write('########################################################################\n\n')
 
-            observationpoint_file.write('!BEGIN\n')
-            observationpoint_file.write('{number} #Number of CI points \n'.format(number=feature_count))
+            cin_point_file.write('!BEGIN\n')
+            cin_point_file.write('{number} #Number of CI points \n'.format(number=feature_count))
             index = 0
 
-            for feature, id, name, sector, level, threshold, final in zip(features, ids, names, sectors, levels, thresholds, finals):
+            zipped_list = zip(ids, names, sectors, levels, thresholds, regulars, actives, recoverys, features)
+            sort_zip = sorted(zipped_list, key = lambda t: t[0]) #  sorts the list based on the ids
 
-                points = []
-                buff = feature.geometry()
+            for id, name, sector, level, threshold, regular, active, recovery, feature in sort_zip:
 
-                attributes_single = {id, name, sector, level, threshold, final}
-                attributes_str = [name, sector]
-                # attributes_int and attributes_bool are still missing
-                attributes_single_name = ['id', "name", 'sector', 'level', 'threshold', 'final']
-                attributes_single3 = (id, name, sector, level, threshold, final)
+                points_x = []
+                points_y = []
+                attributes_str = [name]
 
+                try:
+                    points_x.append(feature.geometry().asPoint().x())
+                    points_y.append(feature.geometry().asPoint().y())
 
+                except ValueError:
+                    self.iface.messageBar().pushCritical(
+                        'CIN Point Export',
+                        'Point is not correctly defined. '
+                        'Check whether an x and y coordinate is present for every point.'
+                    )
+                    self.quitDialog()
+                    return
 
-                print(attributes_str, "attributes_str")
-
-                points.append(buff.asPoint())
                 for i in attributes_str:
-                    print(i, "i")
-                    i = i.replace(' ', '_')  # loop this through all atts
-                    # fuck this this still needs more fixes...
-                    # if i:  # loop this through all atts
-                    #     self.iface.messageBar().pushCritical(
-                    #         'CIN Point Export',
-                    #         'Empty \'Name\' or \'Sector\' found! Aborting ...'
-                    #         )
-                    # observationpoint_file.write('Error during point export\n '
-                    #                      'Empty \'Name\' or \'Sector\' found! Aborting...\n')
-                    # self.quitDialog()
-                    # return
+                    if not i:
+                        self.iface.messageBar().pushCritical(
+                            'CIN Point Export',
+                            'Point is missing an entry. Please make sure that all points have the attributes:<br>'
+                            ' name, id, sector, level, threshold, regular, active, recovery'
+                        )
+                        self.quitDialog()
+                        return
+                    i.replace(' ', '_')  # loop this through all atts
 
-                    # erase whitespace before
-
-                    # label contains whitespaces
-                    # if len(i.split(' ')) > 1:
-                    #     self.iface.messageBar().pushCritical(
-                    #         'CIN Point Export',
-                    #         'Labels must not contain whitespaces! Aborting ...'
-                    #         )
-                    # self.quitDialog()
-                    # return
-
-                # iterate over points
-                print("did we get here?")
-                for dot in points:
-                    observationpoint_file.write('{a} {b} {c} {d} {e} {f} {g} {h}\n'.format
-                                                (a=str(id), b=dot.x(), c=dot.y(), d=str(name), e=str(sector),
-                                                 f=int(level), g=float(threshold), h=int(final)))
+                cin_point_file.write('{a} {b} {c} {d} {e} {f} {g} {h} {i} {j}\n'.format
+                                              (a=str(id), b=points_x[0], c=points_y[0], d=str(name), e=int(sector),
+                                               f=int(level), g=float(threshold), h=float(recovery),
+                                               i=str(regular), j=float(active)))
 
                 index += 1
                 progress.setValue(index)
 
                 if self.cancel:
+
                     break
-            observationpoint_file.write('!END\n\n')
+
+            cin_point_file.write('!END\n\n')
         progress.close()
         #if not self.cancel:
         self.iface.messageBar().pushInfo(
