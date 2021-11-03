@@ -79,9 +79,9 @@ class PluginDialog(QDialog):
                                          'Please select a polygon layer.</i>'
                                          .format(layer_name))
 
-        self.expression_field_names.setExpression("name")
-        self.expression_field_ids.setExpression("osm_id")
-        self.expression_field_sectors.setExpression("sector")
+        self.expression_field_names.setExpression("polygon_name")
+        self.expression_field_ids.setExpression("polygon_id")
+        self.expression_field_sectors.setExpression("sec_îd")
         self.expression_field_endusers.setExpression("end_user")
 
 
@@ -128,9 +128,9 @@ class CINPolygonExport(object):
         self.dialog.rejected.connect(self.quitDialog)
         self.dialog.setModal(False)
         self.act.setEnabled(False)
-        self.dialog.expression_field_ids.setFilters(QgsFieldProxyModel.String)
+        self.dialog.expression_field_ids.setFilters(QgsFieldProxyModel.Int | QgsFieldProxyModel.LongLong)
         self.dialog.expression_field_names.setFilters(QgsFieldProxyModel.String)
-        self.dialog.expression_field_sectors.setFilters(QgsFieldProxyModel.Int)
+        self.dialog.expression_field_sectors.setFilters(QgsFieldProxyModel.Int | QgsFieldProxyModel.LongLong)
         self.dialog.expression_field_endusers.setFilters(QgsFieldProxyModel.Double)
         self.dialog.show()
 
