@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Connector Export for ProMaIDes CIN-Module</string>
+   <string>Automatic Connector Export for ProMaIDes CIN-Module</string>
   </property>
   <property name="windowIcon">
    <iconset>

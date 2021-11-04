@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Point Export for ProMaIDes CIN-Module</string>
+   <string>Polygon Export for ProMaIDes CIN-Module</string>
   </property>
   <property name="windowIcon">
    <iconset>
