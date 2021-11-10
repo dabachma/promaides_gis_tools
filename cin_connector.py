@@ -21,7 +21,7 @@ UI_PATH = get_ui_path('ui_cin_2promaides_connector.ui')
 # A name field (string) is required within the point layer
 class PluginDialog(QDialog):
     list_of_input = []
-    list_of_inputnames = ["name", "full_id", "level", "sector", "final", "threshold"]
+    list_of_inputnames = ["point_name", "point_id", "sec_level", "sec_id", "final_flag", "boundary_value"]
     list_of_pairs = []  # multi-dimensional List for the source sink pairs
     emptyattributes = []
 
