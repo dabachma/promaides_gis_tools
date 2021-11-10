@@ -21,9 +21,7 @@ UI_PATH = get_ui_path('ui_cin_2promaides_connector.ui')
 # A name field (string) is required within the point layer
 class PluginDialog(QDialog):
     list_of_input = []
-    list_of_inputnames = ["point_name", "point_id", "sec_level", "sec_id", "final_flag", "boundary_value"]
     list_of_pairs = []  # multi-dimensional List for the source sink pairs
-    emptyattributes = []
 
     def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
         QDialog.__init__(self, parent, flags)
@@ -93,31 +91,24 @@ class PluginDialog(QDialog):
 
                 if layer.geometryType() == QgsWkbTypes.PointGeometry:
                     self.input_layer = layer
-                    try:
-                        for feature in layer.getFeatures():
-                            #This part is added to safe and print out the name of the attribute missing in the input layer.
-                            idx_featurename = 0
-                            while idx_featurename < len(self.list_of_inputnames):
-                                if not (feature[self.list_of_inputnames[idx_featurename]]):
-                                    if not feature[self.list_of_inputnames[idx_featurename]] in emptyattributes:
-                                        emptyattributes.append(self.list_of_inputnames[idx_featurename])
-                                idx_featurename = idx_featurename + 1
+                    field_names = ["point_name", "point_id", "sec_level", "sec_id", "final_flag",
+                                         "boundary_value"]
+                    for field_name in field_names:
 
+                        field_index = layer.fields().indexFromName(field_name)
 
-                            self.listWidget_input.addItem(feature["name"])
-                            self.list_of_input.append(
-                            [feature[self.list_of_inputnames[0]], feature[self.list_of_inputnames[1]], feature[self.list_of_inputnames[2]],
-                             feature[self.list_of_inputnames[3]], feature[self.list_of_inputnames[4]], feature[self.list_of_inputnames[5]]])
-                        # The option to only load selected features in the map view of qgis was disabled since the user connects the locations in the menu already.
-                        # if layer.selectedFeatureCount():
-                        #     self.input_label.setText('<i>Input layer is "{}" with {} selected feature(s).</i>'
-                        #                              .format(layer_name, layer.selectedFeatureCount()))
+                        if field_index == -1:
+                            self.input_label.setText('<i>Selected layer "{}" is missing attributes.<br>'
+                                                     'Please add the field {} or rename an existing field.</i>'
+                                                     .format(layer_name, field_name))
+
+                    for feature in layer.getFeatures():
+                        self.listWidget_input.addItem(feature["point_name"])
+                        self.list_of_input.append(feature[field_names[0]])
+
                         if layer.featureCount():
                             self.input_label.setText('<i>Input layer is "{}" with {} feature(s). </i>'
                                                      .format(layer_name, layer.featureCount()))
-
-                    except:
-                            self.input_label.setText('<i>Input layer features are missing attributes. Please add and fill the following attributes:<br>{}'.format(list_of_inputnames))
 
                 else:
                     self.input_layer = None
