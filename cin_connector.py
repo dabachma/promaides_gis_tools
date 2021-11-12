@@ -20,8 +20,6 @@ UI_PATH = get_ui_path('ui_cin_2promaides_connector.ui')
 # This plugin exports the observations point file for the HYD-module of ProMaIdes from a point shape file;
 # A name field (string) is required within the point layer
 class PluginDialog(QDialog):
-    list_of_input = []
-    list_of_pairs = []  # multi-dimensional List for the source sink pairs
 
     def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
         QDialog.__init__(self, parent, flags)
@@ -45,7 +43,8 @@ class PluginDialog(QDialog):
         self.comboBox_conTypes.addItem('logical')
 
         self.setInputLayer(self.iface.activeLayer())
-        self.list_of_pairs = []  # this is needed to ensure that lists are still empty and not storing info from previous run
+
+        self.list_of_pairs = []  # multi-dimensional List for the source sink pairs
 
     def __del__(self):
         self.iface.currentLayerChanged.disconnect(self.setInputLayer)
@@ -66,7 +65,6 @@ class PluginDialog(QDialog):
             self.comboBox_sink.addItem(item.text())
 
     def merge2pair(self):
-
         pair_index = self.listWidget_pairs.count()
         str_source = self.comboBox_source.currentText()
         str_sink = self.comboBox_sink.currentText()
@@ -80,6 +78,7 @@ class PluginDialog(QDialog):
         self.listWidget_pairs.takeItem(self.listWidget_pairs.currentRow())
 
     def setInputLayer(self, layer):
+        self.list_of_input = []
         if not layer:
             self.input_layer = None
             self.input_label.setText('<i>No layer selected.<br>'
@@ -104,7 +103,7 @@ class PluginDialog(QDialog):
 
                     for feature in layer.getFeatures():
                         self.listWidget_input.addItem(feature["point_name"])
-                        self.list_of_input.append(feature[field_names[0]])
+                        self.list_of_input.append([feature["point_name"], feature["point_id"]])
 
                         if layer.featureCount():
                             self.input_label.setText('<i>Input layer is "{}" with {} feature(s). </i>'
@@ -179,6 +178,11 @@ class CINConnectorExport(object):
         self.dialog.close()
 
     def execTool(self):
+        source_name_write = []
+        sink_name_write = []
+        source_id_write = []
+        sink_id_write = []
+
         filename = self.dialog.filename_edit.text()
 
         if not filename:
@@ -220,20 +224,22 @@ class CINConnectorExport(object):
             connector_file.write('########################################################################\n')
             connector_file.write('!BEGIN\n')
             connector_file.write('{number} #Number of CI Connectors \n'.format(number=len(self.dialog.list_of_pairs)))
-            index = 0
 
             for x1 in range(len(self.dialog.list_of_pairs)):
                 pair_index = x1
                 for x2 in range(len(self.dialog.list_of_input)):
-                    if self.dialog.list_of_pairs[x1][0] == self.dialog.list_of_input[x2][0]:
 
-                        source_name_write = self.dialog.list_of_input [x2][0]
+                    if self.dialog.list_of_pairs[x1][0] == self.dialog.list_of_input[x2][0]:
+                        source_name_write = self.dialog.list_of_input[x2][0]
                         source_id_write = self.dialog.list_of_input[x2][1]
                     if self.dialog.list_of_pairs[x1][1] == self.dialog.list_of_input[x2][0]:
-                        sink_name_write = self.dialog.list_of_input [x2][0]
+                        sink_name_write = self.dialog.list_of_input[x2][0]
                         sink_id_write = self.dialog.list_of_input[x2][1]
+
                 connector_file.write('  {a} {b} point {c} point # Source: {d}; Sink: {e}\n'.format
-                                     (a=pair_index, b=source_id_write, c=sink_id_write, d=str(source_name_write), e=str(sink_name_write),))
+                                         (a=pair_index, b=source_id_write, c=sink_id_write, d=str(source_name_write),
+                                          e=str(sink_name_write), ))
+
                 if self.cancel:
                     break
             connector_file.write('!END\n\n')
