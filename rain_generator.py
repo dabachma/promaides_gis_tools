@@ -175,6 +175,7 @@ class RainGenerator(object):
         self.dialog.CheckButton.clicked.connect(self.CheckFiles)
         self.dialog.ProcessButton.clicked.connect(self.PreSpatialInterpolation)
         self.dialog.CheckButton2.clicked.connect(self.AnalyzeFromUntil)
+        self.dialog.GenerateButton.clicked.connect(self.Generation)
 
         self.dialog.UpdateButton.clicked.connect(self.PreCheckFiles)
 
@@ -982,6 +983,8 @@ class RainGenerator(object):
     CellCoordinates = []
     StormLocations = []
     StormIDs = []
+    StormStartingLine = []
+    StormData = []
     StormCount = 0
     MaxNumberofStorms = 100000
 
@@ -1013,6 +1016,8 @@ class RainGenerator(object):
         self.StormPeakIntensity = []
         self.StormSize = []
         self.NoStormDuration = []
+        self.StormStartingLine = []
+        self.StormData = []
 
         for i in range(self.MaxNumberofStorms):
             self.StormTraveledDistance.append(0)
@@ -1024,6 +1029,8 @@ class RainGenerator(object):
             self.StormPeakIntensityTimestep.append(0)
             self.StormPeakIntensityLocation.append(0)
             self.StormSize.append(0)
+            self.StormStartingLine.append(0)
+            self.StormData.append(0)
 
         Storm = []
         StormConnectivity = []
@@ -1106,15 +1113,17 @@ class RainGenerator(object):
                     if stormid != 0 and (stormid not in self.StormIDs):
                         self.StormIDs.append(stormid)
 
+                        # saving which line each storm starts
+                        self.StormStartingLine[stormid] = StartingLine - 1
+
                 # saving storm locations
                 for stormid in list(set(StormConnectivity)):
-                    indexes=[]
+                    indexes = []
                     if stormid != 0:
                         for index, element in enumerate(StormConnectivity):
                             if element == stormid:
                                 indexes.append(index)
                         self.StormLocations[stormid].append(indexes)
-
 
                 # storm duration
                 print(StormConnectivity, "storm connectivity2")
@@ -1142,7 +1151,6 @@ class RainGenerator(object):
                                 self.StormPeakIntensityTimestep[value] = StartingLine
                                 self.StormPeakIntensityLocation[value] = rainintensities.index(max(rainintensities))
                             self.StormSize[value] = self.StormSize[value] + stormarea
-
 
                         # traveled distance and direction
                         if value != 0 and (value in PreviousStormConnectivity):
@@ -1196,11 +1204,12 @@ class RainGenerator(object):
         # print(self.StormSize[:self.StormCount+1],"size")
         # print(self.StormDuration[:self.StormCount+1],"duration")
         # print(self.StormTraveledDistance[:self.StormCount+1],"distance")
-        #print(self.StormDirection[:self.StormCount + 1], "direction")
-        #print(self.StormLocations,"locations")
-        #print(self.StormIDs,"stormids")
-        #print(self.StormPeakIntensityTimestep,"timestep")
-        #print(self.StormPeakIntensityLocation,"location")
+        # print(self.StormDirection[:self.StormCount + 1], "direction")
+        # print(self.StormLocations,"locations")
+        # print(self.StormIDs,"stormids")
+        # print(self.StormPeakIntensityTimestep,"timestep")
+        # print(self.StormPeakIntensityLocation,"location")
+        # print(self.StormStartingLine,"starting line")
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
             self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
@@ -1240,16 +1249,132 @@ class RainGenerator(object):
                     i, self.StormDuration[i], self.StormVolume[i], self.StormPeakIntensity[i], (self.StormSize[i]),
                     (self.StormTraveledDistance[i]), (self.StormDirection[i])))
 
-
-
     #############################################################################################
     #############################################################################################
-    #generation
+    # generation
 
     def Generation(self):
+
+        # putting all storm volumes peaks and areas in one array for the copula
+        # volume peak area
+        for i in range(0, len(self.StormVolume)):
+            self.StormData[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
+
+        StormDataWithoutZeros = []
+
+        # removing the zero values
+        for data in self.StormData:
+            if data != [0, 0, 0]:
+                StormDataWithoutZeros.append(data)
+        print(StormDataWithoutZeros, "storm data")
+
+        cop = Copula(StormDataWithoutZeros)  # giving the data to the copula
+
+        #################################################
+        # check output address
+        foldername = self.dialog.folderEdit.text()
+        if not foldername:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'No output folder given!'
+            )
+            return
+
+        # promaides file
+        filepath1 = os.path.join(self.dialog.folderEdit_dataanalysis.text(), "GeneratedRainfall_Promaides" + '.txt')
+        try:  # deletes previous files
+            if os.path.isfile(filepath):
+                os.remove(filepath)
+        except:
+            pass
+
+        try:
+            file = open(filepath, 'w')
+            file.close()
+        except:
+            pass
+
+        # storm statistics file
+        if self.dialog.SaveStormStatisticsBox2.isChecked():
+            filepath2 = os.path.join(self.dialog.folderEdit_dataanalysis.text(),
+                                     "GeneratedRainfall_Statistics" + '.txt')
+            try:  # deletes previous files
+                if os.path.isfile(filepath):
+                    os.remove(filepath)
+            except:
+                pass
+
+            try:
+                file = open(filepath, 'w')
+                file.close()
+            except:
+                pass
+
+        # csv file
+        if self.dialog.CSVOutputBox.isChecked():
+            filepath3 = os.path.join(self.dialog.folderEdit_dataanalysis.text(), "GeneratedRainfall_CSV" + '.txt')
+            try:  # deletes previous files
+                if os.path.isfile(filepath):
+                    os.remove(filepath)
+            except:
+                pass
+
+            try:
+                file = open(filepath, 'w')
+                file.close()
+            except:
+                pass
+
+        #####################################################
+        # promaides file
+        with open(filepath1, 'a') as PromaidesGeneratedRainfall:
+            PromaidesGeneratedRainfall.write('# comment\n')
+            PromaidesGeneratedRainfall.write('# !BEGIN\n')
+            PromaidesGeneratedRainfall.write('# number begining from 0 ++ number of points\n')
+            PromaidesGeneratedRainfall.write('# hour [h] discharge [m³/s]\n')
+            PromaidesGeneratedRainfall.write('# !END\n\n\n')
+
+        # storm statistics file
+        if self.dialog.SaveStormStatisticsBox2.isChecked():
+            with open(filepath2, 'a') as GeneratedRainfallStatistics:
+                GeneratedRainfallStatistics.write(
+                    'Storm_id Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea\n')
+
+        # csv file
+        if self.dialog.CSVOutputBox.isChecked():
+            with open(filepath3, 'a') as CSVGeneratedRainfall:
+                CSVGeneratedRainfall.write(
+                    'Storm_id Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea Storm_TraveledDistance StormTotalAngle\n')
+
+        #########################################################################################
         StormIDUniqueValues = self.StormIDs
         RequestedNumberofTimesteps = self.dialog.RequestedGenerationDurationBox.value()
 
+        timestep = 0
+
+        StormStatus = "storm"
+        while timestep < RequestedNumberofTimesteps:
+            if StormStatus == "storm":
+                GeneratedValues = cop.gendata(1)  # volume peak area
+                print(GeneratedValues,"generated values")
+
+                # choose the storm to be written
+                GeneratedStormID = random.choice(StormIDUniqueValues)
+                StormIDUniqueValues.remove(GeneratedStormID)
+                if len(StormIDUniqueValues) == 0:
+                    StormIDUniqueValues = self.StormIDs
+
+                GeneratedStormDuration = self.StormDuration[GeneratedStormID]
+
+                #ifs
+
+
+
+                VolumetobeAddedperTimestep = GeneratedValues[0][0]/GeneratedStormDuration
+                print(GeneratedValues[0][0],"volume")
+                print(VolumetobeAddedperTimestep,"vol per timestep")
+
+            break
 
     def execTool(self):
         print("hello")
