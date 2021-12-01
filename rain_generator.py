@@ -323,7 +323,7 @@ class RainGenerator(object):
             for j in range(len(times)):
                 self.data[i][0].append(times[j])
                 self.data[i][1].append(rains[j])
-        print(self.data)
+        # print(self.data)
 
         # filling the for and until boxes
         self.dialog.FromBox.clear()
@@ -385,7 +385,7 @@ class RainGenerator(object):
 
         self.data = tempdata
         self.dialog.groupBox_2.setEnabled(True)
-        print(self.data)
+        # print(self.data)
 
     ####################################################################################
     ####################################################################################
@@ -994,8 +994,8 @@ class RainGenerator(object):
         for feature in self.layer2.getFeatures():
             self.CellCoordinates.append(feature.geometry().centroid().asPoint())
 
-        print(self.nx, "nx")
-        print(self.ny, "ny")
+        # print(self.nx, "nx")
+        # print(self.ny, "ny")
 
         # calculates angle between two points clockwise
         # east is 0
@@ -1042,7 +1042,7 @@ class RainGenerator(object):
         lines = f.readlines()
         StartingLine = 2
         for linecount in range(len(self.data[0][0])):
-            print(StartingLine, "startingline")
+            # print(StartingLine, "startingline")
             for i in range(StartingLine, StartingLine + ((self.nx * self.ny - 1) * (len(self.data[0][0]) + 4)) + 1,
                            len(self.data[0][0]) + 3 + 1):
                 Storm.append(lines[i].split(' ')[1])
@@ -1083,9 +1083,9 @@ class RainGenerator(object):
                     self.StormCount = self.StormCount + 1
                     StormConnectivity[i] = self.StormCount
             ####################################################################################
-            print(PreviousStormConnectivity, "previous connectivity1")
-            print(StormConnectivity, "storm connectivity1")
-            print(Storm, "storm")
+            # print(PreviousStormConnectivity, "previous connectivity1")
+            # print(StormConnectivity, "storm connectivity1")
+            # print(Storm, "storm")
             # find overlapping storms
             for i, value in enumerate(StormConnectivity):
                 for j, previousvalue in enumerate(PreviousStormConnectivity):
@@ -1126,7 +1126,7 @@ class RainGenerator(object):
                         self.StormLocations[stormid].append(indexes)
 
                 # storm duration
-                print(StormConnectivity, "storm connectivity2")
+                # print(StormConnectivity, "storm connectivity2")
                 for value in list(set(StormConnectivity)):
                     if value != 0:
                         self.StormDuration[value] = self.StormDuration[value] + 1
@@ -1205,10 +1205,10 @@ class RainGenerator(object):
         # print(self.StormDuration[:self.StormCount+1],"duration")
         # print(self.StormTraveledDistance[:self.StormCount+1],"distance")
         # print(self.StormDirection[:self.StormCount + 1], "direction")
-        # print(self.StormLocations,"locations")
+        # print(self.StormLocations, "locations")
         # print(self.StormIDs,"stormids")
-        # print(self.StormPeakIntensityTimestep,"timestep")
-        # print(self.StormPeakIntensityLocation,"location")
+        # print(self.StormPeakIntensityTimestep, "timestep")
+        # print(self.StormPeakIntensityLocation, "location")
         # print(self.StormStartingLine,"starting line")
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
@@ -1351,12 +1351,13 @@ class RainGenerator(object):
         RequestedNumberofTimesteps = self.dialog.RequestedGenerationDurationBox.value()
 
         timestep = 0
+        StormTimestepCounter = 0
 
         StormStatus = "storm"
-        while timestep < RequestedNumberofTimesteps:
+        while timestep <= RequestedNumberofTimesteps:
             if StormStatus == "storm":
                 GeneratedValues = cop.gendata(1)  # volume peak area
-                print(GeneratedValues,"generated values")
+                print(GeneratedValues, "generated values")
 
                 # choose the storm to be written
                 GeneratedStormID = random.choice(StormIDUniqueValues)
@@ -1365,15 +1366,236 @@ class RainGenerator(object):
                     StormIDUniqueValues = self.StormIDs
 
                 GeneratedStormDuration = self.StormDuration[GeneratedStormID]
+                StartingLine = self.StormStartingLine[GeneratedStormID]
+                GeneratedStormPeakIntensity = GeneratedValues[0][1]
+                GeneratedVolume = GeneratedValues[0][0]
+                print(GeneratedStormPeakIntensity, "generatedpeak")
+                GeneratedStormArea = GeneratedValues[0][2]
+                DifferenceinAreaperTimestep = math.ceil(
+                    abs((GeneratedStormArea - self.StormSize[GeneratedStormID]) / GeneratedStormDuration))
+                DifferenceinVolumeperTimestep = abs(
+                    (GeneratedVolume - self.StormVolume[GeneratedStormID]) / GeneratedStormDuration)
 
-                #ifs
+                # loops over the timesteps of the storm
+                for step in range(GeneratedStormDuration):
+                    print(step, "step")
+                    # getting the storm values in timestep from original storm
+                    StorminTimestep = []
+                    StormTemp = []
+                    for i in range(self.nx * self.ny):
+                        StorminTimestep.append(0)
+
+                    # reading file
+                    filepath = os.path.join(tempfile.gettempdir(), "RainfallSpatialInterpolation" + '.txt')
+                    f = open(filepath)
+                    lines = f.readlines()
+                    for i in range(StartingLine,
+                                   StartingLine + ((self.nx * self.ny - 1) * (len(self.data[0][0]) + 4)) + 1,
+                                   len(self.data[0][0]) + 3 + 1):
+                        StormTemp.append(lines[i].split(' ')[1])
+
+                    for i, value in enumerate(StormTemp):
+                        if i in self.StormLocations[GeneratedStormID][StormTimestepCounter]:
+                            StorminTimestep[i] = float(value)
+
+                    print(StormTemp, "Stormtemp")
+                    print(StorminTimestep, "stormintimestep")
+
+                    ExtraVolumeAdded = 0
+                    ExtraVolumeDeleted = 0
+
+                    if GeneratedStormArea > self.StormSize[GeneratedStormID]:
+                        cellstobeadded = DifferenceinAreaperTimestep
+                        cellsadded = 0
+                        while (cellsadded <= cellstobeadded):
+                            if cellsadded >= (self.nx * self.ny):
+                                break
+                            neighboringcell = 0
+                            while neighboringcell != 1:
+                                neighboringcell = 0
+                                ChosenCellIndex = random.choice(range(len(StorminTimestep)))
+                                try:  # right
+                                    if StorminTimestep[ChosenCellIndex] == 0 and StorminTimestep[
+                                        ChosenCellIndex - 1] != 0:
+                                        StorminTimestep[ChosenCellIndex] = 1
+                                        cellsadded = cellsadded + 1
+                                        ExtraVolumeAdded = ExtraVolumeAdded + 1
+                                        neighboringcell = 1
+                                        break
+                                except:
+                                    pass
+                                if neighboringcell==1:
+                                    break
+
+                                try:  # left
+                                    if StorminTimestep[ChosenCellIndex] == 0 and StorminTimestep[
+                                        ChosenCellIndex + 1] != 0:
+                                        StorminTimestep[ChosenCellIndex] = 1
+                                        cellsadded = cellsadded + 1
+                                        ExtraVolumeAdded = ExtraVolumeAdded + 1
+                                        neighboringcell = 1
+                                        break
+                                except:
+                                    pass
+                                if neighboringcell==1:
+                                    break
 
 
+                                try:  # top
+                                    if StorminTimestep[ChosenCellIndex] == 0 and StorminTimestep[
+                                        ChosenCellIndex + self.nx] != 0:
+                                        StorminTimestep[ChosenCellIndex] = 1
+                                        cellsadded = cellsadded + 1
+                                        ExtraVolumeAdded = ExtraVolumeAdded + 1
+                                        neighboringcell = 1
+                                        break
+                                except:
+                                    pass
+                                if neighboringcell==1:
+                                    break
 
-                VolumetobeAddedperTimestep = GeneratedValues[0][0]/GeneratedStormDuration
-                print(GeneratedValues[0][0],"volume")
-                print(VolumetobeAddedperTimestep,"vol per timestep")
 
+                                try:  # bottom
+                                    if StorminTimestep[ChosenCellIndex] == 0 and StorminTimestep[
+                                        ChosenCellIndex - self.nx] != 0:
+                                        StorminTimestep[ChosenCellIndex] = 1
+                                        cellsadded = cellsadded + 1
+                                        ExtraVolumeAdded = ExtraVolumeAdded + 1
+                                        neighboringcell = 1
+                                        break
+                                except:
+                                    pass
+                                if neighboringcell==1:
+                                    break
+
+
+                    elif GeneratedStormArea < self.StormSize[GeneratedStormID]:
+                        cellstobedeleted = DifferenceinAreaperTimestep
+                        cellsdeleted = 0
+                        while cellsdeleted <= cellstobedeleted:
+                            if cellsdeleted >= (len(self.StormLocations[GeneratedStormID][step])):
+                                break
+                            boundarycell = 0
+                            while boundarycell != 1:
+                                boundarycell = 0
+                                ChosenCellIndex = random.choice(range(len(StorminTimestep)))
+                                try:
+                                    if StorminTimestep[ChosenCellIndex] != 0 and StorminTimestep[ChosenCellIndex - 1] == 0:
+                                        ExtraVolumeDeleted = ExtraVolumeDeleted + StorminTimestep[ChosenCellIndex]
+                                        StorminTimestep[ChosenCellIndex] = 0
+                                        cellsdeleted = cellsdeleted + 1
+                                        boundarycell = 1
+                                        break
+                                except:
+                                    pass
+                                if boundarycell==1:
+                                    break
+
+
+                                try:  # left
+                                    if StorminTimestep[ChosenCellIndex] != 0 and StorminTimestep[
+                                        ChosenCellIndex + 1] == 0:
+                                        ExtraVolumeDeleted = ExtraVolumeDeleted + StorminTimestep[ChosenCellIndex]
+                                        StorminTimestep[ChosenCellIndex] = 0
+                                        cellsdeleted = cellsdeleted + 1
+                                        boundarycell = 1
+                                        break
+                                except:
+                                    pass
+                                if boundarycell==1:
+                                    break
+
+                                try:  # top
+                                    if StorminTimestep[ChosenCellIndex] != 0 and StorminTimestep[
+                                        ChosenCellIndex + self.nx] == 0:
+                                        ExtraVolumeDeleted = ExtraVolumeDeleted + StorminTimestep[ChosenCellIndex]
+                                        StorminTimestep[ChosenCellIndex] = 0
+                                        cellsdeleted = cellsdeleted + 1
+                                        boundarycell = 1
+                                        break
+                                except:
+                                    pass
+                                if boundarycell==1:
+                                    break
+
+
+                                try:  # bottom
+                                    if StorminTimestep[ChosenCellIndex] != 0 and StorminTimestep[
+                                        ChosenCellIndex - self.nx] == 0:
+                                        ExtraVolumeDeleted = ExtraVolumeDeleted + StorminTimestep[ChosenCellIndex]
+                                        StorminTimestep[ChosenCellIndex] = 0
+                                        cellsdeleted = cellsdeleted + 1
+                                        boundarycell = 1
+                                        break
+                                except:
+                                    pass
+                                if boundarycell==1:
+                                    break
+
+
+                    # peak intensity
+                    if step == self.StormPeakIntensityTimestep[GeneratedStormID]:
+                        if StorminTimestep[self.StormPeakIntensityLocation] < GeneratedStormPeakIntensity:
+                            ExtraVolumeAdded = ExtraVolumeAdded + abs(
+                                GeneratedStormPeakIntensity - StorminTimestep[self.StormPeakIntensityLocation])
+                        elif StorminTimestep[self.StormPeakIntensityLocation] > GeneratedStormPeakIntensity:
+                            ExtraVolumeDeleted = ExtraVolumeDeleted + abs(
+                                GeneratedStormPeakIntensity - StorminTimestep[self.StormPeakIntensityLocation])
+                        StorminTimestep[self.StormPeakIntensityLocation] = GeneratedStormPeakIntensity
+
+                    # volume
+                    numberofcellsintimestep = 0
+                    for i in StorminTimestep:
+                        if i != 0:
+                            numberofcellsintimestep = numberofcellsintimestep + 1
+
+                    if GeneratedVolume > self.StormVolume[GeneratedStormID]:
+                        if step == self.StormPeakIntensityTimestep[GeneratedStormID]:
+                            VolumetobeAddedtoeachCell = (
+                                        (DifferenceinVolumeperTimestep - ExtraVolumeAdded + ExtraVolumeDeleted) / (
+                                            numberofcellsintimestep - 1))
+                        else:
+                            VolumetobeAddedtoeachCell = (
+                                                                    DifferenceinVolumeperTimestep - ExtraVolumeAdded + ExtraVolumeDeleted) / numberofcellsintimestep
+                        for j, rain in enumerate(StorminTimestep):
+                            if step != self.StormPeakIntensityTimestep[GeneratedStormID]:
+                                if rain != 0:
+                                    StorminTimestep[j] = StorminTimestep[j] + VolumetobeAddedtoeachCell
+                            elif j != self.StormPeakIntensityLocation[GeneratedStormID] and rain != 0:
+                                StorminTimestep[j] = StorminTimestep[j] + VolumetobeAddedtoeachCell
+
+                    elif GeneratedVolume < self.StormVolume[GeneratedStormID]:
+                        if step == self.StormPeakIntensityTimestep[GeneratedStormID]:
+                            VolumetobeDeletedfromeachCell = (
+                                        (DifferenceinVolumeperTimestep + ExtraVolumeAdded - ExtraVolumeDeleted) / (
+                                            numberofcellsintimestep - 1))
+                        else:
+                            VolumetobeDeletedfromeachCell = (
+                                                                        DifferenceinVolumeperTimestep + ExtraVolumeAdded - ExtraVolumeDeleted) / numberofcellsintimestep
+                        for j, rain in enumerate(StorminTimestep):
+                            if step != self.StormPeakIntensityTimestep[GeneratedStormID]:
+                                if rain != 0:
+                                    StorminTimestep[j] = StorminTimestep[j] - VolumetobeDeletedfromeachCell
+                                    if StorminTimestep[j] < 0:
+                                        StorminTimestep[j] = 0
+                            elif j != self.StormPeakIntensityLocation[GeneratedStormID] and rain != 0:
+                                StorminTimestep[j] = StorminTimestep[j] - VolumetobeDeletedfromeachCell
+                                if StorminTimestep[j] < 0:
+                                    StorminTimestep[j] = 0
+
+                    print(StorminTimestep, "Stormintimestepfinal")
+
+                    StartingLine = StartingLine + 1
+                    timestep=timestep+1
+                    print(timestep,"timestep")
+                    print(RequestedNumberofTimesteps,"rqtimesteps")
+                    if timestep <= RequestedNumberofTimesteps:
+                        break
+                # write file
+                # StormStatus = "nostorm"
+
+            print("hi3")
+            timestep = timestep + 1
             break
 
     def execTool(self):
