@@ -1555,8 +1555,7 @@ class RainGenerator(object):
                                         (DifferenceinVolumeperTimestep - ExtraVolumeAdded + ExtraVolumeDeleted) / (
                                             numberofcellsintimestep - 1))
                         else:
-                            VolumetobeAddedtoeachCell = (
-                                                                    DifferenceinVolumeperTimestep - ExtraVolumeAdded + ExtraVolumeDeleted) / numberofcellsintimestep
+                            VolumetobeAddedtoeachCell = (DifferenceinVolumeperTimestep - ExtraVolumeAdded + ExtraVolumeDeleted) / numberofcellsintimestep
                         for j, rain in enumerate(StorminTimestep):
                             if step != self.StormPeakIntensityTimestep[GeneratedStormID]:
                                 if rain != 0:
@@ -1570,8 +1569,7 @@ class RainGenerator(object):
                                         (DifferenceinVolumeperTimestep + ExtraVolumeAdded - ExtraVolumeDeleted) / (
                                             numberofcellsintimestep - 1))
                         else:
-                            VolumetobeDeletedfromeachCell = (
-                                                                        DifferenceinVolumeperTimestep + ExtraVolumeAdded - ExtraVolumeDeleted) / numberofcellsintimestep
+                            VolumetobeDeletedfromeachCell = (DifferenceinVolumeperTimestep + ExtraVolumeAdded - ExtraVolumeDeleted) / numberofcellsintimestep
                         for j, rain in enumerate(StorminTimestep):
                             if step != self.StormPeakIntensityTimestep[GeneratedStormID]:
                                 if rain != 0:
