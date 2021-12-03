@@ -401,7 +401,7 @@
             <double>0.010000000000000</double>
            </property>
            <property name="value">
-            <double>1.000000000000000</double>
+            <double>2.000000000000000</double>
            </property>
           </widget>
          </item>
@@ -446,13 +446,6 @@
       <string>Output</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_27">
-        <property name="text">
-         <string>Generation duration (same as input timestep)</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="1">
        <widget class="QSpinBox" name="RequestedGenerationDurationBox">
         <property name="minimum">
@@ -462,20 +455,24 @@
          <number>999999999</number>
         </property>
         <property name="value">
-         <number>1</number>
+         <number>10</number>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QCheckBox" name="RectangularRainPulseBox">
-        <property name="toolTip">
-         <string/>
-        </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_27">
         <property name="text">
-         <string>Rectangular rain pulses</string>
+         <string>Generation duration (same as input timestep)</string>
         </property>
-        <property name="checked">
-         <bool>true</bool>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="2">
+       <widget class="QLineEdit" name="folderEdit">
+        <property name="toolTip">
+         <string>Set output folder</string>
+        </property>
+        <property name="placeholderText">
+         <string>&lt;output folder&gt;</string>
         </property>
        </widget>
       </item>
@@ -486,19 +483,6 @@
         </property>
         <property name="text">
          <string>Save storm statistics</string>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QCheckBox" name="CSVOutputBox">
-        <property name="toolTip">
-         <string/>
-        </property>
-        <property name="text">
-         <string>CSV output</string>
         </property>
         <property name="checked">
          <bool>false</bool>
@@ -525,13 +509,16 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="0" colspan="2">
-       <widget class="QLineEdit" name="folderEdit">
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="CSVOutputBox">
         <property name="toolTip">
-         <string>Set output folder</string>
+         <string/>
         </property>
-        <property name="placeholderText">
-         <string>&lt;output folder&gt;</string>
+        <property name="text">
+         <string>CSV output</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
