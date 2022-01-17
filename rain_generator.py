@@ -1123,11 +1123,6 @@ class RainGenerator(object):
                 self.NoStormDuration.append(nostormcount)
                 nostormcount = 0
 
-                # storm volume
-                for i, value in enumerate(StormConnectivity):
-                    if value > 0:
-                        self.StormVolume[value] = self.StormVolume[value] + Storm[i]
-
                 # saving the storm id
                 for stormid in list(set(StormConnectivity)):
                     if stormid != 0 and (stormid not in self.StormIDs):
@@ -1160,33 +1155,21 @@ class RainGenerator(object):
                                 indexes.append(index)
                         self.StormLocations[stormid].append(indexes)
 
-                # storm duration
+
                 # print(StormConnectivity, "storm connectivity2")
                 for value in list(set(StormConnectivity)):
                     if value != 0:
-                        self.StormDuration[value] = self.StormDuration[value] + 1
-                        # peak intensity and storm area and velocity and direction
-                        rainintensities = []
+                        # velocity and direction
                         currentstormcoordinates = []
                         previousstormcoordinates = []
-                        stormarea = 0
                         for i, id in enumerate(StormConnectivity):
                             if id == value and id != 0:
-                                rainintensities.append(Storm[i])
                                 currentstormcoordinates.append(self.CellCoordinates[i])
-                                stormarea = stormarea + 1
 
                         for i, id in enumerate(PreviousStormConnectivity):
                             if id == value and id != 0:
                                 previousstormcoordinates.append(self.CellCoordinates[i])
 
-                        if value != 0:
-                            #print(rainintensities,"rainintensities")
-                            if max(rainintensities) > self.StormPeakIntensity[value]:
-                                self.StormPeakIntensity[value] = max(rainintensities)
-                                self.StormPeakIntensityTimestep[value] = StartingLine
-                                self.StormPeakIntensityLocation[value] = rainintensities.index(max(rainintensities))
-                            self.StormSize[value] = self.StormSize[value] + stormarea
 
                         # traveled distance and direction
                         if value != 0 and (value in PreviousStormConnectivity):
@@ -1236,15 +1219,51 @@ class RainGenerator(object):
             Storm = []
             StormConnectivity = []
 
+        #peak, peak location and timestep, volume, duration, area
+        for ID, storm in enumerate(self.Storms):
+            if len(storm)==0:
+                continue
+            stormvolume=0
+            stormpeak=0
+            stormpeaktimestep=0
+            stormpeaklocation=0
+            stormarea=0
+            for timestepnumber, timestep in enumerate(storm):
+                stormvolume=stormvolume+sum(timestep)
+                stormarea=stormarea+np.count_nonzero(timestep)
+                if max(timestep)>stormpeak:
+                    stormpeak=max(timestep)
+                    stormpeaktimestep=timestepnumber
+                    stormpeaklocation=timestep.index(stormpeak)
+
+
+            self.StormPeakIntensity[ID]=stormpeak
+            self.StormPeakIntensityTimestep[ID]=stormpeaktimestep
+            self.StormPeakIntensityLocation[ID]=stormpeaklocation
+            self.StormDuration[ID]=len(storm)
+            self.StormSize[ID]=stormarea
+            self.StormVolume[ID]=stormvolume
+
+
+
+            #print(ID,"ID")
+            #print(stormvolume,"vclume")
+            #print(len(storm),"duration")
+            #print(stormpeak,"peak")
+            #print(stormpeaktimestep,"peaktimestep")
+            #print(stormpeaklocation,"stormpeaklocation")
+            #print(stormarea,"area")
+
         #print(self.StormPeakIntensity[:self.StormCount+1],"peak")
-        # print(self.StormSize[:self.StormCount+1],"size")
+        #print(self.StormSize[:self.StormCount+1],"size")
         #print(self.StormDuration[:self.StormCount+1],"duration")
         # print(self.StormTraveledDistance[:self.StormCount+1],"distance")
         # print(self.StormDirection[:self.StormCount + 1], "direction")
         #print(self.StormLocations, "locations")
         # print(self.StormIDs,"stormids")
-        # print(self.StormPeakIntensityTimestep, "timestep")
-        # print(self.StormPeakIntensityLocation, "location")
+        #print(self.StormPeakIntensityTimestep, "timestep")
+        #print(self.StormPeakIntensityLocation, "location")
+        #print(self.StormCount,"storm count")
         # print(self.StormStartingLine,"starting line")
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
@@ -1269,7 +1288,6 @@ class RainGenerator(object):
             )
             return
         self.dialog.groupBox_3.setEnabled(True)
-        print(self.Storms,"storms final")
         self.data = []
 
 
@@ -1291,9 +1309,11 @@ class RainGenerator(object):
         with open(filepath, 'a') as StormStatistics:
             StormStatistics.write(
                 'Storm_id Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea Storm_TraveledDistance StormTotalAngle\n')
-            for i in range(1, self.StormCount + 1):
+            for count, i in enumerate(range(1, self.StormCount + 1)):
+                if self.StormDuration[i]==0:
+                    continue
                 StormStatistics.write('%s %s %s %s %s %s %s\n' % (
-                    i, self.StormDuration[i], self.StormVolume[i], self.StormPeakIntensity[i], (self.StormSize[i]),
+                    count+1, self.StormDuration[i], self.StormVolume[i], self.StormPeakIntensity[i], (self.StormSize[i]),
                     (self.StormTraveledDistance[i]), (self.StormDirection[i])))
 
     #############################################################################################
@@ -1575,19 +1595,19 @@ class RainGenerator(object):
                                 boundarycellids.remove(ChosenCellIndex)
 
                         stormbeinggenerated[step]=StorminTimestep
-                        print(stormbeinggenerated)
+                    print(stormbeinggenerated,"stormm in process")
 #######################################################################################
 
                     SumIntensitiesdata=0
 
                     for raintimestep in stormbeinggenerated:
                         SumIntensitiesdata=SumIntensitiesdata+sum(raintimestep)
-                    print(SumIntensitiesdata,"sum1")
+                    #print(SumIntensitiesdata,"sum+newcells")
                     print(self.StormPeakIntensity[GeneratedStormID],"old peak")
                     SumIntensitiesdata=SumIntensitiesdata-self.StormPeakIntensity[GeneratedStormID]
                     NewVolume = GeneratedVolume - GeneratedStormPeakIntensity
 
-                    print(SumIntensitiesdata, "sum after area")
+                    print(SumIntensitiesdata, "sum after removing old peak")
                     print(NewVolume, "newvolume")
                     print(GeneratedStormPeakIntensity, "new peak")
 
@@ -1595,17 +1615,17 @@ class RainGenerator(object):
 
                         ###volume
                         for j, rain in enumerate(stormtimestep):
-                            print(stormtimestep[j], "value")
+                            #print(stormtimestep[j], "value")
                             stormtimestep[j] = (stormtimestep[j] / SumIntensitiesdata) * NewVolume
-                            print(stormtimestep[j], "value2")
+                            #print(stormtimestep[j], "value2")
                         # peak intensity
                         if (step - 1) == self.StormPeakIntensityTimestep[GeneratedStormID] - self.StormStartingLine[
                             GeneratedStormID]:
                             self.StormPeakIntensityLocation[GeneratedStormID] = GeneratedStormPeakIntensity
                             print("hey hey")
 
-                        print(StorminTimestep, "Stormintimestepfinal")
-                        print(step, sum(StorminTimestep), "aaaaaaaaaaa")
+                        print(stormtimestep, "Stormintimestepfinal")
+                        print(step, sum(stormtimestep), "aaaaaaaaaaa")
 
                         timestep = timestep + 1
                         # write file
