@@ -45,6 +45,7 @@ class PluginDialog(QDialog):
         self.SpatialInterpolationMethodBox.activated.connect(self.UpdateExponentFactorField)
         self.SaveSpatialInterpolationBox.stateChanged.connect(self.UpdateOutputLocation)
         self.SaveStormStatisticsBox.stateChanged.connect(self.UpdateOutputLocation)
+        self.groupBox_7.toggled.connect(self.GriddedDataChecked)
 
         self.RainGaugeLayer.setLayer(None)
         self.GenerationAreaLayer.setLayer(None)
@@ -57,12 +58,17 @@ class PluginDialog(QDialog):
         self.DelimiterBox.addItem("space")
         self.DelimiterBox.addItem(",")
         self.DelimiterBox.addItem("-")
+        self.DelimiterBox_2.addItem("space")
+        self.DelimiterBox_2.addItem(",")
+        self.DelimiterBox_2.addItem("-")
 
         self.dxBox.setValue(5000)
         self.dyBox.setValue(5000)
 
         self.browseButton.clicked.connect(self.onBrowseButtonClicked)
         self.browseButton_dataanalysis.clicked.connect(self.onBrowseButtonClicked_dataanalysis)
+        self.browseButton_griddeddata.clicked.connect(self.onBrowseButtonClicked_griddeddata)
+        self.browseButton_coordinates.clicked.connect(self.onBrowseButtonClicked_coordinates)
         self.browseButton.setAutoDefault(False)
         self.browseButton_dataanalysis.setAutoDefault(False)
 
@@ -125,6 +131,13 @@ class PluginDialog(QDialog):
             self.groupBox_2.setEnabled(False)
             self.groupBox_3.setEnabled(False)
 
+    def GriddedDataChecked(self):
+        if self.groupBox_7.isChecked():
+            self.groupBox.setEnabled(False)
+            self.groupBox_2.setEnabled(False)
+        else:
+            self.groupBox.setEnabled(True)
+
     def onBrowseButtonClicked(self):
         currentFolder = self.folderEdit.text()
         folder = QFileDialog.getExistingDirectory(self.iface.mainWindow(), 'Rain Generator', currentFolder)
@@ -138,6 +151,20 @@ class PluginDialog(QDialog):
         if folder != '':
             self.folderEdit_dataanalysis.setText(folder)
             self.folderEdit_dataanalysis.editingFinished.emit()
+
+    def onBrowseButtonClicked_griddeddata(self):
+        current_filename = self.folderEdit_griddeddata.text()
+        file = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'Rain Generator', current_filename)
+        if file[0] != "":
+            self.folderEdit_griddeddata.setText(file[0])
+            self.folderEdit_griddeddata.editingFinished.emit()
+
+    def onBrowseButtonClicked_coordinates(self):
+        current_filename = self.folderEdit_coordinates.text()
+        file = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'Rain Generator', current_filename)
+        if file[0] != "":
+            self.folderEdit_coordinates.setText(file[0])
+            self.folderEdit_coordinates.editingFinished.emit()
 
 
 class RainGenerator(object):
@@ -175,7 +202,7 @@ class RainGenerator(object):
         self.dialog.CheckButton.clicked.connect(self.CheckFiles)
         self.dialog.ProcessButton.clicked.connect(self.PreSpatialInterpolation)
         self.dialog.CheckButton2.clicked.connect(self.AnalyzeFromUntil)
-        self.dialog.GenerateButton.clicked.connect(self.Generation)
+        self.dialog.GenerateButton.clicked.connect(self.PreGeneration)
 
         self.dialog.UpdateButton.clicked.connect(self.PreCheckFiles)
 
@@ -1123,20 +1150,18 @@ class RainGenerator(object):
                         # saving which line each storm starts
                         self.StormStartingLine[stormid] = StartingLine - 1
 
-
-                #putting identified storms in an array
+                # putting identified storms in an array
                 for stormid in list(set(StormConnectivity)):
-                    if stormid==0:
+                    if stormid == 0:
                         continue
-                    temparray=[]
+                    temparray = []
                     for count, ID in enumerate(StormConnectivity):
-                        if ID==stormid and ID!=0:
+                        if ID == stormid and ID != 0:
                             temparray.append(Storm[count])
                         else:
                             temparray.append(0)
 
                     self.Storms[stormid].append(temparray)
-
 
                 # saving storm locations
                 for stormid in list(set(StormConnectivity)):
@@ -1146,7 +1171,6 @@ class RainGenerator(object):
                             if element == stormid:
                                 indexes.append(index)
                         self.StormLocations[stormid].append(indexes)
-
 
                 # print(StormConnectivity, "storm connectivity2")
                 for value in list(set(StormConnectivity)):
@@ -1161,7 +1185,6 @@ class RainGenerator(object):
                         for i, id in enumerate(PreviousStormConnectivity):
                             if id == value and id != 0:
                                 previousstormcoordinates.append(self.CellCoordinates[i])
-
 
                         # traveled distance and direction
                         if value != 0 and (value in PreviousStormConnectivity):
@@ -1211,42 +1234,40 @@ class RainGenerator(object):
             Storm = []
             StormConnectivity = []
 
-        #peak, peak location and timestep, volume, duration, area
+        # peak, peak location and timestep, volume, duration, area
         for ID, storm in enumerate(self.Storms):
-            if len(storm)==0:
+            if len(storm) == 0:
                 continue
-            stormvolume=0
-            stormpeak=0
-            stormpeaktimestep=0
-            stormpeaklocation=0
-            stormarea=0
+            stormvolume = 0
+            stormpeak = 0
+            stormpeaktimestep = 0
+            stormpeaklocation = 0
+            stormarea = 0
             for timestepnumber, timestep in enumerate(storm):
-                stormvolume=stormvolume+sum(timestep)
-                stormarea=stormarea+np.count_nonzero(timestep)
-                if max(timestep)>stormpeak:
-                    stormpeak=max(timestep)
-                    stormpeaktimestep=timestepnumber
-                    stormpeaklocation=timestep.index(stormpeak)
+                stormvolume = stormvolume + sum(timestep)
+                stormarea = stormarea + np.count_nonzero(timestep)
+                if max(timestep) > stormpeak:
+                    stormpeak = max(timestep)
+                    stormpeaktimestep = timestepnumber
+                    stormpeaklocation = timestep.index(stormpeak)
 
+            self.StormPeakIntensity[ID] = stormpeak
+            self.StormPeakIntensityTimestep[ID] = stormpeaktimestep
+            self.StormPeakIntensityLocation[ID] = stormpeaklocation
+            self.StormDuration[ID] = len(storm)
+            self.StormSize[ID] = stormarea
+            self.StormVolume[ID] = stormvolume
 
-            self.StormPeakIntensity[ID]=stormpeak
-            self.StormPeakIntensityTimestep[ID]=stormpeaktimestep
-            self.StormPeakIntensityLocation[ID]=stormpeaklocation
-            self.StormDuration[ID]=len(storm)
-            self.StormSize[ID]=stormarea
-            self.StormVolume[ID]=stormvolume
-
-
-        #print(self.StormPeakIntensity[:self.StormCount+1],"peak")
-        #print(self.StormSize[:self.StormCount+1],"size")
-        #print(self.StormDuration[:self.StormCount+1],"duration")
+        # print(self.StormPeakIntensity[:self.StormCount+1],"peak")
+        # print(self.StormSize[:self.StormCount+1],"size")
+        # print(self.StormDuration[:self.StormCount+1],"duration")
         # print(self.StormTraveledDistance[:self.StormCount+1],"distance")
         # print(self.StormDirection[:self.StormCount + 1], "direction")
-        #print(self.StormLocations, "locations")
+        # print(self.StormLocations, "locations")
         # print(self.StormIDs,"stormids")
-        #print(self.StormPeakIntensityTimestep, "timestep")
-        #print(self.StormPeakIntensityLocation, "location")
-        #print(self.StormCount,"storm count")
+        # print(self.StormPeakIntensityTimestep, "timestep")
+        # print(self.StormPeakIntensityLocation, "location")
+        # print(self.StormCount,"storm count")
         # print(self.StormStartingLine,"starting line")
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
@@ -1273,8 +1294,6 @@ class RainGenerator(object):
         self.dialog.groupBox_3.setEnabled(True)
         self.data = []
 
-
-
     # function to write storm statistics to file
     def WriteStormStatistics(self):
         filepath = os.path.join(self.dialog.folderEdit_dataanalysis.text(), "StormStatistics" + '.txt')
@@ -1293,15 +1312,25 @@ class RainGenerator(object):
             StormStatistics.write(
                 'Storm_id Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea Storm_TraveledDistance StormTotalAngle\n')
             for count, i in enumerate(range(1, self.StormCount + 1)):
-                if self.StormDuration[i]==0:
+                if self.StormDuration[i] == 0:
                     continue
                 StormStatistics.write('%s %s %s %s %s %s %s\n' % (
-                    count+1, self.StormDuration[i], self.StormVolume[i], self.StormPeakIntensity[i], (self.StormSize[i]),
+                    count + 1, self.StormDuration[i], self.StormVolume[i], self.StormPeakIntensity[i],
+                    (self.StormSize[i]),
                     (self.StormTraveledDistance[i]), (self.StormDirection[i])))
 
     #############################################################################################
     #############################################################################################
     # generation
+
+    def PreGeneration(self):
+        self.iface.messageBar().pushInfo(
+            'Rain Generator',
+            'Processing, Please Wait...'
+        )
+        self.dialog.StatusIndicator.setText("Processing, Please Wait...")
+
+        QTimer.singleShot(50, self.Generation)
 
     StormStatisticsTexttobeWritten = "Storm_Nr Storm_StartingTimestep Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea\n"
 
@@ -1381,7 +1410,7 @@ class RainGenerator(object):
                 print(StormStatus, "storm status")
 
                 ##########################################################################################
-                #storm
+                # storm
                 if StormStatus == "storm":
                     stormcounter = stormcounter + 1
                     ###############################################################
@@ -1390,7 +1419,7 @@ class RainGenerator(object):
                         GeneratedValues = cop.gendata(1)  # volume peak area
                         if (GeneratedValues[0][0] / GeneratedValues[0][2]) < GeneratedValues[0][1]:
                             break
-                    #print(GeneratedValues, "generated values")
+                    # print(GeneratedValues, "generated values")
                     ################################################################
 
                     #################################################################
@@ -1411,10 +1440,9 @@ class RainGenerator(object):
                     DifferenceinAreaperTimestep = math.ceil(
                         abs((GeneratedStormArea - self.StormSize[GeneratedStormID]) / GeneratedStormDuration))
 
-
                     ###############################################################################
 
-                    stormbeinggenerated=[]
+                    stormbeinggenerated = []
                     for i in range(GeneratedStormDuration):
                         stormbeinggenerated.append([])
 
@@ -1436,7 +1464,6 @@ class RainGenerator(object):
                             StorminTimestep.append(0)
                         for i, value in enumerate(self.Storms[GeneratedStormID][step]):
                             StorminTimestep[i] = float(value)
-
 
                         # area
                         if GeneratedStormArea > self.StormSize[GeneratedStormID]:
@@ -1559,17 +1586,17 @@ class RainGenerator(object):
                                 cellsdeletedtemp = cellsdeletedtemp + 1
                                 boundarycellids.remove(ChosenCellIndex)
 
-                        stormbeinggenerated[step]=StorminTimestep
-#######################################################################################
+                        stormbeinggenerated[step] = StorminTimestep
+                    #######################################################################################
 
-                    SumIntensitiesdata=0
+                    SumIntensitiesdata = 0
 
                     for raintimestep in stormbeinggenerated:
-                        SumIntensitiesdata=SumIntensitiesdata+sum(raintimestep)
-                    SumIntensitiesdata=SumIntensitiesdata-self.StormPeakIntensity[GeneratedStormID]
+                        SumIntensitiesdata = SumIntensitiesdata + sum(raintimestep)
+                    SumIntensitiesdata = SumIntensitiesdata - self.StormPeakIntensity[GeneratedStormID]
                     NewVolume = GeneratedVolume - GeneratedStormPeakIntensity
 
-                    #loops over storm timesteps for changing volume and peak
+                    # loops over storm timesteps for changing volume and peak
                     for step, stormtimestep in enumerate(stormbeinggenerated):
 
                         ###volume
@@ -1577,8 +1604,8 @@ class RainGenerator(object):
                             stormtimestep[j] = (stormtimestep[j] / SumIntensitiesdata) * NewVolume
                         # peak intensity
                         if step == self.StormPeakIntensityTimestep[GeneratedStormID]:
-                            stormtimestep[self.StormPeakIntensityLocation[GeneratedStormID]] = GeneratedStormPeakIntensity
-
+                            stormtimestep[
+                                self.StormPeakIntensityLocation[GeneratedStormID]] = GeneratedStormPeakIntensity
 
                         timestep = timestep + 1
                         # write file
@@ -1596,7 +1623,7 @@ class RainGenerator(object):
                             if self.dialog.SaveStormStatisticsBox2.isChecked():
                                 self.dialog.StatusIndicator.setText("Writing Storm Statistics...")
                                 QTimer.singleShot(50, self.WriteStormStatistics2)
-                                QTimer.singleShot(50, self.GenerationFinished)
+                            QTimer.singleShot(50, self.GenerationFinished)
                             break
 
                         if timestep % 500000 == 0 and timestep > 0:
@@ -1613,7 +1640,7 @@ class RainGenerator(object):
                     GeneratedNoStormDuration = math.ceil(GeneratedNoStormDuration)
                     if GeneratedNoStormDuration < 0:
                         GeneratedNoStormDuration = 0
-                    #print(GeneratedNoStormDuration, "generatednostormduration")
+                    # print(GeneratedNoStormDuration, "generatednostormduration")
                     timestep = timestep + GeneratedNoStormDuration
                     StormStatus = "storm"
                     if timestep >= RequestedNumberofTimesteps:
@@ -1625,12 +1652,9 @@ class RainGenerator(object):
                         if self.dialog.SaveStormStatisticsBox2.isChecked():
                             self.dialog.StatusIndicator.setText("Writing Storm Statistics...")
                             QTimer.singleShot(50, self.WriteStormStatistics2)
-                            QTimer.singleShot(50, self.GenerationFinished)
+                        QTimer.singleShot(50, self.GenerationFinished)
                         break
                 # print("end of whole while loop")
-
-
-
 
     def WriteStormStatistics2(self):
         filepath2 = os.path.join(self.dialog.folderEdit.text(),
@@ -1650,16 +1674,12 @@ class RainGenerator(object):
         with open(filepath2, 'a') as GeneratedRainfallStatistics:
             GeneratedRainfallStatistics.write(self.StormStatisticsTexttobeWritten)
 
-
     def GenerationFinished(self):
         self.iface.messageBar().pushSuccess(
             'Rain Generator',
             'Generation Successfull !'
         )
         self.dialog.StatusIndicator.setText("Generation Complete")
-
-
-
 
     def execTool(self):
         print("hello")
