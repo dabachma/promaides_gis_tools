@@ -135,13 +135,17 @@ class PluginDialog(QDialog):
         if self.groupBox_7.isChecked():
             self.groupBox.setEnabled(False)
             self.groupBox_2.setEnabled(False)
-            self.groupBox_5.setEnabled(True)
             self.SaveSpatialInterpolationBox.setEnabled(False)
-            self.TImeVieweLayerBox.setEnable(False)
+            self.TimeVieweLayerBox.setEnabled(False)
+            self.groupBox_5.setEnabled(True)
+            self.folderEdit_dataanalysis.setEnabled(True)
+            self.browseButton_dataanalysis.setEnabled(True)
         else:
             self.groupBox.setEnabled(True)
             self.SaveSpatialInterpolationBox.setEnabled(True)
-            self.TImeVieweLayerBox.setEnable(True)
+            self.TimeVieweLayerBox.setEnabled(True)
+            self.folderEdit_dataanalysis.setEnabled(False)
+            self.browseButton_dataanalysis.setEnabled(False)
             self.groupBox_5.setEnabled(False)
 
     def onBrowseButtonClicked(self):
@@ -572,7 +576,7 @@ class RainGenerator(object):
 
             ###############################################################
             # time viewer layer
-            if self.dialog.TImeVieweLayerBox.isChecked():
+            if self.dialog.TimeVieweLayerBox.isChecked():
                 layer = self.layer2
                 feats = [feat for feat in layer.getFeatures()]
 
@@ -622,7 +626,7 @@ class RainGenerator(object):
                             '%s %s   #%s mm/h\n' % (str(counter), str(rainvalue), str(rainvalue)))
                         ###############################################
                         # time viewer layer
-                        if self.dialog.TImeVieweLayerBox.isChecked():
+                        if self.dialog.TimeVieweLayerBox.isChecked():
                             fields = timeviewerlayer.dataProvider().fields()
                             datetimefieldid = fields.indexFromName("date_time")
                             rainvaluefieldid = fields.indexFromName("Boundary Value")
@@ -700,7 +704,7 @@ class RainGenerator(object):
                         rainvalue = float(allrainvalues[counter][i])
                         ###############################################
                         # time viewer layer
-                        if self.dialog.TImeVieweLayerBox.isChecked():
+                        if self.dialog.TimeVieweLayerBox.isChecked():
                             fields = timeviewerlayer.dataProvider().fields()
                             datetimefieldid = fields.indexFromName("date_time")
                             rainvaluefieldid = fields.indexFromName("Boundary Value")
@@ -779,7 +783,7 @@ class RainGenerator(object):
                         rainvalue = float(allrainvalues[counter][i])
                         ###############################################
                         # time viewer layer
-                        if self.dialog.TImeVieweLayerBox.isChecked():
+                        if self.dialog.TimeVieweLayerBox.isChecked():
                             fields = timeviewerlayer.dataProvider().fields()
                             datetimefieldid = fields.indexFromName("date_time")
                             rainvaluefieldid = fields.indexFromName("Boundary Value")
@@ -806,7 +810,7 @@ class RainGenerator(object):
 
         ##########################################################
         # time viewer layer
-        if self.dialog.TImeVieweLayerBox.isChecked():
+        if self.dialog.TimeVieweLayerBox.isChecked():
             timeviewerlayer.updateFields()
             QgsProject.instance().addMapLayer(timeviewerlayer)
         ##########################################################
@@ -1311,15 +1315,15 @@ class RainGenerator(object):
             self.StormSize[ID] = stormarea
             self.StormVolume[ID] = stormvolume
 
-        print(self.StormPeakIntensity[:self.StormCount+1],"peak")
-        print(self.StormSize[:self.StormCount+1],"size")
-        print(self.StormDuration[:self.StormCount+1],"duration")
+        #print(self.StormPeakIntensity[:self.StormCount+1],"peak")
+        #print(self.StormSize[:self.StormCount+1],"size")
+        #print(self.StormDuration[:self.StormCount+1],"duration")
         # print(self.StormTraveledDistance[:self.StormCount+1],"distance")
         # print(self.StormDirection[:self.StormCount + 1], "direction")
-        print(self.StormLocations, "locations")
-        print(self.StormIDs,"stormids")
-        print(self.StormPeakIntensityTimestep, "timestep")
-        print(self.StormPeakIntensityLocation, "location")
+        #print(self.StormLocations, "locations")
+        #print(self.StormIDs,"stormids")
+        #print(self.StormPeakIntensityTimestep, "timestep")
+        #print(self.StormPeakIntensityLocation, "location")
         # print(self.StormCount,"storm count")
         # print(self.StormStartingLine,"starting line")
 
