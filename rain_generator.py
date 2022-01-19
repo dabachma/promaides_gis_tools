@@ -1123,13 +1123,9 @@ class RainGenerator(object):
             self.CellCoordinates.append(row)
         for xy in self.CellCoordinates:
             xy=[float(i) for i in xy]
-        print(self.CellCoordinates,"coordinates")
-
-
 
         #reading data
         address = os.path.join(self.dialog.folderEdit_griddeddata.text())
-        print(address,"address")
         try:
             if self.dialog.DelimiterBox_2.currentText() == "space":
                 df = pd.read_csv(address.strip("\u202a"), delimiter=" ",header=0,index_col=0)
@@ -1143,8 +1139,10 @@ class RainGenerator(object):
             )
 
         for row in df.iloc:
-            for rain in row:
+            for i, rain in enumerate(row):
                 Storm.append(rain)
+                if i+1==self.nx*self.ny:
+                    break
 
             print(Storm,"storm timstep")
 
