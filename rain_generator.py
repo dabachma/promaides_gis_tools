@@ -1039,7 +1039,7 @@ class RainGenerator(object):
     StormStartingLine = []
     StormData = []  # array for the fitting only has volume peak extent in
     StormCount = 0
-    MaxNumberofStorms = 100000
+    MaxNumberofStorms = 500000
 
 
     def PreStormAnalysis_GriddedData(self):
@@ -1138,21 +1138,21 @@ class RainGenerator(object):
                 'Could Not Read Given Data file...!'
             )
 
+        StormThreshhold = self.dialog.StormThreshholdBox_2.value()
+        numberofcells=self.nx*self.ny
+
+        #start of for loop
         for row in df.iloc:
             for i, rain in enumerate(row):
-                Storm.append(rain)
+                Storm.append(float(rain))
                 if i+1==self.nx*self.ny:
                     break
 
-            print(Storm,"storm timstep")
+            #print(Storm,"storm timstep")
 
-            for i in range(len(Storm)):
-                StormConnectivity.append(0)
-            Storm = [float(i) for i in Storm]
-
+            StormConnectivity=[0]*numberofcells
             ###################################################################################
             # storm cluster identification
-            StormThreshhold = self.dialog.StormThreshholdBox_2.value()
             for i, value in enumerate(Storm):
                 try:
                     if Storm[i - 1] > StormThreshhold and value > StormThreshhold and (i - 1) >= 0:
@@ -1195,16 +1195,15 @@ class RainGenerator(object):
                 self.NoStormDuration.append(nostormcount)
                 nostormcount = 0
 
-                # saving the storm id
-                for stormid in list(set(StormConnectivity)):
-                    if stormid != 0 and (stormid not in self.StormIDs):
-                        self.StormIDs.append(stormid)
-
-
-                # putting identified storms in an array
+                #loops over uniqe storm ids
                 for stormid in list(set(StormConnectivity)):
                     if stormid == 0:
                         continue
+                    # saving the storm id
+                    if stormid != 0 and (stormid not in self.StormIDs):
+                        self.StormIDs.append(stormid)
+
+                    # putting identified storms in an array
                     temparray = []
                     for count, ID in enumerate(StormConnectivity):
                         if ID == stormid and ID != 0:
@@ -1214,16 +1213,14 @@ class RainGenerator(object):
 
                     self.Storms[stormid].append(temparray)
 
-                # saving storm locations
-                for stormid in list(set(StormConnectivity)):
+                    # saving storm locations
                     indexes = []
-                    if stormid != 0:
-                        for index, element in enumerate(StormConnectivity):
-                            if element == stormid:
-                                indexes.append(index)
-                        self.StormLocations[stormid].append(indexes)
+                    for index, element in enumerate(StormConnectivity):
+                        if element == stormid:
+                            indexes.append(index)
+                    self.StormLocations[stormid].append(indexes)
 
-                # print(StormConnectivity, "storm connectivity2")
+
                 for value in list(set(StormConnectivity)):
                     if value != 0:
                         # velocity and direction
