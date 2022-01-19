@@ -135,8 +135,14 @@ class PluginDialog(QDialog):
         if self.groupBox_7.isChecked():
             self.groupBox.setEnabled(False)
             self.groupBox_2.setEnabled(False)
+            self.groupBox_5.setEnabled(True)
+            self.SaveSpatialInterpolationBox.setEnabled(False)
+            self.TImeVieweLayerBox.setEnable(False)
         else:
             self.groupBox.setEnabled(True)
+            self.SaveSpatialInterpolationBox.setEnabled(True)
+            self.TImeVieweLayerBox.setEnable(True)
+            self.groupBox_5.setEnabled(False)
 
     def onBrowseButtonClicked(self):
         currentFolder = self.folderEdit.text()
@@ -154,14 +160,14 @@ class PluginDialog(QDialog):
 
     def onBrowseButtonClicked_griddeddata(self):
         current_filename = self.folderEdit_griddeddata.text()
-        file = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'Rain Generator', current_filename)
+        file = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Rain Generator', current_filename)
         if file[0] != "":
             self.folderEdit_griddeddata.setText(file[0])
             self.folderEdit_griddeddata.editingFinished.emit()
 
     def onBrowseButtonClicked_coordinates(self):
         current_filename = self.folderEdit_coordinates.text()
-        file = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'Rain Generator', current_filename)
+        file = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Rain Generator', current_filename)
         if file[0] != "":
             self.folderEdit_coordinates.setText(file[0])
             self.folderEdit_coordinates.editingFinished.emit()
@@ -201,6 +207,7 @@ class RainGenerator(object):
         self.dialog.ProcessAreaButton.clicked.connect(self.CreateGenerationArea)
         self.dialog.CheckButton.clicked.connect(self.CheckFiles)
         self.dialog.ProcessButton.clicked.connect(self.PreSpatialInterpolation)
+        self.dialog.ProcessButton_GriddedData.clicked.connect(self.PreStormAnalysis_GriddedData)
         self.dialog.CheckButton2.clicked.connect(self.AnalyzeFromUntil)
         self.dialog.GenerateButton.clicked.connect(self.PreGeneration)
 
@@ -1029,6 +1036,317 @@ class RainGenerator(object):
     StormData = []  # array for the fitting only has volume peak extent in
     StormCount = 0
     MaxNumberofStorms = 100000
+
+
+    def PreStormAnalysis_GriddedData(self):
+        filename = self.dialog.folderEdit_griddeddata.text()
+        filename2 =self.dialog.folderEdit_coordinates.text()
+        if not filename or not filename2:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'No output folder given!'
+            )
+            return
+
+        ###check cooridnate files
+
+        self.dialog.StatusIndicator.setText("Analyzing Storm Statistics...")
+        QTimer.singleShot(50, self.StormAnalysis_GriddedData)
+
+
+    def StormAnalysis_GriddedData(self):
+
+        # calculates angle between two points clockwise
+        # east is 0
+        # north is 90
+        def angle_between(p1, p2):
+            ang1 = np.arctan2(*p1[::-1])
+            ang2 = np.arctan2(*p2[::-1])
+            return np.rad2deg((ang1 - ang2) % (2 * np.pi))
+                    
+        self.StormCount = 0
+        nostormcount = 0
+
+
+        self.nx=self.dialog.nxBox.value()
+        self.ny=self.dialog.nyBox.value()
+
+        # reset
+        self.StormTraveledDistance = []
+        self.StormVolume = []
+        self.StormDirection = []
+        self.StormDuration = []
+        self.StormPeakIntensity = []
+        self.StormSize = []
+        self.NoStormDuration = []
+        self.StormStartingLine = []
+        self.StormData = []
+        self.Storms = []
+
+        for i in range(self.MaxNumberofStorms):
+            self.StormTraveledDistance.append(0)
+            self.StormVolume.append(0)
+            self.StormDirection.append([])
+            self.StormLocations.append([])
+            self.StormDuration.append(0)
+            self.StormPeakIntensity.append(0)
+            self.StormPeakIntensityTimestep.append(0)
+            self.StormPeakIntensityLocation.append(0)
+            self.StormSize.append(0)
+            self.StormStartingLine.append(0)
+            self.StormData.append(0)
+            self.Storms.append([])
+
+        Storm = []
+        StormConnectivity = []
+        PreviousStormConnectivity = []
+
+        #reading coordinates
+        address=os.path.join(self.dialog.folderEdit_coordinates.text())
+        try:
+            if self.dialog.DelimiterBox_2.currentText() == "space":
+                df = pd.read_csv(address.strip("\u202a"), delimiter=" ",header=0)
+            else:
+                df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox_2.currentText(),header=0)
+
+        except:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'Could Not Read Given Data file...!'
+            )
+
+        for row in df.iloc:
+            self.CellCoordinates.append(row)
+        for xy in self.CellCoordinates:
+            xy=[float(i) for i in xy]
+        print(self.CellCoordinates,"coordinates")
+
+
+
+        #reading data
+        address = os.path.join(self.dialog.folderEdit_griddeddata.text())
+        print(address,"address")
+        try:
+            if self.dialog.DelimiterBox_2.currentText() == "space":
+                df = pd.read_csv(address.strip("\u202a"), delimiter=" ",header=0,index_col=0)
+            else:
+                df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox_2.currentText(),header=0,index_col=0)
+
+        except:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'Could Not Read Given Data file...!'
+            )
+
+        for row in df.iloc:
+            for rain in row:
+                Storm.append(rain)
+
+            print(Storm,"storm timstep")
+
+            for i in range(len(Storm)):
+                StormConnectivity.append(0)
+            Storm = [float(i) for i in Storm]
+
+            ###################################################################################
+            # storm cluster identification
+            StormThreshhold = self.dialog.StormThreshholdBox_2.value()
+            for i, value in enumerate(Storm):
+                try:
+                    if Storm[i - 1] > StormThreshhold and value > StormThreshhold and (i - 1) >= 0:
+                        StormConnectivity[i] = StormConnectivity[i - 1]
+                        continue
+                except:
+                    pass
+
+                try:
+                    if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx) >= 0:
+                        StormConnectivity[i] = StormConnectivity[i - self.nx]
+                        continue
+                except:
+                    pass
+
+                try:
+                    if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (i - self.nx - 1) >= 0:
+                        StormConnectivity[i] = StormConnectivity[i - self.nx - 1]
+                        continue
+                except:
+                    pass
+
+                if value > StormThreshhold:
+                    self.StormCount = self.StormCount + 1
+                    StormConnectivity[i] = self.StormCount
+            ####################################################################################
+            # find overlapping storms
+            for i, value in enumerate(StormConnectivity):
+                for j, previousvalue in enumerate(PreviousStormConnectivity):
+                    if i == j and value > 0 and previousvalue > 0:
+                        for k, value2 in enumerate(StormConnectivity):
+                            if value2 == value:
+                                StormConnectivity[k] = previousvalue
+            ######################################################################################
+            # getting storm statistics
+
+            if all(i <= self.dialog.StormThreshholdBox_2.value() for i in Storm):
+                nostormcount = nostormcount + 1
+            else:
+                self.NoStormDuration.append(nostormcount)
+                nostormcount = 0
+
+                # saving the storm id
+                for stormid in list(set(StormConnectivity)):
+                    if stormid != 0 and (stormid not in self.StormIDs):
+                        self.StormIDs.append(stormid)
+
+
+                # putting identified storms in an array
+                for stormid in list(set(StormConnectivity)):
+                    if stormid == 0:
+                        continue
+                    temparray = []
+                    for count, ID in enumerate(StormConnectivity):
+                        if ID == stormid and ID != 0:
+                            temparray.append(Storm[count])
+                        else:
+                            temparray.append(0)
+
+                    self.Storms[stormid].append(temparray)
+
+                # saving storm locations
+                for stormid in list(set(StormConnectivity)):
+                    indexes = []
+                    if stormid != 0:
+                        for index, element in enumerate(StormConnectivity):
+                            if element == stormid:
+                                indexes.append(index)
+                        self.StormLocations[stormid].append(indexes)
+
+                # print(StormConnectivity, "storm connectivity2")
+                for value in list(set(StormConnectivity)):
+                    if value != 0:
+                        # velocity and direction
+                        currentstormcoordinates = []
+                        previousstormcoordinates = []
+                        for i, id in enumerate(StormConnectivity):
+                            if id == value and id != 0:
+                                currentstormcoordinates.append(self.CellCoordinates[i])
+
+                        for i, id in enumerate(PreviousStormConnectivity):
+                            if id == value and id != 0:
+                                previousstormcoordinates.append(self.CellCoordinates[i])
+
+                        # traveled distance and direction
+                        if value != 0 and (value in PreviousStormConnectivity):
+                            currentstormcenterx = 0
+                            currentstormcentery = 0
+                            for xy in currentstormcoordinates:
+                                currentstormcenterx = currentstormcenterx + xy[0]
+                                currentstormcentery = currentstormcentery + xy[1]
+                            currentstormcenterx = currentstormcenterx / len(currentstormcoordinates)
+                            currentstormcentery = currentstormcentery / len(currentstormcoordinates)
+
+                            previousstormcenterx = 0
+                            previousstormcentery = 0
+                            for xy in previousstormcoordinates:
+                                previousstormcenterx = previousstormcenterx + xy[0]
+                                previousstormcentery = previousstormcentery + xy[1]
+
+                            if len(previousstormcoordinates) > 0:
+                                previousstormcenterx = previousstormcenterx / len(previousstormcoordinates)
+                                previousstormcentery = previousstormcentery / len(previousstormcoordinates)
+
+                            # both need averaging out
+                            self.StormTraveledDistance[value] = self.StormTraveledDistance[value] + math.sqrt(
+                                (currentstormcenterx - previousstormcenterx) ** 2 + (
+                                        currentstormcentery - previousstormcentery) ** 2)
+                            angle = angle_between([previousstormcenterx, previousstormcentery],
+                                                  [currentstormcenterx, currentstormcentery])
+                            if 0 < angle < 22.5 or 337.5 < angle < 360:
+                                direction = "E"
+                            elif 22.5 <= angle <= 67.5:
+                                direction = "NE"
+                            elif 67.5 <= angle <= 112.5:
+                                direction = "N"
+                            elif 112.5 <= angle <= 157.5:
+                                direction = "NW"
+                            elif 157.5 <= angle <= 202.5:
+                                direction = "W"
+                            elif 202.5 <= angle <= 247.5:
+                                direction = "SW"
+                            elif 247.5 <= angle <= 292.5:
+                                direction = "S"
+                            elif 292.5 <= angle <= 337.5:
+                                direction = "W"
+                            else:
+                                direction = "Not Available"
+                            self.StormDirection[value].append(direction)
+
+            PreviousStormConnectivity = StormConnectivity
+            Storm = []
+            StormConnectivity = []
+
+
+        print(self.Storms,"final storms")
+        # peak, peak location and timestep, volume, duration, area
+        for ID, storm in enumerate(self.Storms):
+            if len(storm) == 0:
+                continue
+            stormvolume = 0
+            stormpeak = 0
+            stormpeaktimestep = 0
+            stormpeaklocation = 0
+            stormarea = 0
+            for timestepnumber, timestep in enumerate(storm):
+                stormvolume = stormvolume + sum(timestep)
+                stormarea = stormarea + np.count_nonzero(timestep)
+                if max(timestep) > stormpeak:
+                    stormpeak = max(timestep)
+                    stormpeaktimestep = timestepnumber
+                    stormpeaklocation = timestep.index(stormpeak)
+
+            self.StormPeakIntensity[ID] = stormpeak
+            self.StormPeakIntensityTimestep[ID] = stormpeaktimestep
+            self.StormPeakIntensityLocation[ID] = stormpeaklocation
+            self.StormDuration[ID] = len(storm)
+            self.StormSize[ID] = stormarea
+            self.StormVolume[ID] = stormvolume
+
+        print(self.StormPeakIntensity[:self.StormCount+1],"peak")
+        print(self.StormSize[:self.StormCount+1],"size")
+        print(self.StormDuration[:self.StormCount+1],"duration")
+        # print(self.StormTraveledDistance[:self.StormCount+1],"distance")
+        # print(self.StormDirection[:self.StormCount + 1], "direction")
+        print(self.StormLocations, "locations")
+        print(self.StormIDs,"stormids")
+        print(self.StormPeakIntensityTimestep, "timestep")
+        print(self.StormPeakIntensityLocation, "location")
+        # print(self.StormCount,"storm count")
+        # print(self.StormStartingLine,"starting line")
+
+        if self.dialog.SaveStormStatisticsBox.isChecked():
+            self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
+            QTimer.singleShot(50, self.WriteStormStatistics)
+
+        N = 0
+        for i in self.StormDuration:
+            if i > 0:
+                N = N + 1
+        self.dialog.StatusIndicator.setText("Processing Complete, %s Storms Identified" % (N))
+        self.iface.messageBar().pushSuccess(
+
+            'Rain Generator',
+            'Processing Complete !'
+        )
+
+        if N < 2:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'Not Enough Storms Identified for Generation!'
+            )
+            return
+        self.dialog.groupBox_3.setEnabled(True)
+        self.data = []
+
 
     def StormAnalysis(self):
 
