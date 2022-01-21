@@ -61,6 +61,12 @@ class PluginDialog(QDialog):
         self.DelimiterBox_2.addItem("space")
         self.DelimiterBox_2.addItem(",")
         self.DelimiterBox_2.addItem("-")
+        self.InputDataUnitBox.addItem("minutely")
+        self.InputDataUnitBox.addItem("10-minutely")
+        self.InputDataUnitBox.addItem("30-minutely")
+        self.InputDataUnitBox.addItem("hourly")
+        self.InputDataUnitBox.addItem("daily")
+        
 
         self.dxBox.setValue(5000)
         self.dyBox.setValue(5000)
@@ -1712,6 +1718,18 @@ class RainGenerator(object):
 
         RequestedNumberofTimesteps = self.dialog.RequestedGenerationDurationBox.value()
 
+        if self.dialog.InputDataUnitBox.currentText()=="minutely":
+            RequestedNumberofTimesteps=RequestedNumberofTimesteps*365*24*60
+        elif self.dialog.InputDataUnitBox.currentText()=="10-minutely":
+            RequestedNumberofTimesteps = RequestedNumberofTimesteps * 365 * 24 * 6
+        elif self.dialog.InputDataUnitBox.currentText()=="30-minutely":
+            RequestedNumberofTimesteps = RequestedNumberofTimesteps * 365 * 24 * 2
+        elif self.dialog.InputDataUnitBox.currentText()=="hourly":
+            RequestedNumberofTimesteps = RequestedNumberofTimesteps * 365 * 24
+        elif self.dialog.InputDataUnitBox.currentText()=="daily":
+            RequestedNumberofTimesteps = RequestedNumberofTimesteps * 365
+
+
         timestep = 0
         stormcounter = 0
 
@@ -1723,8 +1741,8 @@ class RainGenerator(object):
         StormTexttobeWritten = ""
         with open(filepath3, 'a') as CSVGeneratedRainfall:
             while timestep <= RequestedNumberofTimesteps:
-                print(timestep, "timestep")
-                print(StormStatus, "storm status")
+                #print(timestep, "timestep")
+                #print(StormStatus, "storm status")
 
                 ##########################################################################################
                 # storm
@@ -1732,10 +1750,9 @@ class RainGenerator(object):
                     stormcounter = stormcounter + 1
                     ###############################################################
                     # generating storm values form copola
-                    while (1 < 2):
-                        GeneratedValues = cop.gendata(1)  # volume peak area
-                        if (GeneratedValues[0][0] / GeneratedValues[0][2]) < GeneratedValues[0][1]:
-                            break
+
+                    GeneratedValues = cop.gendata(1)  # volume peak area
+
                     # print(GeneratedValues, "generated values")
                     ################################################################
 
@@ -1915,10 +1932,10 @@ class RainGenerator(object):
 
                     # loops over storm timesteps for changing volume and peak
                     for step, stormtimestep in enumerate(stormbeinggenerated):
-
-                        ###volume
-                        for j, rain in enumerate(stormtimestep):
-                            stormtimestep[j] = (stormtimestep[j] / SumIntensitiesdata) * NewVolume
+                        if SumIntensitiesdata!=0:
+                            ###volume
+                            for j, rain in enumerate(stormtimestep):
+                                stormtimestep[j] = (stormtimestep[j] / SumIntensitiesdata) * NewVolume
                         # peak intensity
                         if step == self.StormPeakIntensityTimestep[GeneratedStormID]:
                             stormtimestep[
