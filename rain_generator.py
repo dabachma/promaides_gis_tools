@@ -10,7 +10,8 @@ from numpy import random
 from random import sample
 import matplotlib.pyplot as plt
 from scipy import stats
-import math
+import scipy.stats as ss
+import csv
 
 import numpy as np
 import scipy.linalg
@@ -2007,6 +2008,39 @@ class RainGenerator(object):
 
         with open(filepath2, 'a') as GeneratedRainfallStatistics:
             GeneratedRainfallStatistics.write(self.StormStatisticsTexttobeWritten)
+        QTimer.singleShot(50, self.ReturnPeriodCalculation)
+
+
+    def ReturnPeriodCalculation(self):
+        filepath2 = os.path.join(self.dialog.folderEdit.text(),"GeneratedRainfall_Statistics" + '.txt')
+        df = pd.read_csv(filepath2.strip("\u202a"), delimiter=" ")
+        Durations = df["Storm_Duration"].tolist()
+        Volumes = df["Storm_Volume"].tolist()
+        peaks = df["Storm_PeakIntensity"].tolist()
+        areas = df["Storm_TotalArea"].tolist()
+        n=self.dialog.RequestedGenerationDurationBox.value()
+        Durations_ranks=[len(Durations)-(sorted(Durations).index(x)) for x in Durations]
+        Volumes_ranks = [len(Volumes)-(sorted(Volumes).index(x)) for x in Volumes]
+        peaks_ranks = [len(peaks)-(sorted(peaks).index(x)) for x in peaks]
+        areas_ranks = [len(areas)-(sorted(areas).index(x)) for x in areas]
+        Durations_returnperiods = []
+        Volumes_returnperiods = []
+        peaks_returnperiods = []
+        areas_returnperiods = []
+        for i in range(len(Durations_ranks)):
+            Durations_returnperiods.append((n+1)/Durations_ranks[i])
+            Volumes_returnperiods.append((n + 1) / Volumes_ranks[i])
+            peaks_returnperiods.append((n + 1) / peaks_ranks[i])
+            areas_returnperiods.append((n + 1) / areas_ranks[i])
+
+        df['Return_Period_Duration'] = Durations_returnperiods
+        df['Return_Period_Volume'] = Volumes_returnperiods
+        df['Return_Period_Peak'] = peaks_returnperiods
+        df['Return_Period_Area'] = areas_returnperiods
+
+        df.to_csv(filepath2.strip("\u202a"), sep=' ', index=False)
+
+
 
     def GenerationFinished(self):
         self.iface.messageBar().pushSuccess(
