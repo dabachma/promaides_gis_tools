@@ -137,7 +137,7 @@ class CINConnectorExportAuto(object):
                         if pol_feature.geometry().contains(point_feature.geometry()):
                             connector_id.append(str(pair_index))
                             source_id_write.append(str(pol_feature["polygon_id"]))
-                            source_name_write.append(str(pol_feature["polygon_name"]))
+                            source_name_write.append(str(pol_feature["polygon_na"]))
                             sink_id_write.append(str(point_feature["point_id"]))
                             sink_name_write.append(str(point_feature["point_name"]))
 
