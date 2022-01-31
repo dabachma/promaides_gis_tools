@@ -182,13 +182,6 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="5" colspan="2">
-          <widget class="QLabel" name="label_41">
-           <property name="text">
-            <string>Rainfall threshhold</string>
-           </property>
-          </widget>
-         </item>
          <item row="2" column="4" colspan="2">
           <widget class="QSpinBox" name="nyBox">
            <property name="minimum">
@@ -196,16 +189,6 @@
            </property>
            <property name="maximum">
             <number>999999999</number>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="7">
-          <widget class="QDoubleSpinBox" name="StormThreshholdBox_2">
-           <property name="minimum">
-            <double>0.010000000000000</double>
-           </property>
-           <property name="value">
-            <double>2.000000000000000</double>
            </property>
           </widget>
          </item>
@@ -261,30 +244,10 @@
       <item row="3" column="0" colspan="2">
        <widget class="QGroupBox" name="groupBox_5">
         <property name="title">
-         <string>Extras</string>
+         <string>Options</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_4">
-         <item row="0" column="0">
-          <widget class="QCheckBox" name="SaveSpatialInterpolationBox">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Save spatial interpolation of input time series</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QCheckBox" name="TimeVieweLayerBox">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Output layer for Time Viewer</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
+         <item row="7" column="0" colspan="2">
           <widget class="QLineEdit" name="folderEdit_dataanalysis">
            <property name="toolTip">
             <string>Set output folder</string>
@@ -294,7 +257,17 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="2">
+         <item row="6" column="0">
+          <widget class="QCheckBox" name="SaveStormStatisticsBox">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string>Save storm statistics</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="5">
           <widget class="QPushButton" name="browseButton_dataanalysis">
            <property name="maximumSize">
             <size>
@@ -307,13 +280,46 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="0">
-          <widget class="QCheckBox" name="SaveStormStatisticsBox">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_35">
+           <property name="maximumSize">
+            <size>
+             <width>100</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Rainfall threshhold</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QCheckBox" name="SaveSpatialInterpolationBox">
            <property name="toolTip">
             <string/>
            </property>
            <property name="text">
-            <string>Save storm statistics</string>
+            <string>Save spatial interpolation of input time series</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QCheckBox" name="TimeVieweLayerBox">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string>Output layer for Time Viewer</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QDoubleSpinBox" name="StormThreshholdBox">
+           <property name="minimum">
+            <double>0.010000000000000</double>
+           </property>
+           <property name="value">
+            <double>2.000000000000000</double>
            </property>
           </widget>
          </item>
@@ -416,16 +422,6 @@
          <bool>false</bool>
         </property>
         <layout class="QGridLayout" name="gridLayout">
-         <item row="4" column="3">
-          <widget class="QDoubleSpinBox" name="StormThreshholdBox">
-           <property name="minimum">
-            <double>0.010000000000000</double>
-           </property>
-           <property name="value">
-            <double>2.000000000000000</double>
-           </property>
-          </widget>
-         </item>
          <item row="2" column="2" colspan="3">
           <widget class="QComboBox" name="TimeColumnBox"/>
          </item>
@@ -476,13 +472,6 @@
            <property name="icon">
             <iconset>
              <normaloff>../icons/UpdateIcon.png</normaloff>../icons/UpdateIcon.png</iconset>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <widget class="QLabel" name="label_35">
-           <property name="text">
-            <string>Rainfall threshhold</string>
            </property>
           </widget>
          </item>

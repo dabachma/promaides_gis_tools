@@ -67,7 +67,6 @@ class PluginDialog(QDialog):
         self.InputDataUnitBox.addItem("30-minutely")
         self.InputDataUnitBox.addItem("hourly")
         self.InputDataUnitBox.addItem("daily")
-        
 
         self.dxBox.setValue(5000)
         self.dyBox.setValue(5000)
@@ -1048,10 +1047,9 @@ class RainGenerator(object):
     StormCount = 0
     MaxNumberofStorms = 500000
 
-
     def PreStormAnalysis_GriddedData(self):
         filename = self.dialog.folderEdit_griddeddata.text()
-        filename2 =self.dialog.folderEdit_coordinates.text()
+        filename2 = self.dialog.folderEdit_coordinates.text()
         if not filename or not filename2:
             self.iface.messageBar().pushCritical(
                 'Rain Generator',
@@ -1064,7 +1062,6 @@ class RainGenerator(object):
         self.dialog.StatusIndicator.setText("Analyzing Storm Statistics...")
         QTimer.singleShot(50, self.StormAnalysis_GriddedData)
 
-
     def StormAnalysis_GriddedData(self):
 
         # calculates angle between two points clockwise
@@ -1074,13 +1071,12 @@ class RainGenerator(object):
             ang1 = np.arctan2(*p1[::-1])
             ang2 = np.arctan2(*p2[::-1])
             return np.rad2deg((ang1 - ang2) % (2 * np.pi))
-                    
+
         self.StormCount = 0
         nostormcount = 0
 
-
-        self.nx=self.dialog.nxBox.value()
-        self.ny=self.dialog.nyBox.value()
+        self.nx = self.dialog.nxBox.value()
+        self.ny = self.dialog.nyBox.value()
 
         # reset
         self.StormTraveledDistance = []
@@ -1112,13 +1108,13 @@ class RainGenerator(object):
         StormConnectivity = []
         PreviousStormConnectivity = []
 
-        #reading coordinates
-        address=os.path.join(self.dialog.folderEdit_coordinates.text())
+        # reading coordinates
+        address = os.path.join(self.dialog.folderEdit_coordinates.text())
         try:
             if self.dialog.DelimiterBox_2.currentText() == "space":
-                df = pd.read_csv(address.strip("\u202a"), delimiter=" ",header=0)
+                df2 = pd.read_csv(address.strip("\u202a"), delimiter=" ", header=0)
             else:
-                df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox_2.currentText(),header=0)
+                df2 = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox_2.currentText(), header=0)
 
         except:
             self.iface.messageBar().pushCritical(
@@ -1126,38 +1122,40 @@ class RainGenerator(object):
                 'Could Not Read Given Data file...!'
             )
 
-        for row in df.iloc:
+        for row in df2.iloc:
             self.CellCoordinates.append(row)
         for xy in self.CellCoordinates:
-            xy=[float(i) for i in xy]
+            xy = [float(i) for i in xy]
 
-        #reading data
+        # reading data
         address = os.path.join(self.dialog.folderEdit_griddeddata.text())
-        try:
-            if self.dialog.DelimiterBox_2.currentText() == "space":
-                df = pd.read_csv(address.strip("\u202a"), delimiter=" ",header=0,index_col=0)
-            else:
-                df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox_2.currentText(),header=0,index_col=0)
+        #try:
+        if self.dialog.DelimiterBox_2.currentText() == "space":
+            df = pd.read_csv(address.strip("\u202a"), delimiter=" ", header=0, index_col=0)
+        else:
+            df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox_2.currentText(), header=0,
+                             index_col=0)
 
-        except:
-            self.iface.messageBar().pushCritical(
-                'Rain Generator',
-                'Could Not Read Given Data file...!'
-            )
+        #except:
+        #    self.iface.messageBar().pushCritical(
+        #        'Rain Generator',
+        #        'Could Not Read Given Data file...!'
+        #    )
 
-        StormThreshhold = self.dialog.StormThreshholdBox_2.value()
-        numberofcells=self.nx*self.ny
+        StormThreshhold = self.dialog.StormThreshholdBox.value()
+        numberofcells = self.nx * self.ny
 
-        #start of for loop
+        # start of for loop
         for row in df.iloc:
             for i, rain in enumerate(row):
                 Storm.append(float(rain))
-                if i+1==self.nx*self.ny:
+                if i + 1 == self.nx * self.ny:
                     break
 
-            #print(Storm,"storm timstep")
 
-            StormConnectivity=[0]*numberofcells
+            print(Storm,"storm timstep")
+
+            StormConnectivity = [0] * numberofcells
             ###################################################################################
             # storm cluster identification
             for i, value in enumerate(Storm):
@@ -1195,14 +1193,14 @@ class RainGenerator(object):
                                 StormConnectivity[k] = previousvalue
             ######################################################################################
             # getting storm statistics
-
-            if all(i <= self.dialog.StormThreshholdBox_2.value() for i in Storm):
+            print(StormConnectivity,"connectivity")
+            if all(i <= self.dialog.StormThreshholdBox.value() for i in Storm):
                 nostormcount = nostormcount + 1
             else:
                 self.NoStormDuration.append(nostormcount)
                 nostormcount = 0
 
-                #loops over uniqe storm ids
+                # loops over uniqe storm ids
                 for stormid in list(set(StormConnectivity)):
                     if stormid == 0:
                         continue
@@ -1217,7 +1215,7 @@ class RainGenerator(object):
                             temparray.append(Storm[count])
                         else:
                             temparray.append(0)
-
+                    print(temparray,"temparray")
                     self.Storms[stormid].append(temparray)
 
                     # saving storm locations
@@ -1226,7 +1224,6 @@ class RainGenerator(object):
                         if element == stormid:
                             indexes.append(index)
                     self.StormLocations[stormid].append(indexes)
-
 
                 for value in list(set(StormConnectivity)):
                     if value != 0:
@@ -1291,8 +1288,7 @@ class RainGenerator(object):
             Storm = []
             StormConnectivity = []
 
-
-        print(self.Storms,"final storms")
+        print(self.Storms, "final storms")
         # peak, peak location and timestep, volume, duration, area
         for ID, storm in enumerate(self.Storms):
             if len(storm) == 0:
@@ -1317,15 +1313,15 @@ class RainGenerator(object):
             self.StormSize[ID] = stormarea
             self.StormVolume[ID] = stormvolume
 
-        #print(self.StormPeakIntensity[:self.StormCount+1],"peak")
-        #print(self.StormSize[:self.StormCount+1],"size")
-        #print(self.StormDuration[:self.StormCount+1],"duration")
+        # print(self.StormPeakIntensity[:self.StormCount+1],"peak")
+        # print(self.StormSize[:self.StormCount+1],"size")
+        # print(self.StormDuration[:self.StormCount+1],"duration")
         # print(self.StormTraveledDistance[:self.StormCount+1],"distance")
         # print(self.StormDirection[:self.StormCount + 1], "direction")
-        #print(self.StormLocations, "locations")
-        #print(self.StormIDs,"stormids")
-        #print(self.StormPeakIntensityTimestep, "timestep")
-        #print(self.StormPeakIntensityLocation, "location")
+        # print(self.StormLocations, "locations")
+        # print(self.StormIDs,"stormids")
+        # print(self.StormPeakIntensityTimestep, "timestep")
+        # print(self.StormPeakIntensityLocation, "location")
         # print(self.StormCount,"storm count")
         # print(self.StormStartingLine,"starting line")
 
@@ -1337,6 +1333,8 @@ class RainGenerator(object):
         for i in self.StormDuration:
             if i > 0:
                 N = N + 1
+        print(N,"N")
+        print(len(self.StormIDs),"len")
         self.dialog.StatusIndicator.setText("Processing Complete, %s Storms Identified" % (N))
         self.iface.messageBar().pushSuccess(
 
@@ -1352,7 +1350,6 @@ class RainGenerator(object):
             return
         self.dialog.groupBox_3.setEnabled(True)
         self.data = []
-
 
     def StormAnalysis(self):
 
@@ -1656,7 +1653,7 @@ class RainGenerator(object):
 
         QTimer.singleShot(50, self.Generation)
 
-    StormStatisticsTexttobeWritten = "Storm_Nr Storm_StartingTimestep Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea\n"
+    StormStatisticsTexttobeWritten = "Storm_ID Storm_StartingTimestep Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea\n"
 
     def Generation(self):
 
@@ -1719,17 +1716,16 @@ class RainGenerator(object):
 
         RequestedNumberofTimesteps = self.dialog.RequestedGenerationDurationBox.value()
 
-        if self.dialog.InputDataUnitBox.currentText()=="minutely":
-            RequestedNumberofTimesteps=RequestedNumberofTimesteps*365*24*60
-        elif self.dialog.InputDataUnitBox.currentText()=="10-minutely":
+        if self.dialog.InputDataUnitBox.currentText() == "minutely":
+            RequestedNumberofTimesteps = RequestedNumberofTimesteps * 365 * 24 * 60
+        elif self.dialog.InputDataUnitBox.currentText() == "10-minutely":
             RequestedNumberofTimesteps = RequestedNumberofTimesteps * 365 * 24 * 6
-        elif self.dialog.InputDataUnitBox.currentText()=="30-minutely":
+        elif self.dialog.InputDataUnitBox.currentText() == "30-minutely":
             RequestedNumberofTimesteps = RequestedNumberofTimesteps * 365 * 24 * 2
-        elif self.dialog.InputDataUnitBox.currentText()=="hourly":
+        elif self.dialog.InputDataUnitBox.currentText() == "hourly":
             RequestedNumberofTimesteps = RequestedNumberofTimesteps * 365 * 24
-        elif self.dialog.InputDataUnitBox.currentText()=="daily":
+        elif self.dialog.InputDataUnitBox.currentText() == "daily":
             RequestedNumberofTimesteps = RequestedNumberofTimesteps * 365
-
 
         timestep = 0
         stormcounter = 0
@@ -1742,8 +1738,8 @@ class RainGenerator(object):
         StormTexttobeWritten = ""
         with open(filepath3, 'a') as CSVGeneratedRainfall:
             while timestep <= RequestedNumberofTimesteps:
-                #print(timestep, "timestep")
-                #print(StormStatus, "storm status")
+                # print(timestep, "timestep")
+                # print(StormStatus, "storm status")
 
                 ##########################################################################################
                 # storm
@@ -1772,6 +1768,9 @@ class RainGenerator(object):
                     GeneratedStormPeakIntensity = GeneratedValues[0][1]  # peak
                     GeneratedVolume = GeneratedValues[0][0]  # volume
                     GeneratedStormArea = GeneratedValues[0][2]  # area
+                    #print(GeneratedStormDuration, "generated duration")
+                    #print(GeneratedStormArea, "generated storm area")
+                    #print(self.StormSize[GeneratedStormID], "data")
                     DifferenceinAreaperTimestep = math.ceil(
                         abs((GeneratedStormArea - self.StormSize[GeneratedStormID]) / GeneratedStormDuration))
 
@@ -1933,7 +1932,7 @@ class RainGenerator(object):
 
                     # loops over storm timesteps for changing volume and peak
                     for step, stormtimestep in enumerate(stormbeinggenerated):
-                        if SumIntensitiesdata!=0:
+                        if SumIntensitiesdata != 0:
                             ###volume
                             for j, rain in enumerate(stormtimestep):
                                 stormtimestep[j] = (stormtimestep[j] / SumIntensitiesdata) * NewVolume
@@ -1942,12 +1941,13 @@ class RainGenerator(object):
                             stormtimestep[
                                 self.StormPeakIntensityLocation[GeneratedStormID]] = GeneratedStormPeakIntensity
 
-                        timestep = timestep + 1
                         # write file
                         StormTexttobeWritten += str(timestep) + " "
                         for i in stormtimestep:
                             StormTexttobeWritten += str(i) + " "
                         StormTexttobeWritten += "\n"
+
+                        timestep = timestep + 1
 
                         if timestep >= RequestedNumberofTimesteps:
                             # write storm
@@ -2010,25 +2010,24 @@ class RainGenerator(object):
             GeneratedRainfallStatistics.write(self.StormStatisticsTexttobeWritten)
         QTimer.singleShot(50, self.ReturnPeriodCalculation)
 
-
     def ReturnPeriodCalculation(self):
-        filepath2 = os.path.join(self.dialog.folderEdit.text(),"GeneratedRainfall_Statistics" + '.txt')
+        filepath2 = os.path.join(self.dialog.folderEdit.text(), "GeneratedRainfall_Statistics" + '.txt')
         df = pd.read_csv(filepath2.strip("\u202a"), delimiter=" ")
         Durations = df["Storm_Duration"].tolist()
         Volumes = df["Storm_Volume"].tolist()
         peaks = df["Storm_PeakIntensity"].tolist()
         areas = df["Storm_TotalArea"].tolist()
-        n=self.dialog.RequestedGenerationDurationBox.value()
-        Durations_ranks=[len(Durations)-(sorted(Durations).index(x)) for x in Durations]
-        Volumes_ranks = [len(Volumes)-(sorted(Volumes).index(x)) for x in Volumes]
-        peaks_ranks = [len(peaks)-(sorted(peaks).index(x)) for x in peaks]
-        areas_ranks = [len(areas)-(sorted(areas).index(x)) for x in areas]
+        n = self.dialog.RequestedGenerationDurationBox.value()
+        Durations_ranks = [len(Durations) - (sorted(Durations).index(x)) for x in Durations]
+        Volumes_ranks = [len(Volumes) - (sorted(Volumes).index(x)) for x in Volumes]
+        peaks_ranks = [len(peaks) - (sorted(peaks).index(x)) for x in peaks]
+        areas_ranks = [len(areas) - (sorted(areas).index(x)) for x in areas]
         Durations_returnperiods = []
         Volumes_returnperiods = []
         peaks_returnperiods = []
         areas_returnperiods = []
         for i in range(len(Durations_ranks)):
-            Durations_returnperiods.append((n+1)/Durations_ranks[i])
+            Durations_returnperiods.append((n + 1) / Durations_ranks[i])
             Volumes_returnperiods.append((n + 1) / Volumes_ranks[i])
             peaks_returnperiods.append((n + 1) / peaks_ranks[i])
             areas_returnperiods.append((n + 1) / areas_ranks[i])
@@ -2039,8 +2038,6 @@ class RainGenerator(object):
         df['Return_Period_Area'] = areas_returnperiods
 
         df.to_csv(filepath2.strip("\u202a"), sep=' ', index=False)
-
-
 
     def GenerationFinished(self):
         self.iface.messageBar().pushSuccess(
