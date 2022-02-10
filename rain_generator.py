@@ -1046,6 +1046,7 @@ class RainGenerator(object):
     StormData = []  # array for the fitting only has volume peak extent in
     StormCount = 0
     MaxNumberofStorms = 500000
+    StormStartingTimestep = []
 
     def PreStormAnalysis_GriddedData(self):
         filename = self.dialog.folderEdit_griddeddata.text()
@@ -1089,6 +1090,7 @@ class RainGenerator(object):
         self.StormStartingLine = []
         self.StormData = []
         self.Storms = []
+        self.StormStartingTimestep = []
 
         for i in range(self.MaxNumberofStorms):
             self.StormTraveledDistance.append(0)
@@ -1100,7 +1102,7 @@ class RainGenerator(object):
             self.StormPeakIntensityTimestep.append(0)
             self.StormPeakIntensityLocation.append(0)
             self.StormSize.append(0)
-            self.StormStartingLine.append(0)
+            self.StormStartingTimestep.append(0)
             self.StormData.append(0)
             self.Storms.append([])
 
@@ -1125,18 +1127,26 @@ class RainGenerator(object):
         for row in df2.iloc:
             self.CellCoordinates.append(row)
         for xy in self.CellCoordinates:
-            xy = [float(i) for i in xy]
+            try:
+                xy = [float(i) for i in xy]
+            except:
+                self.iface.messageBar().pushCritical(
+                    'Rain Generator',
+                    'Could Not Read Given Data file...! Please Check the Selected Delimiter...'
+                )
+                return
 
         # reading data
         address = os.path.join(self.dialog.folderEdit_griddeddata.text())
-        #try:
+        # try:
         if self.dialog.DelimiterBox_2.currentText() == "space":
             df = pd.read_csv(address.strip("\u202a"), delimiter=" ", header=0, index_col=0)
         else:
             df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox_2.currentText(), header=0,
                              index_col=0)
 
-        #except:
+
+        # except:
         #    self.iface.messageBar().pushCritical(
         #        'Rain Generator',
         #        'Could Not Read Given Data file...!'
@@ -1146,14 +1156,14 @@ class RainGenerator(object):
         numberofcells = self.nx * self.ny
 
         # start of for loop
+        TimestepCounter = 0  # for getting the starting time of storms in data file
         for row in df.iloc:
             for i, rain in enumerate(row):
                 Storm.append(float(rain))
                 if i + 1 == self.nx * self.ny:
                     break
 
-
-            print(Storm,"storm timstep")
+            # print(Storm, "storm timstep")
 
             StormConnectivity = [0] * numberofcells
             ###################################################################################
@@ -1193,7 +1203,6 @@ class RainGenerator(object):
                                 StormConnectivity[k] = previousvalue
             ######################################################################################
             # getting storm statistics
-            print(StormConnectivity,"connectivity")
             if all(i <= self.dialog.StormThreshholdBox.value() for i in Storm):
                 nostormcount = nostormcount + 1
             else:
@@ -1207,6 +1216,7 @@ class RainGenerator(object):
                     # saving the storm id
                     if stormid != 0 and (stormid not in self.StormIDs):
                         self.StormIDs.append(stormid)
+                        self.StormStartingTimestep[stormid] = df.index[TimestepCounter]
 
                     # putting identified storms in an array
                     temparray = []
@@ -1215,7 +1225,7 @@ class RainGenerator(object):
                             temparray.append(Storm[count])
                         else:
                             temparray.append(0)
-                    print(temparray,"temparray")
+                    # print(temparray, "temparray")
                     self.Storms[stormid].append(temparray)
 
                     # saving storm locations
@@ -1287,8 +1297,9 @@ class RainGenerator(object):
             PreviousStormConnectivity = StormConnectivity
             Storm = []
             StormConnectivity = []
+            TimestepCounter = TimestepCounter + 1
 
-        print(self.Storms, "final storms")
+        # print(self.Storms, "final storms")
         # peak, peak location and timestep, volume, duration, area
         for ID, storm in enumerate(self.Storms):
             if len(storm) == 0:
@@ -1333,8 +1344,8 @@ class RainGenerator(object):
         for i in self.StormDuration:
             if i > 0:
                 N = N + 1
-        print(N,"N")
-        print(len(self.StormIDs),"len")
+        # print(N, "N")
+        # print(len(self.StormIDs), "len")
         self.dialog.StatusIndicator.setText("Processing Complete, %s Storms Identified" % (N))
         self.iface.messageBar().pushSuccess(
 
@@ -1395,6 +1406,7 @@ class RainGenerator(object):
             self.StormSize.append(0)
             self.StormStartingLine.append(0)
             self.StormData.append(0)
+            self.StormStartingTimestep.append(0)
             self.Storms.append([])
 
         Storm = []
@@ -1631,12 +1643,12 @@ class RainGenerator(object):
             pass
         with open(filepath, 'a') as StormStatistics:
             StormStatistics.write(
-                'Storm_id Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea Storm_TraveledDistance StormTotalAngle\n')
+                'Storm_id Storm_Starting_Timestep Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea Storm_TraveledDistance StormTotalAngle\n')
             for count, i in enumerate(range(1, self.StormCount + 1)):
                 if self.StormDuration[i] == 0:
                     continue
-                StormStatistics.write('%s %s %s %s %s %s %s\n' % (
-                    count + 1, self.StormDuration[i], self.StormVolume[i], self.StormPeakIntensity[i],
+                StormStatistics.write('%s %s %s %s %s %s %s %s\n' % (
+                    count + 1, self.StormStartingTimestep[i], self.StormDuration[i], self.StormVolume[i], self.StormPeakIntensity[i],
                     (self.StormSize[i]),
                     (self.StormTraveledDistance[i]), (self.StormDirection[i])))
 
@@ -1748,9 +1760,12 @@ class RainGenerator(object):
                     ###############################################################
                     # generating storm values form copola
 
-                    GeneratedValues = cop.gendata(1)  # volume peak area
+                    while (1 < 2):
+                        GeneratedValues = cop.gendata(1)  # volume peak area
+                        if GeneratedValues[0][1] <= GeneratedValues[0][0]:
+                            break
 
-                    # print(GeneratedValues, "generated values")
+                    print(GeneratedValues, "generated values")
                     ################################################################
 
                     #################################################################
@@ -1768,9 +1783,9 @@ class RainGenerator(object):
                     GeneratedStormPeakIntensity = GeneratedValues[0][1]  # peak
                     GeneratedVolume = GeneratedValues[0][0]  # volume
                     GeneratedStormArea = GeneratedValues[0][2]  # area
-                    #print(GeneratedStormDuration, "generated duration")
-                    #print(GeneratedStormArea, "generated storm area")
-                    #print(self.StormSize[GeneratedStormID], "data")
+                    # print(GeneratedStormDuration, "generated duration")
+                    # print(GeneratedStormArea, "generated storm area")
+                    # print(self.StormSize[GeneratedStormID], "data")
                     DifferenceinAreaperTimestep = math.ceil(
                         abs((GeneratedStormArea - self.StormSize[GeneratedStormID]) / GeneratedStormDuration))
 
@@ -1944,7 +1959,7 @@ class RainGenerator(object):
                         # write file
                         StormTexttobeWritten += str(timestep) + " "
                         for i in stormtimestep:
-                            StormTexttobeWritten += str(i) + " "
+                            StormTexttobeWritten += str(abs(i)) + " "
                         StormTexttobeWritten += "\n"
 
                         timestep = timestep + 1
