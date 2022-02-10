@@ -1047,6 +1047,7 @@ class RainGenerator(object):
     StormCount = 0
     MaxNumberofStorms = 500000
     StormStartingTimestep = []
+    StormCenters=[]
 
     def PreStormAnalysis_GriddedData(self):
         filename = self.dialog.folderEdit_griddeddata.text()
@@ -1091,6 +1092,7 @@ class RainGenerator(object):
         self.StormData = []
         self.Storms = []
         self.StormStartingTimestep = []
+        self.StormCenters = []
 
         for i in range(self.MaxNumberofStorms):
             self.StormTraveledDistance.append(0)
@@ -1105,6 +1107,7 @@ class RainGenerator(object):
             self.StormStartingTimestep.append(0)
             self.StormData.append(0)
             self.Storms.append([])
+            self.StormCenters.append([])
 
         Storm = []
         StormConnectivity = []
@@ -1244,55 +1247,18 @@ class RainGenerator(object):
                             if id == value and id != 0:
                                 currentstormcoordinates.append(self.CellCoordinates[i])
 
-                        for i, id in enumerate(PreviousStormConnectivity):
-                            if id == value and id != 0:
-                                previousstormcoordinates.append(self.CellCoordinates[i])
-
-                        # traveled distance and direction
-                        if value != 0 and (value in PreviousStormConnectivity):
-                            currentstormcenterx = 0
-                            currentstormcentery = 0
-                            for xy in currentstormcoordinates:
-                                currentstormcenterx = currentstormcenterx + xy[0]
-                                currentstormcentery = currentstormcentery + xy[1]
+                        ##################################################
+                        #getting storm center x y
+                        currentstormcenterx = 0
+                        currentstormcentery = 0
+                        for xy in currentstormcoordinates:
+                            currentstormcenterx = currentstormcenterx + xy[0]
+                            currentstormcentery = currentstormcentery + xy[1]
+                        if len(currentstormcoordinates) !=0:
                             currentstormcenterx = currentstormcenterx / len(currentstormcoordinates)
                             currentstormcentery = currentstormcentery / len(currentstormcoordinates)
-
-                            previousstormcenterx = 0
-                            previousstormcentery = 0
-                            for xy in previousstormcoordinates:
-                                previousstormcenterx = previousstormcenterx + xy[0]
-                                previousstormcentery = previousstormcentery + xy[1]
-
-                            if len(previousstormcoordinates) > 0:
-                                previousstormcenterx = previousstormcenterx / len(previousstormcoordinates)
-                                previousstormcentery = previousstormcentery / len(previousstormcoordinates)
-
-                            # both need averaging out
-                            self.StormTraveledDistance[value] = self.StormTraveledDistance[value] + math.sqrt(
-                                (currentstormcenterx - previousstormcenterx) ** 2 + (
-                                        currentstormcentery - previousstormcentery) ** 2)
-                            angle = angle_between([previousstormcenterx, previousstormcentery],
-                                                  [currentstormcenterx, currentstormcentery])
-                            if 0 < angle < 22.5 or 337.5 < angle < 360:
-                                direction = "E"
-                            elif 22.5 <= angle <= 67.5:
-                                direction = "NE"
-                            elif 67.5 <= angle <= 112.5:
-                                direction = "N"
-                            elif 112.5 <= angle <= 157.5:
-                                direction = "NW"
-                            elif 157.5 <= angle <= 202.5:
-                                direction = "W"
-                            elif 202.5 <= angle <= 247.5:
-                                direction = "SW"
-                            elif 247.5 <= angle <= 292.5:
-                                direction = "S"
-                            elif 292.5 <= angle <= 337.5:
-                                direction = "W"
-                            else:
-                                direction = "Not Available"
-                            self.StormDirection[value].append(direction)
+                            self.StormCenters[value].append([currentstormcenterx,currentstormcentery])
+                        ########################################################
 
             PreviousStormConnectivity = StormConnectivity
             Storm = []
@@ -1323,6 +1289,33 @@ class RainGenerator(object):
             self.StormDuration[ID] = len(storm)
             self.StormSize[ID] = stormarea
             self.StormVolume[ID] = stormvolume
+            self.StormTraveledDistance[ID] = math.sqrt((self.StormCenters[ID][len(self.StormCenters[ID])-1][0] - self.StormCenters[ID][0][0]) ** 2 + (self.StormCenters[ID][len(self.StormCenters[ID])-1][1] - self.StormCenters[ID][0][1]) ** 2)
+
+
+            angle = angle_between([self.StormCenters[ID][0][0], self.StormCenters[ID][0][1]],
+                                  [self.StormCenters[ID][len(self.StormCenters[ID])-1][0], self.StormCenters[ID][len(self.StormCenters[ID])-1][1]])
+
+            if 0 < angle < 22.5 or 337.5 < angle < 360:
+                direction = "E"
+            elif 22.5 <= angle <= 67.5:
+                direction = "NE"
+            elif 67.5 <= angle <= 112.5:
+                direction = "N"
+            elif 112.5 <= angle <= 157.5:
+                direction = "NW"
+            elif 157.5 <= angle <= 202.5:
+                direction = "W"
+            elif 202.5 <= angle <= 247.5:
+                direction = "SW"
+            elif 247.5 <= angle <= 292.5:
+                direction = "S"
+            elif 292.5 <= angle <= 337.5:
+                direction = "W"
+            else:
+                direction = "Not Available"
+            self.StormDirection[ID].append(direction)
+
+
 
         # print(self.StormPeakIntensity[:self.StormCount+1],"peak")
         # print(self.StormSize[:self.StormCount+1],"size")
@@ -1335,6 +1328,7 @@ class RainGenerator(object):
         # print(self.StormPeakIntensityLocation, "location")
         # print(self.StormCount,"storm count")
         # print(self.StormStartingLine,"starting line")
+        #print(self.StormCenters,"centers")
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
             self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
@@ -1479,7 +1473,7 @@ class RainGenerator(object):
                 for stormid in list(set(StormConnectivity)):
                     if stormid != 0 and (stormid not in self.StormIDs):
                         self.StormIDs.append(stormid)
-
+                        self.StormStartingTimestep[stormid]=StartingLine - 1
                         # saving which line each storm starts
                         self.StormStartingLine[stormid] = StartingLine - 1
 
