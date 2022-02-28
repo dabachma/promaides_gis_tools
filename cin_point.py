@@ -87,9 +87,9 @@ class PluginDialog(QDialog):
         self.expression_field_names.setExpression("point_name")
         self.expression_field_sectors.setExpression("sec_id")
         self.expression_field_levels.setExpression("sec_level")
-        self.expression_field_thresholds.setExpression("boundary_v")
-        self.expression_field_regulars.setExpression("regular_fl")
-        self.expression_field_recoverys.setExpression("recovery_t")
+        self.expression_field_thresholds.setExpression("threshold")
+        self.expression_field_regulars.setExpression("regular")
+        self.expression_field_recoverys.setExpression("recovery")
         self.expression_field_actives.setExpression("activation")
 
         self.expression_field_names.setLayer(self.input_layer)
