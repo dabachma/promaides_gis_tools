@@ -76,14 +76,21 @@ class PluginDialog(QDialog):
         str_sink = self.comboBox_sink.currentText()
         str_con_type = self.comboBox_conTypes.currentText()
 
-        #Check if there is already a connection 
-        mergeItems = "Source: "+ self.comboBox_source.currentText() + "; Sink: " + self.comboBox_sink.currentText() + ";"      
-
-        if not self.listWidget_pairs.findItems(mergeItems, Qt.MatchExactly | Qt.MatchRecursive):
-            self.list_of_pairs.append([str_source, str_sink, pair_index, str_con_type])
-            self.listWidget_pairs.addItem(mergeItems) 
+        if str_source != str_sink:
+            verification = True
         else:
-            self.iface.messageBar().pushMessage("Info", "Connection already exists")
+            verification = False
+            self.iface.messageBar().pushMessage("Info", "The incoming (first) CI-structure is the same as the outgoing CI-structure (second)")
+        
+        #Check if there is already a connection            
+        if verification:
+            mergeItems = "Source: "+ self.comboBox_source.currentText() + "; Sink: " + self.comboBox_sink.currentText() + ";"
+            
+            if not self.listWidget_pairs.findItems(mergeItems, Qt.MatchExactly | Qt.MatchRecursive):
+                self.list_of_pairs.append([str_source, str_sink, pair_index, str_con_type])
+                self.listWidget_pairs.addItem(mergeItems) 
+            else:
+                self.iface.messageBar().pushMessage("Info", "Connection already exists")
 
     def remove_pair(self):
         del self.list_of_pairs[self.listWidget_pairs.currentRow()]
