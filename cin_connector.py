@@ -6,6 +6,7 @@ from qgis.core import *
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt import uic
+from qgis.gui import QgsMessageBar
 
 # promaides modules
 from .interpolate import RasterInterpolator
@@ -75,8 +76,14 @@ class PluginDialog(QDialog):
         str_sink = self.comboBox_sink.currentText()
         str_con_type = self.comboBox_conTypes.currentText()
 
-        self.list_of_pairs.append([str_source, str_sink, pair_index, str_con_type])
-        self.listWidget_pairs.addItem("Source: "+ self.comboBox_source.currentText() + "; Sink: " + self.comboBox_sink.currentText() + ";")
+        #Check if there is already a connection 
+        mergeItems = "Source: "+ self.comboBox_source.currentText() + "; Sink: " + self.comboBox_sink.currentText() + ";"      
+
+        if not self.listWidget_pairs.findItems(mergeItems, Qt.MatchExactly | Qt.MatchRecursive):
+            self.list_of_pairs.append([str_source, str_sink, pair_index, str_con_type])
+            self.listWidget_pairs.addItem(mergeItems) 
+        else:
+            self.iface.messageBar().pushMessage("Info", "Connection already exists")
 
     def remove_pair(self):
         del self.list_of_pairs[self.listWidget_pairs.currentRow()]
