@@ -6,6 +6,7 @@ from qgis.core import *
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt import uic
+from qgis.gui import QgsMessageBar
 
 # promaides modules
 from .interpolate import RasterInterpolator
@@ -45,6 +46,8 @@ class PluginDialog(QDialog):
         self.setInputLayer(self.iface.activeLayer())
 
         self.list_of_pairs = []  # multi-dimensional List for the source sink pairs
+        
+        self.HelpButton.clicked.connect(self.Help)
 
     def __del__(self):
         self.iface.currentLayerChanged.disconnect(self.setInputLayer)
@@ -55,14 +58,19 @@ class PluginDialog(QDialog):
         if new_filename != '':
             self.filename_edit.setText(new_filename)
             self.filename_edit.editingFinished.emit()
+            
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-64/DAM-CIN---Connector-Export---Manual")
 
     def add2sourcelist(self):
         for item in self.listWidget_input.selectedItems():
-            self.comboBox_source.addItem(item.text())
+            if self.comboBox_source.findText(item.text(), Qt.MatchExactly | Qt.MatchRecursive) == -1:
+                self.comboBox_source.addItem(item.text())
 
     def add2sinklist(self):
         for item in self.listWidget_input.selectedItems():
-            self.comboBox_sink.addItem(item.text())
+            if self.comboBox_sink.findText(item.text(), Qt.MatchExactly | Qt.MatchRecursive) == -1:
+                self.comboBox_sink.addItem(item.text())
 
     def merge2pair(self):
         pair_index = self.listWidget_pairs.count()
@@ -70,8 +78,21 @@ class PluginDialog(QDialog):
         str_sink = self.comboBox_sink.currentText()
         str_con_type = self.comboBox_conTypes.currentText()
 
-        self.list_of_pairs.append([str_source, str_sink, pair_index, str_con_type])
-        self.listWidget_pairs.addItem("Source: "+ self.comboBox_source.currentText() + "; Sink: " + self.comboBox_sink.currentText() + ";")
+        if str_source != str_sink:
+            verification = True
+        else:
+            verification = False
+            self.iface.messageBar().pushMessage("Info", "The incoming (first) CI-structure is the same as the outgoing CI-structure (second)")
+        
+        #Check if there is already a connection            
+        if verification:
+            mergeItems = "Source: "+ self.comboBox_source.currentText() + "; Sink: " + self.comboBox_sink.currentText() + ";"
+            
+            if not self.listWidget_pairs.findItems(mergeItems, Qt.MatchExactly | Qt.MatchRecursive):
+                self.list_of_pairs.append([str_source, str_sink, pair_index, str_con_type])
+                self.listWidget_pairs.addItem(mergeItems) 
+            else:
+                self.iface.messageBar().pushMessage("Info", "Connection already exists")
 
     def remove_pair(self):
         del self.list_of_pairs[self.listWidget_pairs.currentRow()]

@@ -39,6 +39,8 @@ class PluginDialog(QDialog):
 
         self.browse_button.clicked.connect(self.onBrowseButtonClicked)
         self.button_box.rejected.connect(self.reject)
+        
+        self.HelpButton.clicked.connect(self.Help)
 
     def __del__(self):
         print("__del__")
@@ -59,7 +61,8 @@ class PluginDialog(QDialog):
             self.filename_edit.setText(new_filename)
             self.filename_edit.editingFinished.emit()
 
-
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-66/DAM-CIN---Connector-Export---Automatic")    
 
 class CINConnectorExportAuto(object):
 
