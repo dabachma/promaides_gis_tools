@@ -45,6 +45,9 @@ class PluginDialog(QDialog):
         self.setInputLayer(self.iface.activeLayer())
 
         self.list_of_pairs = []  # multi-dimensional List for the source sink pairs
+        
+        self.HelpButton.clicked.connect(self.Help)
+
 
     def __del__(self):
         self.iface.currentLayerChanged.disconnect(self.setInputLayer)
@@ -55,7 +58,10 @@ class PluginDialog(QDialog):
         if new_filename != '':
             self.filename_edit.setText(new_filename)
             self.filename_edit.editingFinished.emit()
-
+            
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-64/DAM-CIN---Connector-Export---Manual")
+         
     def add2sourcelist(self):
         for item in self.listWidget_input.selectedItems():
             self.comboBox_source.addItem(item.text())
