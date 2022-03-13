@@ -34,6 +34,8 @@ class PluginDialog(QDialog):
         self.iface.currentLayerChanged.connect(self.setInputLayer)
 
         self.setInputLayer(self.iface.activeLayer())
+        
+        self.HelpButton.clicked.connect(self.Help)
 
     def __del__(self):
         self.iface.currentLayerChanged.disconnect(self.setInputLayer)
@@ -44,7 +46,10 @@ class PluginDialog(QDialog):
         if new_filename != '':
             self.filename_edit.setText(new_filename)
             self.filename_edit.editingFinished.emit()
-
+   
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-67/DAM-CIN---Polygon-Export")     
+    
     def setInputLayer(self, layer):
         """
         """
