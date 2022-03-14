@@ -11,6 +11,9 @@ from qgis.PyQt import uic
 from .interpolate import RasterInterpolator
 from .environment import get_ui_path
 
+# system modules
+import webbrowser
+
 #general
 from datetime import datetime
 from .version import *
