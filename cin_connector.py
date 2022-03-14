@@ -65,11 +65,13 @@ class PluginDialog(QDialog):
          
     def add2sourcelist(self):
         for item in self.listWidget_input.selectedItems():
-            self.comboBox_source.addItem(item.text())
+            if self.comboBox_source.findText(item.text(), Qt.MatchExactly | Qt.MatchRecursive) == -1:
+                self.comboBox_source.addItem(item.text())
 
     def add2sinklist(self):
         for item in self.listWidget_input.selectedItems():
-            self.comboBox_sink.addItem(item.text())
+            if self.comboBox_sink.findText(item.text(), Qt.MatchExactly | Qt.MatchRecursive) == -1:
+                self.comboBox_sink.addItem(item.text())
 
     def merge2pair(self):
         pair_index = self.listWidget_pairs.count()
