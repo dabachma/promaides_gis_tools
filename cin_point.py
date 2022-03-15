@@ -157,8 +157,160 @@ class CINPointExport(object):
         self.dialog = None
         self.act.setEnabled(True)
         self.cancel = False
+        
+    def verificationInput(self):      
+        layer = self.iface.activeLayer()
+        field_names = layer.fields().names()
+        idx = layer.featureCount()
+        
+        ids_field = self.dialog.expression_field_ids.currentText()       
+        names_field = self.dialog.expression_field_names.currentText()
+        sectors_field = self.dialog.expression_field_sectors.currentText()
+        levels_field = self.dialog.expression_field_levels.currentText()
+        thresholds_field = self.dialog.expression_field_thresholds.currentText()
+        regular_field = self.dialog.expression_field_regulars.currentText()
+        recoverys_field = self.dialog.expression_field_recoverys.currentText()
+        actives_field = self.dialog.expression_field_actives.currentText()
 
-    def execTool(self):
+        try:
+            ids_pos = field_names.index(ids_field)
+        except:
+            self.iface.messageBar().pushCritical("CIN Point Export","Field ID has no input")
+            self.quitDialog()
+            return False
+        
+        try:
+            name_pos = field_names.index(names_field)                
+        except:
+            self.iface.messageBar().pushCritical("CIN Point Export","Field Name has no input")
+            self.quitDialog()
+            return False
+       
+        try:
+            sector_pos = field_names.index(sectors_field)
+        except:
+            self.iface.messageBar().pushCritical("CIN Point Export","Field Sector has no input")
+            self.quitDialog()
+            return False
+        
+        try:              
+            levels_pos = field_names.index(levels_field)
+        except:
+            self.iface.messageBar().pushCritical("CIN Point Export","Field Level has no input")
+            self.quitDialog()
+            return False
+        
+        try:    
+            thresholds_pos = field_names.index(thresholds_field)
+        except:
+            self.iface.messageBar().pushCritical("CIN Point Export","Field Threshold has no input")
+            self.quitDialog()
+            return False
+        
+        try:
+            regular_pos =field_names.index(regular_field)
+        except:
+            self.iface.messageBar().pushCritical("CIN Point Export","Field Regular has no input")
+            self.quitDialog()
+            return False    
+        
+        try:
+            recoverys_pos = field_names.index(recoverys_field)
+        except:
+            self.iface.messageBar().pushCritical("CIN Point Export","Field Recovery Time has no input")
+            self.quitDialog()
+            return False   
+        
+        try:
+            actives_pos = field_names.index(actives_field)
+        except:
+            self.iface.messageBar().pushCritical("CIN Point Export","Field Activation Time has no input")
+            self.quitDialog()
+            return False
+
+        for i in range(0 , idx):
+            attrs = layer.getFeature(i)
+
+            if attrs[ids_pos] == NULL:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'ID input of "{}" is NULL'.format(attrs[name_pos]))
+                self.quitDialog()
+                return False
+
+            if attrs[name_pos] == NULL:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Name input of ID "{}" is NULL'.format(attrs[ids_pos]))
+                self.quitDialog()
+                return False
+
+            if not isinstance(attrs[sector_pos], int):
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Sector input of "{}" is not an integer'.format(attrs[name_pos]))              
+                self.quitDialog()
+                return False
+            
+            if 1 <= attrs[sector_pos] <= 4 or 10 <= attrs[sector_pos] <= 19:
+                pass
+            else:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Sector input of "{}" is not a valid sector'.format(attrs[name_pos]))
+                self.quitDialog()
+                return False
+            
+            if attrs[levels_pos] == NULL:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Level input of "{}" is NULL'.format(attrs[name_pos]))
+                self.quitDialog()
+                return False
+            
+            if attrs[thresholds_pos] == NULL:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Threshold input of "{}" is NULL'.format(attrs[name_pos]))
+                self.quitDialog()
+                return False
+
+            if attrs[regular_pos] == NULL:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Regular input of "{}" is NULL'.format(attrs[name_pos]))
+                self.quitDialog()
+                return False          
+
+            if str(attrs[regular_pos]).lower() == "true" or str(attrs[regular_pos]).lower() == "false":
+                pass
+            else:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Regular input of "{}" must be true or false'.format(attrs[name_pos]))
+                self.quitDialog()
+                return False
+
+            if attrs[recoverys_pos] == NULL:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Recovery Time input of "{}" is NULL'.format(attrs[name_pos]))
+                self.quitDialog()
+                return False
+
+            if attrs[actives_pos] == NULL:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Activation Time input of "{}" is NULL'.format(attrs[name_pos]))
+                self.quitDialog()
+                return False
+        return True
+
+     def execTool(self):
+        if not self.verificationInput(): 
+            self.quitDialog()
+            return
+        
         filename = self.dialog.filename_edit.text()
         if not filename:
             self.iface.messageBar().pushCritical(
