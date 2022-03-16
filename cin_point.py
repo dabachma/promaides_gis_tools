@@ -306,7 +306,7 @@ class CINPointExport(object):
                 return False
         return True
 
-     def execTool(self):
+    def execTool(self):
         if not self.verificationInput(): 
             self.quitDialog()
             return
