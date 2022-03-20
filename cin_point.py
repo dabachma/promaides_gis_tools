@@ -162,6 +162,8 @@ class CINPointExport(object):
         layer = self.iface.activeLayer()
         field_names = layer.fields().names()
         idx = layer.featureCount()
+        ListIDs = []
+        ListNames = []
         
         ids_field = self.dialog.expression_field_ids.currentText()       
         names_field = self.dialog.expression_field_names.currentText()
@@ -227,10 +229,23 @@ class CINPointExport(object):
             self.iface.messageBar().pushCritical("CIN Point Export","Field Activation Time has no input")
             self.quitDialog()
             return False
-
+        
+        for x in range(0 , idx):
+            attrs = layer.getFeature(x)
+            ListIDs.append(attrs[ids_pos])
+            ListNames.append(attrs[name_pos])
+        
         for i in range(0 , idx):
             attrs = layer.getFeature(i)
-
+            
+            #ID controll
+            if attrs[ids_pos] == NULL and attrs[name_pos] == NULL:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'There is a point without name and id')
+                self.quitDialog()
+                return False
+            
             if attrs[ids_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
@@ -238,21 +253,51 @@ class CINPointExport(object):
                 self.quitDialog()
                 return False
 
+            if not isinstance(attrs[ids_pos], int):
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'ID input "{}" of "{}" is not a valid input (Required typ: Integer)'.format(attrs[ids_pos],attrs[name_pos]))              
+                self.quitDialog()
+                return False
+
+            if ListIDs.count(attrs[ids_pos]) > 1:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'ID "{}" occurs multiple times'.format(attrs[ids_pos]))              
+                self.quitDialog()
+                return False 
+
+            #name controll
             if attrs[name_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
                     'Name input of ID "{}" is NULL'.format(attrs[ids_pos]))
                 self.quitDialog()
                 return False
+            
+            if not isinstance(attrs[name_pos], str):
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Name input "{}" of ID "{}" is not a valid input (Required typ: String) '.format(attrs[name_pos], attrs[ids_pos]))
+                self.quitDialog()
+                return False
 
+            if ListNames.count(attrs[name_pos]) > 1:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Name "{}" occurs multiple times'.format(attrs[name_pos]))              
+                self.quitDialog()
+                return False 
+            
+            #sector controll
             if not isinstance(attrs[sector_pos], int):
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
-                    'Sector input of "{}" is not an integer'.format(attrs[name_pos]))              
+                    'Sector input "{}" of "{}" is not a valid input (Required typ: Integer)'.format(attrs[sector_pos],attrs[name_pos]))              
                 self.quitDialog()
                 return False
             
-            if 1 <= attrs[sector_pos] <= 4 or 10 <= attrs[sector_pos] <= 19:
+            if 1 <= attrs[sector_pos] <= 4 or 10 <= attrs[sector_pos] <= 18:
                 pass
             else:
                 self.iface.messageBar().pushCritical(
@@ -261,6 +306,7 @@ class CINPointExport(object):
                 self.quitDialog()
                 return False
             
+            #level controll
             if attrs[levels_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
@@ -268,6 +314,14 @@ class CINPointExport(object):
                 self.quitDialog()
                 return False
             
+            if not isinstance(attrs[levels_pos], int):
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Level input "{}" of "{}" is not a valid input (Required typ: Integer)'.format(attrs[levels_pos],attrs[name_pos]))              
+                self.quitDialog()
+                return False
+            
+            #thresholds controll
             if attrs[thresholds_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
@@ -275,12 +329,27 @@ class CINPointExport(object):
                 self.quitDialog()
                 return False
 
+            if not isinstance(attrs[thresholds_pos], float):
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Threshold input "{}" of "{}" is not a valid input (Required typ: Double)'.format(attrs[thresholds_pos],attrs[name_pos]))              
+                self.quitDialog()
+                return False
+            
+            #regular controll
             if attrs[regular_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
                     'Regular input of "{}" is NULL'.format(attrs[name_pos]))
                 self.quitDialog()
-                return False          
+                return False     
+
+            if not isinstance(attrs[regular_pos], str):
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Regulat input "{}" of "{}" is not a valid input (Required typ: String)'.format(attrs[regular_pos],attrs[name_pos]))              
+                self.quitDialog()
+                return False     
 
             if str(attrs[regular_pos]).lower() == "true" or str(attrs[regular_pos]).lower() == "false":
                 pass
@@ -290,7 +359,8 @@ class CINPointExport(object):
                     'Regular input of "{}" must be true or false'.format(attrs[name_pos]))
                 self.quitDialog()
                 return False
-
+            
+            #recovery time controll
             if attrs[recoverys_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
@@ -298,10 +368,25 @@ class CINPointExport(object):
                 self.quitDialog()
                 return False
 
+            if not isinstance(attrs[recoverys_pos], float):
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Recovery Time input "{}" of "{}" is not a valid input (Required typ: Double)'.format(attrs[recoverys_pos],attrs[name_pos]))              
+                self.quitDialog()
+                return False                
+            
+            #activation time controll
             if attrs[actives_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
                     'Activation Time input of "{}" is NULL'.format(attrs[name_pos]))
+                self.quitDialog()
+                return False
+
+            if not isinstance(attrs[actives_pos], float):
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Activation Time input "{}" of "{}" is not a valid input (Required typ: Double)'.format(attrs[actives_pos],attrs[name_pos]))              
                 self.quitDialog()
                 return False
         return True
