@@ -30,63 +30,68 @@ UI_PATH = get_ui_path('ui_time_viewer.ui')
 class PluginDialog(QDockWidget):
     
     ClosingSignal = pyqtSignal()
+    try:
+        def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
+            QDockWidget.__init__(self, parent, flags)
+            uic.loadUi(UI_PATH, self)
 
-    def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
-        QDockWidget.__init__(self, parent, flags)
-        uic.loadUi(UI_PATH, self)
+            self.iface = iface
 
-        self.iface = iface
+            #self.InputLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
+            self.InputLayerBox.setLayer(None)
+            self.InputLayerBox.layerChanged.connect(self.UpdateFrameID)
+            self.FieldIDBox.fieldChanged.connect(self.UpdateProcessButton)
+            self.TimeSlider.valueChanged.connect(self.SliderUpdated)
 
-        #self.InputLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
-        self.InputLayerBox.setLayer(None)
-        self.InputLayerBox.layerChanged.connect(self.UpdateFrameID)
-        self.FieldIDBox.fieldChanged.connect(self.UpdateProcessButton)
-        self.TimeSlider.valueChanged.connect(self.SliderUpdated)
+            #reads if the plugin was open or not
+            s = QgsSettings()
+            pluginstatus = s.value("TimeViewer", "default text")
+            if pluginstatus=="open":
+                QTimer.singleShot(1000, self.ReadSettings)
 
-        #reads if the plugin was open or not
-        s = QgsSettings()
-        pluginstatus = s.value("TimeViewer", "default text")
-        if pluginstatus=="open":
-            QTimer.singleShot(1000, self.ReadSettings)
-
-        #sets the plugin status to open
-        s.setValue("TimeViewer", "open")
+            #sets the plugin status to open
+            s.setValue("TimeViewer", "open")
 
 
-        self.SaveBox.addItem('PNG')
-        self.SaveBox.addItem('JPEG')
+            self.SaveBox.addItem('PNG')
+            self.SaveBox.addItem('JPEG')
 
-        self.Displayer.setText("Hello!")
-            
+            self.Displayer.setText("Hello!")
 
-        self.SaveBox.setEnabled(False)
-        self.folderEdit.setEnabled(False)
-        self.browseButton.setEnabled(False)
-        self.PlayButton.setEnabled(False)
-        self.PauseButton.setEnabled(False)
-        self.StopButton.setEnabled(False)
-        self.PreviousButton.setEnabled(False)
-        self.NextButton.setEnabled(False)
-        self.TimeSlider.setEnabled(False)
-        self.ProcessButton.setEnabled(False)
-        self.ExportVideoButton.setEnabled(False)
 
-        self.AddButton.clicked.connect(self.AddLayer)
-        self.RemoveButton.clicked.connect(self.RemoveLayer)
+            self.SaveBox.setEnabled(False)
+            self.folderEdit.setEnabled(False)
+            self.browseButton.setEnabled(False)
+            self.PlayButton.setEnabled(False)
+            self.PauseButton.setEnabled(False)
+            self.StopButton.setEnabled(False)
+            self.PreviousButton.setEnabled(False)
+            self.NextButton.setEnabled(False)
+            self.TimeSlider.setEnabled(False)
+            self.ProcessButton.setEnabled(False)
+            self.ExportVideoButton.setEnabled(False)
 
-        self.PlayButton.clicked.connect(self.play1)
-        self.NextButton.clicked.connect(self.Next)
-        self.PreviousButton.clicked.connect(self.Previous)
-        self.ProcessButton.clicked.connect(self.WriteProcessing)
-        self.PauseButton.clicked.connect(self.PausePlay)
-        self.StopButton.clicked.connect(self.StopPlay)
-        self.browseButton.clicked.connect(self.onBrowseButtonClicked)
-        self.SaveFrameBox.stateChanged.connect(self.saveframeclicked)
-        self.ExportVideoButton.clicked.connect(self.OpenVideoExportDialog)
-        self.SavePreferenceButton.clicked.connect(self.SaveSettings)
-        self.RestorePreferenceButton.clicked.connect(self.ReadSettings)
-        self.HelpButton.clicked.connect(self.Help)
-        self.browseButton.setAutoDefault(False)
+            self.AddButton.clicked.connect(self.AddLayer)
+            self.RemoveButton.clicked.connect(self.RemoveLayer)
+
+            self.PlayButton.clicked.connect(self.play1)
+            self.NextButton.clicked.connect(self.Next)
+            self.PreviousButton.clicked.connect(self.Previous)
+            self.ProcessButton.clicked.connect(self.WriteProcessing)
+            self.PauseButton.clicked.connect(self.PausePlay)
+            self.StopButton.clicked.connect(self.StopPlay)
+            self.browseButton.clicked.connect(self.onBrowseButtonClicked)
+            self.SaveFrameBox.stateChanged.connect(self.saveframeclicked)
+            self.ExportVideoButton.clicked.connect(self.OpenVideoExportDialog)
+            self.SavePreferenceButton.clicked.connect(self.SaveSettings)
+            self.RestorePreferenceButton.clicked.connect(self.ReadSettings)
+            self.HelpButton.clicked.connect(self.Help)
+            self.browseButton.setAutoDefault(False)
+    except:
+        self.iface.messageBar().pushCritical(
+            'Time Viewer',
+            'An error has occured, please visit https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-72/Python-Error'
+        )
 
     def saveframeclicked(state):
         if state > 0:
