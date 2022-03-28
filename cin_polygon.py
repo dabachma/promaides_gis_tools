@@ -87,9 +87,9 @@ class PluginDialog(QDialog):
                                          'Please select a polygon layer.</i>'
                                          .format(layer_name))
 
-        self.expression_field_names.setExpression("polygon_na")
-        self.expression_field_ids.setExpression("polygon_id")
-        self.expression_field_sectors.setExpression("sec_id")
+        self.expression_field_names.setExpression("name")
+        self.expression_field_ids.setExpression("id")
+        self.expression_field_sectors.setExpression("sector_id")
         self.expression_field_endusers.setExpression("end_user")
 
 
@@ -150,7 +150,128 @@ class CINPolygonExport(object):
         self.act.setEnabled(True)
         self.cancel = False
 
+    def verificationInput(self):
+        layer = self.iface.activeLayer()
+        field_names = layer.fields().names()
+        idx = layer.featureCount()
+        ListIDs = []
+        ListNames = []
+        
+        ids_field = self.dialog.expression_field_ids.currentText()       
+        names_field = self.dialog.expression_field_names.currentText()
+        sectors_field = self.dialog.expression_field_sectors.currentText()
+        endusers_field = self.dialog.expression_field_endusers.currentText()
+        
+        try:
+            ids_pos = field_names.index(ids_field)
+        except:
+            self.iface.messageBar().pushCritical("CIN Point Export","Field ID has no input")
+            return False
+        
+        try:
+            name_pos = field_names.index(names_field)                
+        except:
+            self.iface.messageBar().pushCritical("CIN Point Export","Field Name has no input")
+            return False
+       
+        try:
+            sector_pos = field_names.index(sectors_field)
+        except:
+            self.iface.messageBar().pushCritical("CIN Point Export","Field Sector has no input")
+            return False
+        
+        try:              
+            endusers_pos = field_names.index(endusers_field)
+        except:
+            self.iface.messageBar().pushCritical("CIN Point Export","Field End Users has no input")
+            return False
+        
+        for x in range(0 , idx):
+            attrs = layer.getFeature(x)
+            ListIDs.append(attrs[ids_pos])
+            ListNames.append(attrs[name_pos])
+
+        for i in range(0 , idx):
+            attrs = layer.getFeature(i)
+            
+            #ID controll
+            if attrs[ids_pos] == NULL and attrs[name_pos] == NULL:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'There is a point without name and id')
+                return False
+            
+            if attrs[ids_pos] == NULL:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'ID input of "{}" is NULL'.format(attrs[name_pos]))
+                return False
+
+            if not isinstance(attrs[ids_pos], int):
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'ID input "{}" of "{}" is not a valid input (Required typ: Integer)'.format(attrs[ids_pos],attrs[name_pos]))              
+                return False
+
+            if ListIDs.count(attrs[ids_pos]) > 1:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'ID "{}" occurs multiple times'.format(attrs[ids_pos]))              
+                return False 
+
+            #name controll
+            if attrs[name_pos] == NULL:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Name input of ID "{}" is NULL'.format(attrs[ids_pos]))
+                return False
+            
+            if not isinstance(attrs[name_pos], str):
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Name input "{}" of ID "{}" is not a valid input (Required typ: String) '.format(attrs[name_pos], attrs[ids_pos]))
+                return False
+
+            if ListNames.count(attrs[name_pos]) > 1:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Name "{}" occurs multiple times'.format(attrs[name_pos]))              
+                return False 
+            
+            #sector controll
+            if not isinstance(attrs[sector_pos], int):
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Sector input "{}" of "{}" is not a valid input (Required typ: Integer)'.format(attrs[sector_pos],attrs[name_pos]))              
+                return False
+            
+            if 1 <= attrs[sector_pos] <= 4 or 10 <= attrs[sector_pos] <= 18:
+                pass
+            else:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'Sector input of "{}" is not a valid sector'.format(attrs[name_pos]))
+                return False
+            
+            #end user controll
+            if attrs[endusers_pos] == NULL:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'End User input of "{}" is NULL'.format(attrs[name_pos]))
+                return False
+            
+            if not isinstance(attrs[endusers_pos], float):
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    'End User input "{}" of "{}" is not a valid input (Required typ: Double)'.format(attrs[endusers_pos],attrs[name_pos]))              
+                return False
+        return True
+
     def execTool(self):
+        if not self.verificationInput(): 
+            self.quitDialog()
+            return
+
         filename = self.dialog.filename_edit.text()
         if not filename:
             self.iface.messageBar().pushCritical(
