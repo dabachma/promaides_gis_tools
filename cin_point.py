@@ -83,14 +83,14 @@ class PluginDialog(QDialog):
                                          'Please select a polypoint layer.</i>'
                                          .format(layer_name))
 
-        self.expression_field_ids.setExpression("point_id")
-        self.expression_field_names.setExpression("point_name")
+        self.expression_field_ids.setExpression("id")
+        self.expression_field_names.setExpression("name")
         self.expression_field_sectors.setExpression("sec_id")
         self.expression_field_levels.setExpression("sec_level")
         self.expression_field_thresholds.setExpression("threshold")
         self.expression_field_regulars.setExpression("regular")
         self.expression_field_recoverys.setExpression("recovery")
-        self.expression_field_actives.setExpression("activation")
+        self.expression_field_actives.setExpression("active")
 
         self.expression_field_names.setLayer(self.input_layer)
         self.expression_field_ids.setLayer(self.input_layer)
@@ -313,6 +313,13 @@ class CINPointExport(object):
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
                     'Threshold input "{}" of "{}" is not a valid input (Required typ: Double)'.format(attrs[thresholds_pos],attrs[name_pos]))              
+                return False
+
+            if -9999 < attrs[thresholds_pos] <= 0:
+                self.iface.messageBar().pushCritical(
+                    'CIN Point Export',
+                    f'Threshold of "{attrs[name_pos]}" must be either -9999 or >0 '
+                )
                 return False
             
             #regular controll
