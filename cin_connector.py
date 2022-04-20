@@ -81,28 +81,35 @@ class PluginDialog(QDialog):
         str_source = self.comboBox_source.currentText()
         str_sink = self.comboBox_sink.currentText()
         str_con_type = self.comboBox_conTypes.currentText()
-
-        if str_source != str_sink:
-            mergeItems = "Source: "+ self.comboBox_source.currentText() + "; Sink: " + self.comboBox_sink.currentText() + ";"
-            
-            if not self.listWidget_pairs.findItems(mergeItems, Qt.MatchExactly | Qt.MatchRecursive):
-                self.list_of_pairs.append([str_source, str_sink, pair_index, str_con_type])
-                self.listWidget_pairs.addItem(mergeItems) 
-            else:
-                self.iface.messageBar().pushMessage("Info", "Connection already exists")
-        else: 
-            self.iface.messageBar().pushMessage("Info", "The incoming (first) CI-structure is the same as the outgoing CI-structure (second)")                           
+        
+        if str_source != "" and str_sink != "": 
+            if str_source != str_sink:
+                mergeItems = "Source: "+ self.comboBox_source.currentText() + "; Sink: " + self.comboBox_sink.currentText() + ";"
+                
+                if not self.listWidget_pairs.findItems(mergeItems, Qt.MatchExactly | Qt.MatchRecursive):
+                    self.list_of_pairs.append([str_source, str_sink, pair_index, str_con_type])
+                    self.listWidget_pairs.addItem(mergeItems) 
+                else:
+                    self.iface.messageBar().pushMessage("Info", "Connection already exists")
+            else: 
+                self.iface.messageBar().pushMessage("Info", "The incoming (first) CI-structure is the same as the outgoing CI-structure (second)")                           
 
     def remove_pair(self):
-        del self.list_of_pairs[self.listWidget_pairs.currentRow()]
-        self.listWidget_pairs.takeItem(self.listWidget_pairs.currentRow())
+        for item in self.listWidget_pairs.selectedItems():
+            row = self.listWidget_pairs.row(item)
+            del self.list_of_pairs[row]
+            self.listWidget_pairs.takeItem(row)            
+        
+            # del self.list_of_pairs[self.listWidget_pairs.currentRow()]
+            # self.listWidget_pairs.takeItem(self.listWidget_pairs.currentRow())
+
 
     def setInputLayer(self, layer):
         self.list_of_input = []
         if not layer:
             self.input_layer = None
             self.input_label.setText('<i>No layer selected.<br>'
-                                     'Please select a merged CI point layer.</i>')
+                                    'Please select a merged CI point layer.</i>')
         else:
             layer_name = layer.name()
 
@@ -110,35 +117,25 @@ class PluginDialog(QDialog):
 
                 if layer.geometryType() == QgsWkbTypes.PointGeometry:
                     self.input_layer = layer
-                    field_names = ["name", "id", "sec_level", "sec_id", "final_flag",
-                                         "boundary_value"]
-                    for field_name in field_names:
+                    if self.verificationInput(layer):
+                        for feature in layer.getFeatures():
+                            self.listWidget_input.addItem(feature["name"])
+                            self.list_of_input.append([feature["name"], feature["id"]])
 
-                        field_index = layer.fields().indexFromName(field_name)
-
-                        if field_index == -1:
-                            self.input_label.setText('<i>Selected layer "{}" is missing attributes.<br>'
-                                                     'Please add the field {} or rename an existing field.</i>'
-                                                     .format(layer_name, field_name))
-
-                    for feature in layer.getFeatures():
-                        self.listWidget_input.addItem(feature["name"])
-                        self.list_of_input.append([feature["name"], feature["id"]])
-
-                        if layer.featureCount():
-                            self.input_label.setText('<i>Input layer is "{}" with {} feature(s). </i>'
-                                                     .format(layer_name, layer.featureCount()))
+                            if layer.featureCount():
+                                self.input_label.setText('<i>Input layer is "{}" with {} feature(s). </i>'
+                                                        .format(layer_name, layer.featureCount()))
 
                 else:
                     self.input_layer = None
                     self.input_label.setText('<i>Selected layer "{}" is not a point layer.<br>'
-                                             'Please select a polypoint layer.</i>'
-                                             .format(layer_name))
+                                            'Please select a polypoint layer.</i>'
+                                            .format(layer_name))
             else:
                 self.input_layer = None
                 self.input_label.setText('<i>Selected layer "{}" is not a vector layer.<br>'
-                                         'Please select a polypoint layer.</i>'
-                                         .format(layer_name))
+                                        'Please select a polypoint layer.</i>'
+                                        .format(layer_name))
         #  Critical Infrastructure Objects in Input Layers
         #  self.listWidget_input.currentRowChanged.connect(self.updateRasterPropertiesGroup) #  listWidget_input
         self.addButton_2source.setEnabled(True)#  addButton_2source
@@ -152,6 +149,71 @@ class PluginDialog(QDialog):
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
         else:
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+
+    def verificationInput(self, layer):
+        field_names = ["name", "id", "sec_level", "sec_id"] #"final_flag",
+                                            #"boundary_value"]
+        
+        point_dict = {"ID":[], "Name":[]}
+
+        for field_name in field_names:
+
+            field_index = layer.fields().indexOf(field_name)
+            if field_index == -1:
+                self.input_label.setText('<i>Selected layer "{}" is missing attributes.<br>'
+                                        'Please add the field {} or rename an existing field.</i>'
+                                        .format(layer.name(), field_name))
+                return False
+            
+        pos_id = layer.fields().indexOf("id")
+        pos_name = layer.fields().indexOf("name")
+
+        for feature in self.input_layer.getFeatures():
+            point_dict['ID'].append(feature[pos_id])
+            point_dict['Name'].append(feature[pos_name])
+
+            if feature[pos_id] == NULL and feature[pos_name] == NULL:
+                self.input_label.setText('<i>Selected layer "{}" is missing features.<br>'
+                                        'There is a point without a name and id.</i>'
+                                        .format(layer.name()))
+                return False    
+            #ID controll
+            if feature[pos_id] == NULL:
+                self.input_label.setText('<i>Selected layer "{}" is missing feature.<br>'
+                                        'ID input of "{}" is NULL</i>'
+                                        .format(layer.name(), feature[pos_name]))
+                return False    
+            
+            if not isinstance(feature[pos_id], int):
+                self.input_label.setText('<i>Selected layer "{}" has an incorrect input.<br>'
+                                        'ID input "{}" of "{}" is not a valid input (Required typ: Integer)</i>'
+                                        .format(layer.name(), feature[pos_id], feature[pos_name]))
+                return False  
+
+            if point_dict['ID'].count(feature[pos_id]) > 1:
+                self.input_label.setText('<i>Selected layer "{}" has an incorrect input.<br>'
+                                        'ID "{}" occurs multiple times</i>'
+                                        .format(layer.name(), feature[pos_id]))
+                return False
+            #name controll
+            if feature[pos_name] == NULL:
+                self.input_label.setText('<i>Selected layer "{}" is missing feature.<br>'
+                                        'Name input of "{}" is NULL</i>'
+                                        .format(layer.name(), feature[pos_id]))
+                return False    
+            
+            if not isinstance(feature[pos_name], str):
+                self.input_label.setText('<i>Selected layer "{}" has an incorrect input.<br>'
+                                        'Name input "{}" of "{}" is not a valid input (Required typ: String)</i>'
+                                        .format(layer.name(), feature[pos_name], feature[pos_id]))
+                return False  
+
+            if point_dict['Name'].count(feature[pos_name]) > 1:
+                self.input_label.setText('<i>Selected layer "{}" has an incorrect input.<br>'
+                                        'Name "{}" occurs multiple times</i>'
+                                        .format(layer.name(), feature[pos_name]))
+                return False
+        return True
 
 class CINConnectorExport(object):
 
@@ -198,80 +260,82 @@ class CINConnectorExport(object):
         self.dialog.close()
 
     def execTool(self):
-        source_name_write = []
-        sink_name_write = []
-        source_id_write = []
-        sink_id_write = []
+        if len(self.dialog.list_of_pairs) > 0:
+            source_name_write = []
+            sink_name_write = []
+            source_id_write = []
+            sink_id_write = []
 
-        filename = self.dialog.filename_edit.text()
+            filename = self.dialog.filename_edit.text()
 
-        if not filename:
-            self.iface.messageBar().pushCritical(
+            if not filename:
+                self.iface.messageBar().pushCritical(
+                    'CIN Connector Export',
+                    'No output filename given!'
+                )
+                self.quitDialog()
+                return
+
+            progress = QProgressDialog('Exporting connectors ...', 'Abort', 0, len(self.dialog.list_of_pairs), self.iface.mainWindow())
+            progress.setWindowTitle('CIN Connector Export')
+            progress.canceled.connect(self.scheduleAbort)
+            progress.show()
+
+            # iterate over polyline features
+            with open(filename, 'w+') as connector_file:
+
+                connector_file.write('########################################################################\n')
+                connector_file.write('# This file was automatically generated by "Connector Export for ProMaiDes CIN module'
+                                            'Export-QGIS-Plugin Version {version_1} \n'.format(version_1=VERSION))
+                #date and time output
+                now = datetime.now()
+                dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+                connector_file.write('# Generated at {dt_string_1} '.format(dt_string_1=dt_string))
+                connector_file.write('from layer {filename_1} \n'.format(filename_1=self.dialog.input_layer.sourceName()))
+                connector_file.write('# Comments are marked with #\n')
+                connector_file.write('# There are three CI-elements:\n')
+                connector_file.write('# 1. Points; as in this file)\n')
+                connector_file.write('# 2. Connectors; linking Points with each other, multiple connectors in '
+                                            'several directions are possible) \n')
+                connector_file.write('# 3. Polygons; mostly final elements\n')
+                connector_file.write('#\n')
+                connector_file.write('# Explanation of data:\n')
+                connector_file.write('#  Start the CI-connectors with !BEGIN and end it with !END; in between are:\n')
+                connector_file.write('#  NumberOfPoints\n')
+                connector_file.write('#  id(unique) id_from_CI_element type(point_polygon)  id_to_CI_element type(point_polygon)')
+                connector_file.write('#\n')
+                connector_file.write('########################################################################\n')
+                connector_file.write('!BEGIN\n')
+                connector_file.write('{number} #Number of CI Connectors \n'.format(number=len(self.dialog.list_of_pairs)))
+
+                for x1 in range(len(self.dialog.list_of_pairs)):
+                    pair_index = x1
+                    for x2 in range(len(self.dialog.list_of_input)):
+
+                        if self.dialog.list_of_pairs[x1][0] == self.dialog.list_of_input[x2][0]:
+                            source_name_write = self.dialog.list_of_input[x2][0]
+                            source_id_write = self.dialog.list_of_input[x2][1]
+                        if self.dialog.list_of_pairs[x1][1] == self.dialog.list_of_input[x2][0]:
+                            sink_name_write = self.dialog.list_of_input[x2][0]
+                            sink_id_write = self.dialog.list_of_input[x2][1]
+
+                    connector_file.write('  {a} {b} point {c} point # Source: {d}; Sink: {e}\n'.format
+                                            (a=pair_index, b=source_id_write, c=sink_id_write, d=str(source_name_write),
+                                            e=str(sink_name_write), ))
+
+                    if self.cancel:
+                        break
+                connector_file.write('!END\n\n')
+                connector_file.close()
+
+            #if not self.cancel:
+            self.iface.messageBar().pushInfo(
                 'CIN Connector Export',
-                'No output filename given!'
+                'Export finished successfully!'
             )
+
+            progress.close()
             self.quitDialog()
             return
 
-        progress = QProgressDialog('Exporting connectors ...', 'Abort', 0, len(self.dialog.list_of_pairs), self.iface.mainWindow())
-        progress.setWindowTitle('CIN Connector Export')
-        progress.canceled.connect(self.scheduleAbort)
-        progress.show()
-
-        # iterate over polyline features
-        with open(filename, 'w+') as connector_file:
-
-            connector_file.write('########################################################################\n')
-            connector_file.write('# This file was automatically generated by "Connector Export for ProMaiDes CIN module'
-                                        'Export-QGIS-Plugin Version {version_1} \n'.format(version_1=VERSION))
-            #date and time output
-            now = datetime.now()
-            dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-            connector_file.write('# Generated at {dt_string_1} '.format(dt_string_1=dt_string))
-            connector_file.write('from layer {filename_1} \n'.format(filename_1=self.dialog.input_layer.sourceName()))
-            connector_file.write('# Comments are marked with #\n')
-            connector_file.write('# There are three CI-elements:\n')
-            connector_file.write('# 1. Points; as in this file)\n')
-            connector_file.write('# 2. Connectors; linking Points with each other, multiple connectors in '
-                                        'several directions are possible) \n')
-            connector_file.write('# 3. Polygons; mostly final elements\n')
-            connector_file.write('#\n')
-            connector_file.write('# Explanation of data:\n')
-            connector_file.write('#  Start the CI-connectors with !BEGIN and end it with !END; in between are:\n')
-            connector_file.write('#  NumberOfPoints\n')
-            connector_file.write('#  id(unique) id_from_CI_element type(point_polygon)  id_to_CI_element type(point_polygon)')
-            connector_file.write('#\n')
-            connector_file.write('########################################################################\n')
-            connector_file.write('!BEGIN\n')
-            connector_file.write('{number} #Number of CI Connectors \n'.format(number=len(self.dialog.list_of_pairs)))
-
-            for x1 in range(len(self.dialog.list_of_pairs)):
-                pair_index = x1
-                for x2 in range(len(self.dialog.list_of_input)):
-
-                    if self.dialog.list_of_pairs[x1][0] == self.dialog.list_of_input[x2][0]:
-                        source_name_write = self.dialog.list_of_input[x2][0]
-                        source_id_write = self.dialog.list_of_input[x2][1]
-                    if self.dialog.list_of_pairs[x1][1] == self.dialog.list_of_input[x2][0]:
-                        sink_name_write = self.dialog.list_of_input[x2][0]
-                        sink_id_write = self.dialog.list_of_input[x2][1]
-
-                connector_file.write('  {a} {b} point {c} point # Source: {d}; Sink: {e}\n'.format
-                                         (a=pair_index, b=source_id_write, c=sink_id_write, d=str(source_name_write),
-                                          e=str(sink_name_write), ))
-
-                if self.cancel:
-                    break
-            connector_file.write('!END\n\n')
-            connector_file.close()
-
-        #if not self.cancel:
-        self.iface.messageBar().pushInfo(
-            'CIN Connector Export',
-            'Export finished successfully!'
-           )
-
-        progress.close()
-        self.quitDialog()
-        return
 
