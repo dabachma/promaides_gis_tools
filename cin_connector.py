@@ -110,7 +110,7 @@ class PluginDialog(QDialog):
 
                 if layer.geometryType() == QgsWkbTypes.PointGeometry:
                     self.input_layer = layer
-                    field_names = ["point_name", "point_id", "sec_level", "sec_id", "final_flag",
+                    field_names = ["name", "id", "sec_level", "sec_id", "final_flag",
                                          "boundary_value"]
                     for field_name in field_names:
 
@@ -122,8 +122,8 @@ class PluginDialog(QDialog):
                                                      .format(layer_name, field_name))
 
                     for feature in layer.getFeatures():
-                        self.listWidget_input.addItem(feature["point_name"])
-                        self.list_of_input.append([feature["point_name"], feature["point_id"]])
+                        self.listWidget_input.addItem(feature["name"])
+                        self.list_of_input.append([feature["name"], feature["id"]])
 
                         if layer.featureCount():
                             self.input_label.setText('<i>Input layer is "{}" with {} feature(s). </i>'
