@@ -111,6 +111,138 @@ class CINConnectorExportAuto(object):
         self.cancel = False
         self.dialog.close()
 
+    def verificationInput(self):
+        polygonlayer = self.dialog.PolygonLayerBox.currentLayer()
+        pointlayer = self.dialog.PointLayerBox.currentLayer()
+
+        point_dict = {"ID":[],"Name":[]}
+        poly_dict = {"ID":[],"Name":[]}
+
+        if polygonlayer.fields().indexOf("id") == -1:
+            self.iface.messageBar().pushCritical( 
+                'CIN Connector Export - Automatic',
+                'Polygon Layer has no field "id"')
+            return False
+        else:
+            pos_polyid = polygonlayer.fields().indexOf("id")
+
+        if polygonlayer.fields().indexOf("name") == -1:
+            self.iface.messageBar().pushCritical( 
+                'CIN Connector Export - Automatic',
+                'Polygon Layer has no field "name"')
+            return False
+        else:
+            pos_polyname = polygonlayer.fields().indexOf("name")
+
+        if pointlayer.fields().indexOf("id") == -1:
+            self.iface.messageBar().pushCritical( 
+            'CIN Connector Export - Automatic',
+            'Point Layer has no field "id"')
+            return False  
+        else:
+            pos_pointid = pointlayer.fields().indexOf("id")  
+
+        if pointlayer.fields().indexOf("name") == -1:
+            self.iface.messageBar().pushCritical( 
+                'CIN Connector Export - Automatic',
+                'Point Layer has no field "name"')
+            return False
+        else:
+            pos_pointname = pointlayer.fields().indexOf("name")  
+
+        for attrs in pointlayer.getFeatures():
+            point_dict['ID'].append(attrs[pos_pointid])
+            point_dict['Name'].append(attrs[pos_pointname])
+
+            if attrs[pos_pointid] == NULL and attrs[pos_pointname] == NULL:
+                self.iface.messageBar().pushCritical(
+                'CIN Connector Export - Automatic',
+                'Point Layer: There is a point without a name and id')
+                return False 
+            #ID controll
+            if attrs[pos_pointid] == NULL:
+                self.iface.messageBar().pushCritical(
+                'CIN Connector Export - Automatic',
+                'Point Layer: ID input of "{}" is NULL'.format(attrs[pos_pointname]))
+                return False               
+            
+            if not isinstance(attrs[pos_pointid], int):
+                self.iface.messageBar().pushCritical(
+                    'CIN Connector Export - Automatic',
+                    'Point Layer: ID input "{}" of "{}" is not a valid input (Required typ: Integer)'.format(attrs[pos_pointid],attrs[pos_pointname]))              
+                return False
+
+            if point_dict['ID'].count(attrs[pos_pointid]) > 1:
+                self.iface.messageBar().pushCritical(
+                    'CIN Connector Export - Automatic',
+                    'Point Layer: ID "{}" occurs multiple times'.format(attrs[pos_pointid]))              
+                return False 
+            #name controll
+            if attrs[pos_pointname] == NULL:
+                self.iface.messageBar().pushCritical(
+                'CIN Connector Export - Automatic',
+                'Point Layer: Name input of "{}" is NULL'.format(attrs[pos_pointid]))
+                return False               
+            
+            if not isinstance(attrs[pos_pointname], str):
+                self.iface.messageBar().pushCritical(
+                    'CIN Connector Export - Automatic',
+                    'Point Layer: Name input "{}" of "{}" is not a valid input (Required typ: String)'.format(attrs[pos_pointname],attrs[pos_pointid]))              
+                return False
+
+            if point_dict['Name'].count(attrs[pos_pointname]) > 1:
+                self.iface.messageBar().pushCritical(
+                    'CIN Connector Export - Automatic',
+                    'Point Layer: Name "{}" occurs multiple times'.format(attrs[pos_pointname]))              
+                return False
+
+        for attrs in polygonlayer.getFeatures():
+            poly_dict['ID'].append(attrs[pos_polyid])
+            poly_dict['Name'].append(attrs[pos_polyname])
+
+            if attrs[pos_polyid] == NULL and attrs[pos_polyname] == NULL:
+                self.iface.messageBar().pushCritical(
+                'CIN Connector Export - Automatic',
+                'Polygon Layer: There is a point without a name and id')
+                return False 
+            #ID controll
+            if attrs[pos_polyid] == NULL:
+                self.iface.messageBar().pushCritical(
+                'CIN Connector Export - Automatic',
+                'Polygon Layer: ID input of "{}" is NULL'.format(attrs[pos_polyname]))
+                return False               
+            
+            if not isinstance(attrs[pos_polyid], int):
+                self.iface.messageBar().pushCritical(
+                    'CIN Connector Export - Automatic',
+                    'Polygon Layer: ID input "{}" of "{}" is not a valid input (Required typ: Integer)'.format(attrs[pos_polyid],attrs[pos_polyname]))              
+                return False
+
+            if poly_dict['ID'].count(attrs[pos_polyid]) > 1:
+                self.iface.messageBar().pushCritical(
+                    'CIN Connector Export - Automatic',
+                    'Polygon Layer: ID "{}" occurs multiple times'.format(attrs[pos_polyid]))              
+                return False 
+            #name controll
+            if attrs[pos_polyname] == NULL:
+                self.iface.messageBar().pushCritical(
+                'CIN Connector Export - Automatic',
+                'Polygon Layer: Name input of "{}" is NULL'.format(attrs[pos_polyid]))
+                return False               
+            
+            if not isinstance(attrs[pos_polyname], str):
+                self.iface.messageBar().pushCritical(
+                    'CIN Connector Export - Automatic',
+                    'Polygon Layer: Name input "{}" of "{}" is not a valid input (Required typ: String)'.format(attrs[pos_polyname],attrs[pos_polyid]))              
+                return False
+
+            if poly_dict['Name'].count(attrs[pos_polyname]) > 1:
+                self.iface.messageBar().pushCritical(
+                    'CIN Connector Export - Automatic',
+                    'Polygon Layer: Name "{}" occurs multiple times'.format(attrs[pos_polyname]))              
+                return False    
+        return True            
+
     def execTool(self):
         filename = self.dialog.filename_edit.text()
 
@@ -136,20 +268,23 @@ class CINConnectorExportAuto(object):
         connector_id = []
 
         if polygonlayer:
+            if self.verificationInput():
+                for pol_feature in polygonlayer.getFeatures():
+                    if pointlayer:
+                        for point_feature in pointlayer.getFeatures():
+                            if pol_feature.geometry().contains(point_feature.geometry()):
+                                connector_id.append(str(pair_index))
+                                source_id_write.append(str(pol_feature["id"]))
+                                source_name_write.append(str(pol_feature["name"]))
+                                sink_id_write.append(str(point_feature["id"]))
+                                sink_name_write.append(str(point_feature["name"]))
 
-            for pol_feature in polygonlayer.getFeatures():
-                if pointlayer:
-                    for point_feature in pointlayer.getFeatures():
-                        if pol_feature.geometry().contains(point_feature.geometry()):
-                            connector_id.append(str(pair_index))
-                            source_id_write.append(str(pol_feature["polygon_id"]))
-                            source_name_write.append(str(pol_feature["polygon_na"]))
-                            sink_id_write.append(str(point_feature["point_id"]))
-                            sink_name_write.append(str(point_feature["point_name"]))
+                                print(str(source_id_write[pair_index]) + " " + str(source_name_write[pair_index]))
 
-                            print(str(source_id_write[pair_index]) + " " + str(source_name_write[pair_index]))
-
-                            pair_index = pair_index + 1
+                                pair_index = pair_index + 1
+            else:
+                self.quitDialog()
+                return
 
             print(pair_index, "pair_index_end")
 
