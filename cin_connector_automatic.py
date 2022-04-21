@@ -260,6 +260,7 @@ class CINConnectorExportAuto(object):
         polygonlayer = self.dialog.PolygonLayerBox.currentLayer()
         pointlayer = self.dialog.PointLayerBox.currentLayer()
         pair_index = self.dialog.ConnectorNumberingBox.value()
+        self.pair_index_start = pair_index
         print(pair_index, "pair_index")
         source_id_write = []
         sink_id_write = []
@@ -279,7 +280,7 @@ class CINConnectorExportAuto(object):
                                 sink_id_write.append(str(point_feature["id"]))
                                 sink_name_write.append(str(point_feature["name"]))
 
-                                print(str(source_id_write[pair_index]) + " " + str(source_name_write[pair_index]))
+                                print(str(source_id_write[pair_index-self.pair_index_start]) + " " + str(source_name_write[pair_index-self.pair_index_start]))
 
                                 pair_index = pair_index + 1
             else:
@@ -335,7 +336,7 @@ class CINConnectorExportAuto(object):
             connector_file.write('!BEGIN\n')
             connector_file.write('{number} #Number of CI Connectors \n'.format(number=len(connector_id)))
 
-            for x in range(1, pair_index):
+            for x in range(1, pair_index-self.pair_index_start):
                 connector_file.write('  {a} {b} point {c} point # Source: {d}; Sink: {e}\n'.format
                                      (a=connector_id[x], b=source_id_write[x], c=sink_id_write[x], d=str(source_name_write[x]), e=str(sink_name_write[x]),))
                 if self.cancel:
