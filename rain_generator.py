@@ -241,7 +241,10 @@ class RainGenerator(object):
         self.StormIDs = []
         self.Storms = []
         self.StormStartingLine = []
-        self.StormData = []
+        self.StormDataWinter = []
+        self.StormDataSpring = []
+        self.StormDataSummer = []
+        self.StormDataFall = []
         self.act.setEnabled(True)
         self.cancel = False
 
@@ -1048,7 +1051,7 @@ class RainGenerator(object):
     StormCount = 0
     MaxNumberofStorms = 500000
     StormStartingTimestep = []
-    StormCenters=[]
+    StormCenters = []
 
     def PreStormAnalysis_GriddedData(self):
         filename = self.dialog.folderEdit_griddeddata.text()
@@ -1090,7 +1093,10 @@ class RainGenerator(object):
         self.StormSize = []
         self.NoStormDuration = []
         self.StormStartingLine = []
-        self.StormData = []
+        self.StormDataWinter = []
+        self.StormDataSpring = []
+        self.StormDataSummer = []
+        self.StormDataFall = []
         self.Storms = []
         self.StormStartingTimestep = []
         self.StormCenters = []
@@ -1107,7 +1113,10 @@ class RainGenerator(object):
             self.StormPeakIntensityLocation.append(0)
             self.StormSize.append(0)
             self.StormStartingTimestep.append(0)
-            self.StormData.append(0)
+            self.StormDataWinter.append(0)
+            self.StormDataSpring.append(0)
+            self.StormDataSummer.append(0)
+            self.StormDataFall.append(0)
             self.StormSeasons.append(0)
             self.Storms.append([])
             self.StormCenters.append([])
@@ -1142,7 +1151,6 @@ class RainGenerator(object):
                 )
                 return
 
-
         # reading data
         address = os.path.join(self.dialog.folderEdit_griddeddata.text())
         try:
@@ -1155,8 +1163,7 @@ class RainGenerator(object):
             self.iface.messageBar().pushCritical(
                 'Rain Generator',
                 'Could Not Read Given Data file...!'
-           )
-
+            )
 
         StormThreshhold = self.dialog.StormThreshholdBox.value()
         numberofcells = self.nx * self.ny
@@ -1250,16 +1257,16 @@ class RainGenerator(object):
                                 currentstormcoordinates.append(self.CellCoordinates[i])
 
                         ##################################################
-                        #getting storm center x y
+                        # getting storm center x y
                         currentstormcenterx = 0
                         currentstormcentery = 0
                         for xy in currentstormcoordinates:
                             currentstormcenterx = currentstormcenterx + xy[0]
                             currentstormcentery = currentstormcentery + xy[1]
-                        if len(currentstormcoordinates) !=0:
+                        if len(currentstormcoordinates) != 0:
                             currentstormcenterx = currentstormcenterx / len(currentstormcoordinates)
                             currentstormcentery = currentstormcentery / len(currentstormcoordinates)
-                            self.StormCenters[value].append([currentstormcenterx,currentstormcentery])
+                            self.StormCenters[value].append([currentstormcenterx, currentstormcentery])
                         ########################################################
 
             PreviousStormConnectivity = StormConnectivity
@@ -1291,11 +1298,14 @@ class RainGenerator(object):
             self.StormDuration[ID] = len(storm)
             self.StormSize[ID] = stormarea
             self.StormVolume[ID] = stormvolume
-            self.StormTraveledDistance[ID] = math.sqrt((self.StormCenters[ID][len(self.StormCenters[ID])-1][0] - self.StormCenters[ID][0][0]) ** 2 + (self.StormCenters[ID][len(self.StormCenters[ID])-1][1] - self.StormCenters[ID][0][1]) ** 2)
-
+            self.StormTraveledDistance[ID] = math.sqrt(
+                (self.StormCenters[ID][len(self.StormCenters[ID]) - 1][0] - self.StormCenters[ID][0][0]) ** 2 + (
+                            self.StormCenters[ID][len(self.StormCenters[ID]) - 1][1] - self.StormCenters[ID][0][
+                        1]) ** 2)
 
             angle = angle_between([self.StormCenters[ID][0][0], self.StormCenters[ID][0][1]],
-                                  [self.StormCenters[ID][len(self.StormCenters[ID])-1][0], self.StormCenters[ID][len(self.StormCenters[ID])-1][1]])
+                                  [self.StormCenters[ID][len(self.StormCenters[ID]) - 1][0],
+                                   self.StormCenters[ID][len(self.StormCenters[ID]) - 1][1]])
 
             if 0 < angle < 22.5 or 337.5 < angle < 360:
                 direction = "E"
@@ -1317,8 +1327,6 @@ class RainGenerator(object):
                 direction = "Not Available"
             self.StormDirection[ID].append(direction)
 
-
-
         # print(self.StormPeakIntensity[:self.StormCount+1],"peak")
         # print(self.StormSize[:self.StormCount+1],"size")
         # print(self.StormDuration[:self.StormCount+1],"duration")
@@ -1330,10 +1338,10 @@ class RainGenerator(object):
         # print(self.StormPeakIntensityLocation, "location")
         # print(self.StormCount,"storm count")
         # print(self.StormStartingLine,"starting line")
-        #print(self.StormCenters,"centers")
-        #print(self.StormStartingTimestep)
+        # print(self.StormCenters,"centers")
+        # print(self.StormStartingTimestep)
 
-        #determining seasons
+        # determining seasons
 
         def getSeason(date):
             month = int(date.split("-")[1])
@@ -1347,11 +1355,9 @@ class RainGenerator(object):
                 return "FALL"
 
         for p, value3 in enumerate(self.StormStartingTimestep):
-            if value3!=0:
-                self.StormSeasons[p]=getSeason(value3)
-        print(self.StormSeasons)
-
-
+            if value3 != 0:
+                self.StormSeasons[p] = getSeason(value3)
+        # print(self.StormSeasons)
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
             self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
@@ -1408,7 +1414,10 @@ class RainGenerator(object):
         self.StormSize = []
         self.NoStormDuration = []
         self.StormStartingLine = []
-        self.StormData = []
+        self.StormDataWinter = []
+        self.StormDataSpring = []
+        self.StormDataSummer = []
+        self.StormDataFall = []
         self.Storms = []
 
         for i in range(self.MaxNumberofStorms):
@@ -1422,7 +1431,10 @@ class RainGenerator(object):
             self.StormPeakIntensityLocation.append(0)
             self.StormSize.append(0)
             self.StormStartingLine.append(0)
-            self.StormData.append(0)
+            self.StormDataWinter.append(0)
+            self.StormDataSpring.append(0)
+            self.StormDataSummer.append(0)
+            self.StormDataFall.append(0)
             self.StormStartingTimestep.append(0)
             self.Storms.append([])
 
@@ -1496,7 +1508,7 @@ class RainGenerator(object):
                 for stormid in list(set(StormConnectivity)):
                     if stormid != 0 and (stormid not in self.StormIDs):
                         self.StormIDs.append(stormid)
-                        self.StormStartingTimestep[stormid]=StartingLine - 1
+                        self.StormStartingTimestep[stormid] = StartingLine - 1
                         # saving which line each storm starts
                         self.StormStartingLine[stormid] = StartingLine - 1
 
@@ -1629,7 +1641,8 @@ class RainGenerator(object):
                 if self.StormDuration[i] == 0:
                     continue
                 StormStatistics.write('%s %s %s %s %s %s %s %s\n' % (
-                    count + 1, self.StormStartingTimestep[i], self.StormDuration[i], self.StormVolume[i], self.StormPeakIntensity[i],
+                    count + 1, self.StormStartingTimestep[i], self.StormDuration[i], self.StormVolume[i],
+                    self.StormPeakIntensity[i],
                     (self.StormSize[i]),
                     (self.StormTraveledDistance[i]), (self.StormDirection[i])))
 
@@ -1653,17 +1666,39 @@ class RainGenerator(object):
         # putting all storm volumes peaks and areas in one array for the copula
         # volume peak area
         for i in range(0, len(self.StormVolume)):
-            self.StormData[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
+            if self.StormSeasons[i] == "WINTER":
+                self.StormDataWinter[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
+            elif self.StormSeasons[i] == "SPRING":
+                self.StormDataSpring[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
+            elif self.StormSeasons[i] == "SUMMER":
+                self.StormDataSummer[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
+            elif self.StormSeasons[i] == "FALL":
+                self.StormDataFall[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
 
-        StormDataWithoutZeros = []
+        StormDataWithoutZerosWinter = []
+        StormDataWithoutZerosSpring = []
+        StormDataWithoutZerosSummer = []
+        StormDataWithoutZerosFall = []
 
         # removing the zero values
-        for data in self.StormData:
-            if data != [0, 0, 0]:
-                StormDataWithoutZeros.append(data)
-        # print(StormDataWithoutZeros, "storm data")
+        for data in self.StormDataWinter:
+            if data != [0, 0, 0] and data!=0:
+                StormDataWithoutZerosWinter.append(data)
+        for data in self.StormDataSpring:
+            if data != [0, 0, 0] and data!=0:
+                StormDataWithoutZerosSpring.append(data)
+        for data in self.StormDataSummer:
+            if data != [0, 0, 0] and data!=0:
+                StormDataWithoutZerosSummer.append(data)
+        for data in self.StormDataFall:
+            if data != [0, 0, 0] and data!=0:
+                StormDataWithoutZerosFall.append(data)
+        print(StormDataWithoutZerosWinter, "storm data winter")
 
-        cop = Copula(StormDataWithoutZeros)  # giving the data to the copula
+        copWinter = Copula(StormDataWithoutZerosWinter)  # giving the data to the copula
+        copSpring = Copula(StormDataWithoutZerosSpring)  # giving the data to the copula
+        copSummer = Copula(StormDataWithoutZerosSummer)  # giving the data to the copula
+        copFall = Copula(StormDataWithoutZerosFall)  # giving the data to the copula
 
         #################################################
         # check output address
@@ -1739,10 +1774,62 @@ class RainGenerator(object):
                 if StormStatus == "storm":
                     stormcounter = stormcounter + 1
                     ###############################################################
+                    #determing storm season
+                    if self.dialog.InputDataUnitBox.currentText() == "minutely":
+                        if 0<=timestep<91*24*60:
+                            StormSeason=1
+                        elif 91*24*60<=timestep<182*24*60:
+                            StormSeason=2
+                        elif 182*24*60<=timestep<273*24*60:
+                            StormSeason=3
+                        elif 273*24*60<=timestep:
+                            StormSeason=4
+                    elif self.dialog.InputDataUnitBox.currentText() == "10-minutely":
+                        if 0 <= timestep < 91 * 24 * 6:
+                            StormSeason = 1
+                        elif 91 * 24 * 6 <= timestep < 182 * 24 * 6:
+                            StormSeason = 2
+                        elif 182 * 24 * 6 <= timestep < 273 * 24 * 6:
+                            StormSeason = 3
+                        elif 273 * 24 * 6 <= timestep:
+                            StormSeason = 4
+                    elif self.dialog.InputDataUnitBox.currentText() == "30-minutely":
+                        if 0 <= timestep < 91 * 24 * 2:
+                            StormSeason = 1
+                        elif 91 * 24 * 2 <= timestep < 182 * 24 * 2:
+                            StormSeason = 2
+                        elif 182 * 24 * 2 <= timestep < 273 * 24 * 2:
+                            StormSeason = 3
+                        elif 273 * 24 * 2 <= timestep:
+                            StormSeason = 4
+                    elif self.dialog.InputDataUnitBox.currentText() == "hourly":
+                        if 0 <= timestep < 91 * 24:
+                            StormSeason = 1
+                        elif 91 * 24 <= timestep < 182 * 24:
+                            StormSeason = 2
+                        elif 182 * 24 <= timestep < 273 * 24:
+                            StormSeason = 3
+                        elif 273 * 24 <= timestep:
+                            StormSeason = 4
+                    elif self.dialog.InputDataUnitBox.currentText() == "daily":
+                        if 0 <= timestep < 91:
+                            StormSeason = 1
+                        elif 91 <= timestep < 182:
+                            StormSeason = 2
+                        elif 182 <= timestep < 273:
+                            StormSeason = 3
+                        elif 273 <= timestep:
+                            StormSeason = 4
                     # generating storm values form copola
-
                     while (1 < 2):
-                        GeneratedValues = cop.gendata(1)  # volume peak area
+                        if StormSeason==1:
+                            GeneratedValues = copWinter.gendata(1)  # volume peak area
+                        elif StormSeason==2:
+                            GeneratedValues = copSpring.gendata(1)  # volume peak area
+                        elif StormSeason==3:
+                            GeneratedValues = copSummer.gendata(1)  # volume peak area
+                        elif StormSeason==4:
+                            GeneratedValues = copFall.gendata(1)  # volume peak area
                         if GeneratedValues[0][1] <= GeneratedValues[0][0]:
                             break
 
