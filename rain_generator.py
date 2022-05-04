@@ -446,7 +446,7 @@ class RainGenerator(object):
 
         self.data = tempdata
         self.dialog.groupBox_2.setEnabled(True)
-        # print(self.data)
+
 
     ####################################################################################
     ####################################################################################
@@ -533,6 +533,7 @@ class RainGenerator(object):
     ####################################################################
 
     def PreSpatialInterpolation(self):
+        print(self.data)
         self.dialog.StatusIndicator.setText("Performing Spatial Interpolation...")
         QTimer.singleShot(50, self.SpatialInterpolation)  # waits half a second for the message to be displayed
 
@@ -1419,6 +1420,7 @@ class RainGenerator(object):
         self.StormDataSummer = []
         self.StormDataFall = []
         self.Storms = []
+        self.StormCenters = []
 
         for i in range(self.MaxNumberofStorms):
             self.StormTraveledDistance.append(0)
@@ -1437,6 +1439,7 @@ class RainGenerator(object):
             self.StormDataFall.append(0)
             self.StormStartingTimestep.append(0)
             self.Storms.append([])
+            self.StormCenters.append([])
 
         Storm = []
         StormConnectivity = []
@@ -1693,7 +1696,6 @@ class RainGenerator(object):
         for data in self.StormDataFall:
             if data != [0, 0, 0] and data!=0:
                 StormDataWithoutZerosFall.append(data)
-        print(StormDataWithoutZerosWinter, "storm data winter")
 
         copWinter = Copula(StormDataWithoutZerosWinter)  # giving the data to the copula
         copSpring = Copula(StormDataWithoutZerosSpring)  # giving the data to the copula
@@ -1833,7 +1835,7 @@ class RainGenerator(object):
                         if GeneratedValues[0][1] <= GeneratedValues[0][0]:
                             break
 
-                    print(GeneratedValues, "generated values")
+                    #print(GeneratedValues, "generated values")
                     ################################################################
 
                     #################################################################
