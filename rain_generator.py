@@ -1042,6 +1042,7 @@ class RainGenerator(object):
     StormLocations = []
     StormIDs = []
     Storms = []
+    StormSeasons = []
     StormStartingLine = []
     StormData = []  # array for the fitting only has volume peak extent in
     StormCount = 0
@@ -1093,6 +1094,7 @@ class RainGenerator(object):
         self.Storms = []
         self.StormStartingTimestep = []
         self.StormCenters = []
+        self.StormSeasons = []
 
         for i in range(self.MaxNumberofStorms):
             self.StormTraveledDistance.append(0)
@@ -1106,6 +1108,7 @@ class RainGenerator(object):
             self.StormSize.append(0)
             self.StormStartingTimestep.append(0)
             self.StormData.append(0)
+            self.StormSeasons.append(0)
             self.Storms.append([])
             self.StormCenters.append([])
 
@@ -1139,21 +1142,21 @@ class RainGenerator(object):
                 )
                 return
 
+
         # reading data
         address = os.path.join(self.dialog.folderEdit_griddeddata.text())
-        # try:
-        if self.dialog.DelimiterBox_2.currentText() == "space":
-            df = pd.read_csv(address.strip("\u202a"), delimiter=" ", header=0, index_col=0)
-        else:
-            df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox_2.currentText(), header=0,
-                             index_col=0)
+        try:
+            if self.dialog.DelimiterBox_2.currentText() == "space":
+                df = pd.read_csv(address.strip("\u202a"), delimiter=" ", header=0, index_col=0)
+            else:
+                df = pd.read_csv(address.strip("\u202a"), delimiter=self.dialog.DelimiterBox_2.currentText(), header=0,
+                                 index_col=0)
+        except:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'Could Not Read Given Data file...!'
+           )
 
-
-        # except:
-        #    self.iface.messageBar().pushCritical(
-        #        'Rain Generator',
-        #        'Could Not Read Given Data file...!'
-        #    )
 
         StormThreshhold = self.dialog.StormThreshholdBox.value()
         numberofcells = self.nx * self.ny
@@ -1328,6 +1331,27 @@ class RainGenerator(object):
         # print(self.StormCount,"storm count")
         # print(self.StormStartingLine,"starting line")
         #print(self.StormCenters,"centers")
+        #print(self.StormStartingTimestep)
+
+        #determining seasons
+
+        def getSeason(date):
+            month = int(date.split("-")[1])
+            if (month > 11 or month <= 3):
+                return "WINTER"
+            elif (month == 4 or month == 5):
+                return "SPRING"
+            elif (month >= 6 and month <= 9):
+                return "SUMMER"
+            else:
+                return "FALL"
+
+        for p, value3 in enumerate(self.StormStartingTimestep):
+            if value3!=0:
+                self.StormSeasons[p]=getSeason(value3)
+        print(self.StormSeasons)
+
+
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
             self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
