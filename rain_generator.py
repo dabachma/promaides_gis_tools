@@ -533,7 +533,7 @@ class RainGenerator(object):
     ####################################################################
 
     def PreSpatialInterpolation(self):
-        print(self.data)
+        #print(self.data)
         self.dialog.StatusIndicator.setText("Performing Spatial Interpolation...")
         QTimer.singleShot(50, self.SpatialInterpolation)  # waits half a second for the message to be displayed
 
@@ -548,7 +548,6 @@ class RainGenerator(object):
                 )
                 return
         filepath = os.path.join(tempfile.gettempdir(), "RainfallSpatialInterpolation" + '.txt')
-        print(filepath)
         try:  # deletes previous files
             if os.path.isfile(filepath):
                 os.remove(filepath)
@@ -1613,12 +1612,10 @@ class RainGenerator(object):
             else:
                 return "FALL"
 
-        print(self.StormStartingTimestep, "timesteps")
+
         for p, value3 in enumerate(self.StormStartingTimestep):
             if value3 != 0:
                 self.StormSeasons[p] = getSeason(value3)
-
-        print(self.StormSeasons,"seasons")
 
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
