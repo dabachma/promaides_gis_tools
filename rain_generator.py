@@ -447,7 +447,6 @@ class RainGenerator(object):
         self.data = tempdata
         self.dialog.groupBox_2.setEnabled(True)
 
-
     ####################################################################################
     ####################################################################################
     ####################################################################################
@@ -533,7 +532,7 @@ class RainGenerator(object):
     ####################################################################
 
     def PreSpatialInterpolation(self):
-        #print(self.data)
+        # print(self.data)
         self.dialog.StatusIndicator.setText("Performing Spatial Interpolation...")
         QTimer.singleShot(50, self.SpatialInterpolation)  # waits half a second for the message to be displayed
 
@@ -1300,8 +1299,8 @@ class RainGenerator(object):
             self.StormVolume[ID] = stormvolume
             self.StormTraveledDistance[ID] = math.sqrt(
                 (self.StormCenters[ID][len(self.StormCenters[ID]) - 1][0] - self.StormCenters[ID][0][0]) ** 2 + (
-                            self.StormCenters[ID][len(self.StormCenters[ID]) - 1][1] - self.StormCenters[ID][0][
-                        1]) ** 2)
+                        self.StormCenters[ID][len(self.StormCenters[ID]) - 1][1] - self.StormCenters[ID][0][
+                    1]) ** 2)
 
             angle = angle_between([self.StormCenters[ID][0][0], self.StormCenters[ID][0][1]],
                                   [self.StormCenters[ID][len(self.StormCenters[ID]) - 1][0],
@@ -1612,11 +1611,9 @@ class RainGenerator(object):
             else:
                 return "FALL"
 
-
         for p, value3 in enumerate(self.StormStartingTimestep):
             if value3 != 0:
                 self.StormSeasons[p] = getSeason(value3)
-
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
             self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
@@ -1685,17 +1682,35 @@ class RainGenerator(object):
 
     def Generation(self):
 
+        #putting storms of a season in an array
+        WinterStormIDs = []
+        WinterStormIDsTemp = []
+        SpringStormIDs = []
+        SpringStormIDsTemp = []
+        SummerStormIDs=[]
+        SummerStormIDsTemp=[]
+        FallStormIDs = []
+        FallStormIDsTemp = []
+
         # putting all storm volumes peaks and areas in one array for the copula
         # volume peak area
         for i in range(0, len(self.StormVolume)):
             if self.StormSeasons[i] == "WINTER":
                 self.StormDataWinter[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
+                WinterStormIDs.append(i)
+                WinterStormIDsTemp.append(i)
             elif self.StormSeasons[i] == "SPRING":
                 self.StormDataSpring[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
+                SpringStormIDs.append(i)
+                SpringStormIDsTemp.append(i)
             elif self.StormSeasons[i] == "SUMMER":
                 self.StormDataSummer[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
+                SummerStormIDs.append(i)
+                SummerStormIDsTemp.append(i)
             elif self.StormSeasons[i] == "FALL":
                 self.StormDataFall[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
+                FallStormIDs.append(i)
+                FallStormIDsTemp.append(i)
 
         StormDataWithoutZerosWinter = []
         StormDataWithoutZerosSpring = []
@@ -1704,19 +1719,19 @@ class RainGenerator(object):
 
         # removing the zero values
         for data in self.StormDataWinter:
-            if data != [0, 0, 0] and data!=0:
+            if data != [0, 0, 0] and data != 0:
                 StormDataWithoutZerosWinter.append(data)
         for data in self.StormDataSpring:
-            if data != [0, 0, 0] and data!=0:
+            if data != [0, 0, 0] and data != 0:
                 StormDataWithoutZerosSpring.append(data)
         for data in self.StormDataSummer:
-            if data != [0, 0, 0] and data!=0:
+            if data != [0, 0, 0] and data != 0:
                 StormDataWithoutZerosSummer.append(data)
         for data in self.StormDataFall:
-            if data != [0, 0, 0] and data!=0:
+            if data != [0, 0, 0] and data != 0:
                 StormDataWithoutZerosFall.append(data)
 
-        if len(StormDataWithoutZerosWinter)!=0:
+        if len(StormDataWithoutZerosWinter) != 0:
             copWinter = Copula(StormDataWithoutZerosWinter)  # giving the data to the copula
         else:
             self.iface.messageBar().pushCritical(
@@ -1811,13 +1826,9 @@ class RainGenerator(object):
         stormcounter = 0
 
         StormStatus = "storm"
-        StormIDUniqueValues = []
-        for i in self.StormIDs:
-            StormIDUniqueValues.append(i)
-
         StormTexttobeWritten = ""
         with open(filepath3, 'a') as CSVGeneratedRainfall:
-            while timestep <= RequestedNumberofTimesteps:
+            while timestep <= RequestedNumberofTimesteps:     #start of the generation loop
                 # print(timestep, "timestep")
                 # print(StormStatus, "storm status")
 
@@ -1826,75 +1837,94 @@ class RainGenerator(object):
                 if StormStatus == "storm":
                     stormcounter = stormcounter + 1
                     ###############################################################
-                    #determing storm season
+                    # determing storm season
                     if self.dialog.InputDataUnitBox.currentText() == "minutely":
-                        if 0<=timestep<91*24*60:
-                            StormSeason=1
-                        elif 91*24*60<=timestep<182*24*60:
-                            StormSeason=2
-                        elif 182*24*60<=timestep<273*24*60:
-                            StormSeason=3
-                        elif 273*24*60<=timestep:
-                            StormSeason=4
+                        if 0 <= timestep < 91 * 24 * 60:
+                            StormSeason = "WINTER"
+                        elif 91 * 24 * 60 <= timestep < 182 * 24 * 60:
+                            StormSeason = "SPRING"
+                        elif 182 * 24 * 60 <= timestep < 273 * 24 * 60:
+                            StormSeason = "SUMMER"
+                        elif 273 * 24 * 60 <= timestep:
+                            StormSeason = "FALL"
                     elif self.dialog.InputDataUnitBox.currentText() == "10-minutely":
                         if 0 <= timestep < 91 * 24 * 6:
-                            StormSeason = 1
+                            StormSeason = "WINTER"
                         elif 91 * 24 * 6 <= timestep < 182 * 24 * 6:
-                            StormSeason = 2
+                            StormSeason = "SPRING"
                         elif 182 * 24 * 6 <= timestep < 273 * 24 * 6:
-                            StormSeason = 3
+                            StormSeason = "SUMMER"
                         elif 273 * 24 * 6 <= timestep:
-                            StormSeason = 4
+                            StormSeason = "FALL"
                     elif self.dialog.InputDataUnitBox.currentText() == "30-minutely":
                         if 0 <= timestep < 91 * 24 * 2:
-                            StormSeason = 1
+                            StormSeason = "WINTER"
                         elif 91 * 24 * 2 <= timestep < 182 * 24 * 2:
-                            StormSeason = 2
+                            StormSeason = "SPRING"
                         elif 182 * 24 * 2 <= timestep < 273 * 24 * 2:
-                            StormSeason = 3
+                            StormSeason = "SUMMER"
                         elif 273 * 24 * 2 <= timestep:
-                            StormSeason = 4
+                            StormSeason = "FALL"
                     elif self.dialog.InputDataUnitBox.currentText() == "hourly":
                         if 0 <= timestep < 91 * 24:
-                            StormSeason = 1
+                            StormSeason = "WINTER"
                         elif 91 * 24 <= timestep < 182 * 24:
-                            StormSeason = 2
+                            StormSeason = "SPRING"
                         elif 182 * 24 <= timestep < 273 * 24:
-                            StormSeason = 3
+                            StormSeason = "SUMMER"
                         elif 273 * 24 <= timestep:
-                            StormSeason = 4
+                            StormSeason = "FALL"
                     elif self.dialog.InputDataUnitBox.currentText() == "daily":
                         if 0 <= timestep < 91:
-                            StormSeason = 1
+                            StormSeason = "WINTER"
                         elif 91 <= timestep < 182:
-                            StormSeason = 2
+                            StormSeason = "SPRING"
                         elif 182 <= timestep < 273:
-                            StormSeason = 3
+                            StormSeason = "SUMMER"
                         elif 273 <= timestep:
-                            StormSeason = 4
+                            StormSeason = "FALL"
                     # generating storm values form copola
                     while (1 < 2):
-                        if StormSeason==1:
+                        if StormSeason == "WINTER":
                             GeneratedValues = copWinter.gendata(1)  # volume peak area
-                        elif StormSeason==2:
+                        elif StormSeason == "SPRING":
                             GeneratedValues = copSpring.gendata(1)  # volume peak area
-                        elif StormSeason==3:
+                        elif StormSeason == "SUMMER":
                             GeneratedValues = copSummer.gendata(1)  # volume peak area
-                        elif StormSeason==4:
+                        elif StormSeason == "FALL":
                             GeneratedValues = copFall.gendata(1)  # volume peak area
                         if GeneratedValues[0][1] <= GeneratedValues[0][0]:
                             break
 
-                    #print(GeneratedValues, "generated values")
+                    # print(GeneratedValues, "generated values")
                     ################################################################
 
                     #################################################################
                     # choose the storm to be written from the observed storms
-                    GeneratedStormID = random.choice(StormIDUniqueValues)
-                    StormIDUniqueValues.remove(GeneratedStormID)
-                    if len(StormIDUniqueValues) == 0:
-                        for i in self.StormIDs:
-                            StormIDUniqueValues.append(i)
+                    if StormSeason == "WINTER":
+                        GeneratedStormID = random.choice(WinterStormIDsTemp)
+                        WinterStormIDsTemp.remove(GeneratedStormID)
+                        if len(WinterStormIDsTemp) == 0:
+                            for i in WinterStormIDs:
+                                WinterStormIDsTemp.append(i)
+                    elif StormSeason == "SPRING":
+                        GeneratedStormID = random.choice(SpringStormIDsTemp)
+                        SpringStormIDsTemp.remove(GeneratedStormID)
+                        if len(SpringStormIDsTemp) == 0:
+                            for i in SpringStormIDs:
+                                SpringStormIDsTemp.append(i)
+                    elif StormSeason == "SUMMER":
+                        GeneratedStormID = random.choice(SummerStormIDsTemp)
+                        SummerStormIDsTemp.remove(GeneratedStormID)
+                        if len(SummerStormIDsTemp) == 0:
+                            for i in SummerStormIDs:
+                                SummerStormIDsTemp.append(i)
+                    elif StormSeason == "FALL":
+                        GeneratedStormID = random.choice(FallStormIDsTemp)
+                        FallStormIDsTemp.remove(GeneratedStormID)
+                        if len(FallStormIDsTemp) == 0:
+                            for i in FallStormIDs:
+                                FallStormIDsTemp.append(i)
                     ##################################################################
 
                     #################################################################
