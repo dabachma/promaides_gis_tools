@@ -548,7 +548,7 @@ class RainGenerator(object):
                 )
                 return
         filepath = os.path.join(tempfile.gettempdir(), "RainfallSpatialInterpolation" + '.txt')
-
+        print(filepath)
         try:  # deletes previous files
             if os.path.isfile(filepath):
                 os.remove(filepath)
@@ -1421,6 +1421,7 @@ class RainGenerator(object):
         self.StormDataFall = []
         self.Storms = []
         self.StormCenters = []
+        self.StormSeasons = []
 
         for i in range(self.MaxNumberofStorms):
             self.StormTraveledDistance.append(0)
@@ -1437,6 +1438,7 @@ class RainGenerator(object):
             self.StormDataSpring.append(0)
             self.StormDataSummer.append(0)
             self.StormDataFall.append(0)
+            self.StormSeasons.append(0)
             self.StormStartingTimestep.append(0)
             self.Storms.append([])
             self.StormCenters.append([])
@@ -1511,7 +1513,7 @@ class RainGenerator(object):
                 for stormid in list(set(StormConnectivity)):
                     if stormid != 0 and (stormid not in self.StormIDs):
                         self.StormIDs.append(stormid)
-                        self.StormStartingTimestep[stormid] = StartingLine - 1
+                        self.StormStartingTimestep[stormid] = self.data[0][0][StartingLine - 3]
                         # saving which line each storm starts
                         self.StormStartingLine[stormid] = StartingLine - 1
 
@@ -1598,6 +1600,26 @@ class RainGenerator(object):
         # print(self.StormPeakIntensityLocation, "location")
         # print(self.StormCount,"storm count")
         # print(self.StormStartingLine,"starting line")
+
+        ##added
+        def getSeason(date):
+            month = int(date.split("-")[1])
+            if (month > 11 or month <= 3):
+                return "WINTER"
+            elif (month == 4 or month == 5):
+                return "SPRING"
+            elif (month >= 6 and month <= 9):
+                return "SUMMER"
+            else:
+                return "FALL"
+
+        print(self.StormStartingTimestep, "timesteps")
+        for p, value3 in enumerate(self.StormStartingTimestep):
+            if value3 != 0:
+                self.StormSeasons[p] = getSeason(value3)
+
+        print(self.StormSeasons,"seasons")
+
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
             self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
@@ -1697,11 +1719,42 @@ class RainGenerator(object):
             if data != [0, 0, 0] and data!=0:
                 StormDataWithoutZerosFall.append(data)
 
-        copWinter = Copula(StormDataWithoutZerosWinter)  # giving the data to the copula
-        copSpring = Copula(StormDataWithoutZerosSpring)  # giving the data to the copula
-        copSummer = Copula(StormDataWithoutZerosSummer)  # giving the data to the copula
-        copFall = Copula(StormDataWithoutZerosFall)  # giving the data to the copula
-
+        if len(StormDataWithoutZerosWinter)!=0:
+            copWinter = Copula(StormDataWithoutZerosWinter)  # giving the data to the copula
+        else:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'No Rainfall Data for Winter Available!'
+            )
+            self.dialog.StatusIndicator.setText("Error, Cannot Proceed!")
+            return
+        if len(StormDataWithoutZerosSpring) != 0:
+            copSpring = Copula(StormDataWithoutZerosSpring)  # giving the data to the copula
+        else:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'No Rainfall Data for Spring Available!'
+            )
+            self.dialog.StatusIndicator.setText("Error, Cannot Proceed!")
+            return
+        if len(StormDataWithoutZerosSummer) != 0:
+            copSummer = Copula(StormDataWithoutZerosSummer)  # giving the data to the copula
+        else:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'No Rainfall Data for Summer Available!'
+            )
+            self.dialog.StatusIndicator.setText("Error, Cannot Proceed!")
+            return
+        if len(StormDataWithoutZerosFall) != 0:
+            copFall = Copula(StormDataWithoutZerosFall)  # giving the data to the copula
+        else:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'No Rainfall Data for Fall Available!'
+            )
+            self.dialog.StatusIndicator.setText("Error, Cannot Proceed!")
+            return
         #################################################
         # check output address
         foldername = self.dialog.folderEdit.text()
