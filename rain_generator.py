@@ -1214,7 +1214,6 @@ class RainGenerator(object):
                 for j, previousvalue in enumerate(PreviousStormConnectivity):
                     if i == j and 0 < value != previousvalue > 0:
                         FindandReplace(StormConnectivity, value, previousvalue)
-
             ######################################################################################
             # getting storm statistics
             if all(i <= self.dialog.StormThreshholdBox.value() for i in Storm):
@@ -1223,7 +1222,7 @@ class RainGenerator(object):
                 self.NoStormDuration.append(nostormcount)
                 nostormcount = 0
 
-                # loops over uniqe storm ids
+                # loops over unique storm ids
                 for stormid in list(set(StormConnectivity)):
                     if stormid == 0:
                         continue
@@ -1249,26 +1248,23 @@ class RainGenerator(object):
                             indexes.append(index)
                     self.StormLocations[stormid].append(indexes)
 
-                for value in list(set(StormConnectivity)):
-                    if value != 0:
-                        # velocity and direction
-                        currentstormcoordinates = []
-                        for i, id in enumerate(StormConnectivity):
-                            if id == value and id != 0:
-                                currentstormcoordinates.append(self.CellCoordinates[i])
-
-                        ##################################################
-                        # getting storm center x y
-                        currentstormcenterx = 0
-                        currentstormcentery = 0
-                        for xy in currentstormcoordinates:
-                            currentstormcenterx = currentstormcenterx + xy[0]
-                            currentstormcentery = currentstormcentery + xy[1]
-                        if len(currentstormcoordinates) != 0:
-                            currentstormcenterx = currentstormcenterx / len(currentstormcoordinates)
-                            currentstormcentery = currentstormcentery / len(currentstormcoordinates)
-                            self.StormCenters[value].append([currentstormcenterx, currentstormcentery])
-                        ########################################################
+                    # velocity and direction
+                    currentstormcoordinates = []
+                    for i, id in enumerate(StormConnectivity):
+                        if id == stormid and id != 0:
+                            currentstormcoordinates.append(self.CellCoordinates[i])
+                    ##################################################
+                    # getting storm center x y
+                    currentstormcenterx = 0
+                    currentstormcentery = 0
+                    for xy in currentstormcoordinates:
+                        currentstormcenterx = currentstormcenterx + xy[0]
+                        currentstormcentery = currentstormcentery + xy[1]
+                    if len(currentstormcoordinates) != 0:
+                        currentstormcenterx = currentstormcenterx / len(currentstormcoordinates)
+                        currentstormcentery = currentstormcentery / len(currentstormcoordinates)
+                        self.StormCenters[stormid].append([currentstormcenterx, currentstormcentery])
+                    ########################################################
 
             PreviousStormConnectivity = StormConnectivity
             Storm = []
@@ -1372,7 +1368,6 @@ class RainGenerator(object):
         # print(len(self.StormIDs), "len")
         self.dialog.StatusIndicator.setText("Processing Complete, %s Storms Identified" % (N))
         self.iface.messageBar().pushSuccess(
-
             'Rain Generator',
             'Processing Complete !'
         )
