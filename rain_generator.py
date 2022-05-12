@@ -95,7 +95,6 @@ class PluginDialog(QDialog):
     def Help(self):
         webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-73/Rain-Generator")
 
-
     def UpdateFields(self, layer):
         self.DataAddressField.setLayer(self.RainGaugeLayer.currentLayer())
         self.FromBox.clear()
@@ -221,8 +220,9 @@ class RainGenerator(object):
         self.dialog.ProcessButton_GriddedData.clicked.connect(self.PreStormAnalysis_GriddedData)
         self.dialog.CheckButton2.clicked.connect(self.AnalyzeFromUntil)
         self.dialog.GenerateButton.clicked.connect(self.PreGeneration)
-
         self.dialog.UpdateButton.clicked.connect(self.PreCheckFiles)
+
+        self.MaxNumberofStorms = int(self.dialog.MaxNumberofStormsBox.value())
 
     def scheduleAbort(self):
         self.cancel = True
@@ -324,23 +324,6 @@ class RainGenerator(object):
                 )
                 return
 
-            ###################################
-            # f = open(address.strip("\u202a"), "r")
-            # if self.dialog.HeaderBox.isChecked():
-            #    lines = f.readlines()[1:]
-            # else:
-            #    lines = f.readlines()
-            # times = []
-            # rains = []
-            # for x in lines:
-            #    times.append(x.split(' ')[0])
-            #    rains.append(x.split(' ')[1])
-            # f.close()
-            # if len(times) >= numberoftimes:
-            #    numberoftimes = len(times)
-            # if len(rains) >= numberofrains:
-            #    numberofrains = len(rains)
-            #######################################
             try:
                 if self.dialog.DelimiterBox.currentText() == "space":
                     df = pd.read_csv(address.strip("\u202a"), delimiter=" ")
@@ -371,8 +354,6 @@ class RainGenerator(object):
             self.data.append([])
             for y in range(2):
                 self.data[x].append([])
-                # for z in range(nrains):
-                # data[x][y].append(0)
 
         for i, locations in enumerate(files):
             address = locations.replace("\\", "/")
@@ -554,7 +535,7 @@ class RainGenerator(object):
         except:
             pass
 
-        try:
+        try:  # empties previous file
             file = open(filepath, 'w')
             file.close()
         except:
@@ -615,14 +596,15 @@ class RainGenerator(object):
             #################################################################################################
             # Inversed Distance Weighting
             if self.dialog.SpatialInterpolationMethodBox.currentText() == "Inversed Distance Weighting":
+                n = self.dialog.ExponentFactorBox.value()  # exponent factor for the invert distance weighting formula
                 # writing the file
                 for i in range(len(generationlocations)):
                     SpatialInterpolation.write('BEGIN\n')
                     SpatialInterpolation.write(
                         '%s %s             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]\n' % (
                             str(i), str(min(rainlengths))))
+
                     counter = 0
-                    n = self.dialog.ExponentFactorBox.value()  # exponent factor for the invert distance weighting formula
                     while counter + 1 <= min(rainlengths):
                         upperformula = 0
                         lowerformula = 0
@@ -831,7 +813,7 @@ class RainGenerator(object):
         QTimer.singleShot(50, self.StormAnalysis)
 
     ################################################################################################
-    def SpatialInterpolationforPromaides(self):
+    def SpatialInterpolationforPromaides(self): #if save interpolation time series is checked
         filepath = os.path.join(self.dialog.folderEdit_dataanalysis.text(), "RainfallSpatialInterpolation" + '.txt')
         try:  # deletes previous files
             if os.path.isfile(filepath):
@@ -1047,7 +1029,11 @@ class RainGenerator(object):
     Storms = []
     StormSeasons = []
     StormStartingLine = []
-    StormData = []  # array for the fitting only has volume peak extent in
+    # array for the fitting only has volume peak extent in
+    StormDataWinter = []
+    StormDataSpring = []
+    StormDataSummer = []
+    StormDataFall = []
     StormCount = 0
     MaxNumberofStorms = 500000
     StormStartingTimestep = []
@@ -1683,13 +1669,13 @@ class RainGenerator(object):
 
     def Generation(self):
 
-        #putting storms of a season in an array
+        # putting storms of a season in an array
         WinterStormIDs = []
         WinterStormIDsTemp = []
         SpringStormIDs = []
         SpringStormIDsTemp = []
-        SummerStormIDs=[]
-        SummerStormIDsTemp=[]
+        SummerStormIDs = []
+        SummerStormIDsTemp = []
         FallStormIDs = []
         FallStormIDsTemp = []
 
@@ -1829,7 +1815,7 @@ class RainGenerator(object):
         StormStatus = "storm"
         StormTexttobeWritten = ""
         with open(filepath3, 'a') as CSVGeneratedRainfall:
-            while timestep <= RequestedNumberofTimesteps:     #start of the generation loop
+            while timestep <= RequestedNumberofTimesteps:  # start of the generation loop
                 # print(timestep, "timestep")
                 # print(StormStatus, "storm status")
 
