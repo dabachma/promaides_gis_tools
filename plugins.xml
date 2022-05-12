@@ -1,9 +1,9 @@
 <plugins>
-<pyqgis_plugin name="Promaides GIS Tools" version="0.6.6">
+<pyqgis_plugin name="Promaides GIS Tools" version="0.6.8">
 <description>Promaides GIS Tools</description>
 <homepage>https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-5/QGIS</homepage>
 <qgis_minimum_version>3.0</qgis_minimum_version>
-<file_name>promaides_gis_tools_0_6_6_zip</file_name>
+<file_name>promaides_gis_tools_0_6_8_zip</file_name>
 <author_name>Daniel Bachmann et al.</author_name>
 <download_url>
 https://github.com/dabachma/promaides_gis_tools/tree/master/versions/0_6_6/promaides_gis_tools-0.6.6.zip
