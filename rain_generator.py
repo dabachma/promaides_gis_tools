@@ -7,12 +7,8 @@ import os
 import tempfile
 import pandas as pd
 from numpy import random
-from random import sample
-import matplotlib.pyplot as plt
 from scipy import stats
-import scipy.stats as ss
-import csv
-
+import webbrowser
 import numpy as np
 import scipy.linalg
 
@@ -47,6 +43,7 @@ class PluginDialog(QDialog):
         self.SaveSpatialInterpolationBox.stateChanged.connect(self.UpdateOutputLocation)
         self.SaveStormStatisticsBox.stateChanged.connect(self.UpdateOutputLocation)
         self.groupBox_7.toggled.connect(self.GriddedDataChecked)
+        self.HelpButton.clicked.connect(self.Help)
 
         self.RainGaugeLayer.setLayer(None)
         self.GenerationAreaLayer.setLayer(None)
@@ -94,6 +91,10 @@ class PluginDialog(QDialog):
         self.groupBox_2.setEnabled(False)
         self.groupBox_3.setEnabled(False)
         self.groupBox_5.setEnabled(False)
+
+    def Help(self):
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-73/Rain-Generator")
+
 
     def UpdateFields(self, layer):
         self.DataAddressField.setLayer(self.RainGaugeLayer.currentLayer())
