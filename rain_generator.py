@@ -139,6 +139,7 @@ class PluginDialog(QDialog):
 
     def GriddedDataChecked(self):
         if self.groupBox_7.isChecked():
+            self.ProcessButton.setEnabled(True)
             self.groupBox.setEnabled(False)
             self.groupBox_2.setEnabled(False)
             self.SaveSpatialInterpolationBox.setEnabled(False)
@@ -147,6 +148,7 @@ class PluginDialog(QDialog):
             self.folderEdit_dataanalysis.setEnabled(True)
             self.browseButton_dataanalysis.setEnabled(True)
         else:
+            self.ProcessButton.setEnabled(False)
             self.groupBox.setEnabled(True)
             self.SaveSpatialInterpolationBox.setEnabled(True)
             self.TimeVieweLayerBox.setEnabled(True)
@@ -216,13 +218,18 @@ class RainGenerator(object):
 
         self.dialog.ProcessAreaButton.clicked.connect(self.CreateGenerationArea)
         self.dialog.CheckButton.clicked.connect(self.CheckFiles)
-        self.dialog.ProcessButton.clicked.connect(self.PreSpatialInterpolation)
-        self.dialog.ProcessButton_GriddedData.clicked.connect(self.PreStormAnalysis_GriddedData)
+        self.dialog.ProcessButton.clicked.connect(self.ProcessButtonPressed)
         self.dialog.CheckButton2.clicked.connect(self.AnalyzeFromUntil)
         self.dialog.GenerateButton.clicked.connect(self.PreGeneration)
         self.dialog.UpdateButton.clicked.connect(self.PreCheckFiles)
 
         self.MaxNumberofStorms = int(self.dialog.MaxNumberofStormsBox.value())
+
+    def ProcessButtonPressed(self):
+        if self.dialog.groupBox_7.isChecked():
+            self.PreStormAnalysis_GriddedData()
+        else:
+            self.PreSpatialInterpolation()
 
     def scheduleAbort(self):
         self.cancel = True

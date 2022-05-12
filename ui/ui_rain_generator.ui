@@ -260,19 +260,6 @@
          <item row="0" column="6" colspan="2">
           <widget class="QComboBox" name="DelimiterBox_2"/>
          </item>
-         <item row="2" column="6" colspan="2">
-          <widget class="QPushButton" name="ProcessButton_GriddedData">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Process</string>
-           </property>
-          </widget>
-         </item>
         </layout>
        </widget>
       </item>
