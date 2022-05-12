@@ -1171,51 +1171,50 @@ class RainGenerator(object):
                 Storm.append(float(rain))
                 if i + 1 == self.nx * self.ny:  # only reads number of cells that user has defined
                     break
-
             # print(Storm, "storm timstep")
 
-            StormConnectivity = [0] * numberofcells
-            ###################################################################################
-            # storm cluster identification
-            for i, value in enumerate(Storm):
-                try:
-                    if Storm[i - 1] > StormThreshhold and value > StormThreshhold and (i - 1) >= 0:
-                        StormConnectivity[i] = StormConnectivity[i - 1]
-                        continue
-                except:
-                    pass
-
-                try:
-                    if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx) >= 0:
-                        StormConnectivity[i] = StormConnectivity[i - self.nx]
-                        continue
-                except:
-                    pass
-
-                try:
-                    if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (i - self.nx - 1) >= 0:
-                        StormConnectivity[i] = StormConnectivity[i - self.nx - 1]
-                        continue
-                except:
-                    pass
-
-                if value > StormThreshhold:
-                    self.StormCount = self.StormCount + 1
-                    StormConnectivity[i] = self.StormCount
-            ####################################################################################
-            # find overlapping storms
-            for i, value in enumerate(StormConnectivity):
-                for j, previousvalue in enumerate(PreviousStormConnectivity):
-                    if i == j and 0 < value != previousvalue > 0:
-                        FindandReplace(StormConnectivity, value, previousvalue)
-            ######################################################################################
-            # getting storm statistics
-            if all(i <= self.dialog.StormThreshholdBox.value() for i in Storm):
+            if all(i <= StormThreshhold for i in Storm):
                 nostormcount = nostormcount + 1
             else:
                 self.NoStormDuration.append(nostormcount)
                 nostormcount = 0
 
+                StormConnectivity = [0] * numberofcells
+                ###################################################################################
+                # storm cluster identification
+                for i, value in enumerate(Storm):
+                    try:
+                        if Storm[i - 1] > StormThreshhold and value > StormThreshhold and (i - 1) >= 0:
+                            StormConnectivity[i] = StormConnectivity[i - 1]
+                            continue
+                    except:
+                        pass
+
+                    try:
+                        if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx) >= 0:
+                            StormConnectivity[i] = StormConnectivity[i - self.nx]
+                            continue
+                    except:
+                        pass
+
+                    try:
+                        if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (i - self.nx - 1) >= 0:
+                            StormConnectivity[i] = StormConnectivity[i - self.nx - 1]
+                            continue
+                    except:
+                        pass
+
+                    if value > StormThreshhold:
+                        self.StormCount = self.StormCount + 1
+                        StormConnectivity[i] = self.StormCount
+                ####################################################################################
+                # find overlapping storms
+                for i, value in enumerate(StormConnectivity):
+                    for j, previousvalue in enumerate(PreviousStormConnectivity):
+                        if i == j and 0 < value != previousvalue > 0:
+                            FindandReplace(StormConnectivity, value, previousvalue)
+                ######################################################################################
+                # getting storm statistics
                 # loops over unique storm ids
                 for stormid in list(set(StormConnectivity)):
                     if stormid == 0:
@@ -1462,6 +1461,7 @@ class RainGenerator(object):
         f = open(filepath)
         lines = f.readlines()
         StartingLine = 2
+        StormThreshhold = self.dialog.StormThreshholdBox.value()
         for linecount in range(len(self.data[0][0])):
             for i in range(StartingLine, StartingLine + ((self.nx * self.ny - 1) * (len(self.data[0][0]) + 4)) + 1,
                            len(self.data[0][0]) + 3 + 1):
@@ -1469,53 +1469,50 @@ class RainGenerator(object):
 
             # place to put test arrays
 
-            for i in range(len(Storm)):
-                StormConnectivity.append(0)
             Storm = [float(i) for i in Storm]
             StartingLine = StartingLine + 1
-
-            ###################################################################################
-            # storm cluster identification
-            StormThreshhold = self.dialog.StormThreshholdBox.value()
-            for i, value in enumerate(Storm):
-                try:
-                    if Storm[i - 1] > StormThreshhold and value > StormThreshhold and (i - 1) >= 0:
-                        StormConnectivity[i] = StormConnectivity[i - 1]
-                        continue
-                except:
-                    pass
-
-                try:
-                    if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx) >= 0:
-                        StormConnectivity[i] = StormConnectivity[i - self.nx]
-                        continue
-                except:
-                    pass
-
-                try:
-                    if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (i - self.nx - 1) >= 0:
-                        StormConnectivity[i] = StormConnectivity[i - self.nx - 1]
-                        continue
-                except:
-                    pass
-
-                if value > StormThreshhold:
-                    self.StormCount = self.StormCount + 1
-                    StormConnectivity[i] = self.StormCount
-            ####################################################################################
-            # find overlapping storms
-            for i, value in enumerate(StormConnectivity):
-                for j, previousvalue in enumerate(PreviousStormConnectivity):
-                    if i == j and 0 < value != previousvalue > 0:
-                        FindandReplace(StormConnectivity, value, previousvalue)
-            ######################################################################################
-            # getting storm statistics
-
-            if all(i <= self.dialog.StormThreshholdBox.value() for i in Storm):
+            if all(i <= StormThreshhold for i in Storm):
                 nostormcount = nostormcount + 1
             else:
                 self.NoStormDuration.append(nostormcount)
                 nostormcount = 0
+                for i in range(len(Storm)):
+                    StormConnectivity.append(0)
+                ###################################################################################
+                # storm cluster identification
+                for i, value in enumerate(Storm):
+                    try:
+                        if Storm[i - 1] > StormThreshhold and value > StormThreshhold and (i - 1) >= 0:
+                            StormConnectivity[i] = StormConnectivity[i - 1]
+                            continue
+                    except:
+                        pass
+
+                    try:
+                        if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx) >= 0:
+                            StormConnectivity[i] = StormConnectivity[i - self.nx]
+                            continue
+                    except:
+                        pass
+
+                    try:
+                        if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (i - self.nx - 1) >= 0:
+                            StormConnectivity[i] = StormConnectivity[i - self.nx - 1]
+                            continue
+                    except:
+                        pass
+
+                    if value > StormThreshhold:
+                        self.StormCount = self.StormCount + 1
+                        StormConnectivity[i] = self.StormCount
+                ####################################################################################
+                # find overlapping storms
+                for i, value in enumerate(StormConnectivity):
+                    for j, previousvalue in enumerate(PreviousStormConnectivity):
+                        if i == j and 0 < value != previousvalue > 0:
+                            FindandReplace(StormConnectivity, value, previousvalue)
+                ######################################################################################
+                # getting storm statistics
 
                 # saving the storm id
                 for stormid in list(set(StormConnectivity)):
@@ -1813,7 +1810,7 @@ class RainGenerator(object):
                 CSVGeneratedRainfall.write(TexttobeWritten + "\n")
 
         #########################################################################################
-        # self.NoStormDuration = [i for i in self.NoStormDuration if i != 0]   #removing the zeros
+        self.NoStormDuration = [i for i in self.NoStormDuration if i != 0]   #removing the zeros
         # alpha for fitting no storm durations to gamma
         fit_alpha = (sum(self.NoStormDuration) / len(self.NoStormDuration)) ** 2 / np.var(self.NoStormDuration)
 
