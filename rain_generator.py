@@ -1036,11 +1036,12 @@ class RainGenerator(object):
     Storms = []
     StormSeasons = []
     StormStartingLine = []
-    # array for the fitting only has volume peak extent in
+    # arrays for the fitting they have volume peak extent
     StormDataWinter = []
     StormDataSpring = []
     StormDataSummer = []
     StormDataFall = []
+    #############################################
     StormCount = 0
     MaxNumberofStorms = 500000
     StormStartingTimestep = []
@@ -1070,6 +1071,14 @@ class RainGenerator(object):
             ang1 = np.arctan2(*p1[::-1])
             ang2 = np.arctan2(*p2[::-1])
             return np.rad2deg((ang1 - ang2) % (2 * np.pi))
+
+        def FindandReplace(arr, find, replace):
+            # fast and readable
+            base = 0
+            for cnt in range(arr.count(find)):
+                offset = arr.index(find, base)
+                arr[offset] = replace
+                base = offset + 1
 
         self.StormCount = 0
         nostormcount = 0
@@ -1164,9 +1173,9 @@ class RainGenerator(object):
         # start of for loop
         TimestepCounter = 0  # for getting the starting time of storms in data file
         for row in df.iloc:
-            for i, rain in enumerate(row):
+            for i, rain in enumerate(row): #puts the values of current time step in array
                 Storm.append(float(rain))
-                if i + 1 == self.nx * self.ny:
+                if i + 1 == self.nx * self.ny:  #only reads number of cells that user has defined
                     break
 
             # print(Storm, "storm timstep")
@@ -1203,10 +1212,9 @@ class RainGenerator(object):
             # find overlapping storms
             for i, value in enumerate(StormConnectivity):
                 for j, previousvalue in enumerate(PreviousStormConnectivity):
-                    if i == j and value > 0 and previousvalue > 0:
-                        for k, value2 in enumerate(StormConnectivity):
-                            if value2 == value:
-                                StormConnectivity[k] = previousvalue
+                    if i == j and 0 < value != previousvalue > 0:
+                        FindandReplace(StormConnectivity, value, previousvalue)
+
             ######################################################################################
             # getting storm statistics
             if all(i <= self.dialog.StormThreshholdBox.value() for i in Storm):
