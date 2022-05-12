@@ -2,7 +2,8 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 # system modules
-import math
+from math import sqrt
+from math import ceil
 import os
 import tempfile
 import pandas as pd
@@ -489,8 +490,8 @@ class RainGenerator(object):
             hspacing = self.dialog.dxBox.value()
             vspacing = self.dialog.dyBox.value()
 
-        self.nx = math.ceil((xmax - xmin) / hspacing)
-        self.ny = math.ceil((ymax - ymin) / vspacing)
+        self.nx = ceil((xmax - xmin) / hspacing)
+        self.ny = ceil((ymax - ymin) / vspacing)
 
         id = 0
         y = ymax
@@ -820,7 +821,7 @@ class RainGenerator(object):
         QTimer.singleShot(50, self.StormAnalysis)
 
     ################################################################################################
-    def SpatialInterpolationforPromaides(self): #if save interpolation time series is checked
+    def SpatialInterpolationforPromaides(self):  # if save interpolation time series is checked
         filepath = os.path.join(self.dialog.folderEdit_dataanalysis.text(), "RainfallSpatialInterpolation" + '.txt')
         try:  # deletes previous files
             if os.path.isfile(filepath):
@@ -1036,11 +1037,12 @@ class RainGenerator(object):
     Storms = []
     StormSeasons = []
     StormStartingLine = []
-    # array for the fitting only has volume peak extent in
+    # arrays for the fitting they have volume peak extent
     StormDataWinter = []
     StormDataSpring = []
     StormDataSummer = []
     StormDataFall = []
+    #############################################
     StormCount = 0
     MaxNumberofStorms = 500000
     StormStartingTimestep = []
@@ -1063,13 +1065,14 @@ class RainGenerator(object):
 
     def StormAnalysis_GriddedData(self):
 
-        # calculates angle between two points clockwise
-        # east is 0
-        # north is 90
-        def angle_between(p1, p2):
-            ang1 = np.arctan2(*p1[::-1])
-            ang2 = np.arctan2(*p2[::-1])
-            return np.rad2deg((ang1 - ang2) % (2 * np.pi))
+        #replaces a value in list with another
+        def FindandReplace(arr, find, replace):
+            # fast and readable
+            base = 0
+            for cnt in range(arr.count(find)):
+                offset = arr.index(find, base)
+                arr[offset] = replace
+                base = offset + 1
 
         self.StormCount = 0
         nostormcount = 0
@@ -1164,9 +1167,9 @@ class RainGenerator(object):
         # start of for loop
         TimestepCounter = 0  # for getting the starting time of storms in data file
         for row in df.iloc:
-            for i, rain in enumerate(row):
+            for i, rain in enumerate(row):  # puts the values of current time step in array
                 Storm.append(float(rain))
-                if i + 1 == self.nx * self.ny:
+                if i + 1 == self.nx * self.ny:  # only reads number of cells that user has defined
                     break
 
             # print(Storm, "storm timstep")
@@ -1203,10 +1206,8 @@ class RainGenerator(object):
             # find overlapping storms
             for i, value in enumerate(StormConnectivity):
                 for j, previousvalue in enumerate(PreviousStormConnectivity):
-                    if i == j and value > 0 and previousvalue > 0:
-                        for k, value2 in enumerate(StormConnectivity):
-                            if value2 == value:
-                                StormConnectivity[k] = previousvalue
+                    if i == j and 0 < value != previousvalue > 0:
+                        FindandReplace(StormConnectivity, value, previousvalue)
             ######################################################################################
             # getting storm statistics
             if all(i <= self.dialog.StormThreshholdBox.value() for i in Storm):
@@ -1215,7 +1216,7 @@ class RainGenerator(object):
                 self.NoStormDuration.append(nostormcount)
                 nostormcount = 0
 
-                # loops over uniqe storm ids
+                # loops over unique storm ids
                 for stormid in list(set(StormConnectivity)):
                     if stormid == 0:
                         continue
@@ -1241,34 +1242,44 @@ class RainGenerator(object):
                             indexes.append(index)
                     self.StormLocations[stormid].append(indexes)
 
-                for value in list(set(StormConnectivity)):
-                    if value != 0:
-                        # velocity and direction
-                        currentstormcoordinates = []
-                        for i, id in enumerate(StormConnectivity):
-                            if id == value and id != 0:
-                                currentstormcoordinates.append(self.CellCoordinates[i])
-
-                        ##################################################
-                        # getting storm center x y
-                        currentstormcenterx = 0
-                        currentstormcentery = 0
-                        for xy in currentstormcoordinates:
-                            currentstormcenterx = currentstormcenterx + xy[0]
-                            currentstormcentery = currentstormcentery + xy[1]
-                        if len(currentstormcoordinates) != 0:
-                            currentstormcenterx = currentstormcenterx / len(currentstormcoordinates)
-                            currentstormcentery = currentstormcentery / len(currentstormcoordinates)
-                            self.StormCenters[value].append([currentstormcenterx, currentstormcentery])
-                        ########################################################
+                    # velocity and direction
+                    currentstormcoordinates = []
+                    for i, id in enumerate(StormConnectivity):
+                        if id == stormid and id != 0:
+                            currentstormcoordinates.append(self.CellCoordinates[i])
+                    ##################################################
+                    # getting storm center x y
+                    currentstormcenterx = 0
+                    currentstormcentery = 0
+                    for xy in currentstormcoordinates:
+                        currentstormcenterx = currentstormcenterx + xy[0]
+                        currentstormcentery = currentstormcentery + xy[1]
+                    if len(currentstormcoordinates) != 0:
+                        currentstormcenterx = currentstormcenterx / len(currentstormcoordinates)
+                        currentstormcentery = currentstormcentery / len(currentstormcoordinates)
+                        self.StormCenters[stormid].append([currentstormcenterx, currentstormcentery])
+                    ########################################################
 
             PreviousStormConnectivity = StormConnectivity
             Storm = []
             StormConnectivity = []
             TimestepCounter = TimestepCounter + 1
 
+        self.dialog.StatusIndicator.setText("Final Step of Analysis...")
+        QTimer.singleShot(200, self.StormAnalysis_GriddedData_SecondStep)
         # print(self.Storms, "final storms")
         # peak, peak location and timestep, volume, duration, area
+
+    def StormAnalysis_GriddedData_SecondStep(self):
+
+        # calculates angle between two points clockwise
+        # east is 0
+        # north is 90
+        def angle_between(p1, p2):
+            ang1 = np.arctan2(*p1[::-1])
+            ang2 = np.arctan2(*p2[::-1])
+            return np.rad2deg((ang1 - ang2) % (2 * np.pi))
+
         for ID, storm in enumerate(self.Storms):
             if len(storm) == 0:
                 continue
@@ -1291,7 +1302,7 @@ class RainGenerator(object):
             self.StormDuration[ID] = len(storm)
             self.StormSize[ID] = stormarea
             self.StormVolume[ID] = stormvolume
-            self.StormTraveledDistance[ID] = math.sqrt(
+            self.StormTraveledDistance[ID] = sqrt(
                 (self.StormCenters[ID][len(self.StormCenters[ID]) - 1][0] - self.StormCenters[ID][0][0]) ** 2 + (
                         self.StormCenters[ID][len(self.StormCenters[ID]) - 1][1] - self.StormCenters[ID][0][
                     1]) ** 2)
@@ -1335,7 +1346,6 @@ class RainGenerator(object):
         # print(self.StormStartingTimestep)
 
         # determining seasons
-
         def getSeason(date):
             month = int(date.split("-")[1])
             if (month > 11 or month <= 3):
@@ -1364,7 +1374,6 @@ class RainGenerator(object):
         # print(len(self.StormIDs), "len")
         self.dialog.StatusIndicator.setText("Processing Complete, %s Storms Identified" % (N))
         self.iface.messageBar().pushSuccess(
-
             'Rain Generator',
             'Processing Complete !'
         )
@@ -1379,6 +1388,15 @@ class RainGenerator(object):
         self.data = []
 
     def StormAnalysis(self):
+
+        #replaces a value in list with another
+        def FindandReplace(arr, find, replace):
+            # fast and readable
+            base = 0
+            for cnt in range(arr.count(find)):
+                offset = arr.index(find, base)
+                arr[offset] = replace
+                base = offset + 1
 
         # getting the center x y of each square cell
         for feature in self.layer2.getFeatures():
@@ -1488,10 +1506,8 @@ class RainGenerator(object):
             # find overlapping storms
             for i, value in enumerate(StormConnectivity):
                 for j, previousvalue in enumerate(PreviousStormConnectivity):
-                    if i == j and value > 0 and previousvalue > 0:
-                        for k, value2 in enumerate(StormConnectivity):
-                            if value2 == value:
-                                StormConnectivity[k] = previousvalue
+                    if i == j and 0 < value != previousvalue > 0:
+                        FindandReplace(StormConnectivity, value, previousvalue)
             ######################################################################################
             # getting storm statistics
 
@@ -1930,7 +1946,7 @@ class RainGenerator(object):
                     # print(GeneratedStormDuration, "generated duration")
                     # print(GeneratedStormArea, "generated storm area")
                     # print(self.StormSize[GeneratedStormID], "data")
-                    DifferenceinAreaperTimestep = math.ceil(
+                    DifferenceinAreaperTimestep = ceil(
                         abs((GeneratedStormArea - self.StormSize[GeneratedStormID]) / GeneratedStormDuration))
 
                     ###############################################################################
@@ -2131,7 +2147,7 @@ class RainGenerator(object):
                 elif StormStatus == "nostorm":
                     GeneratedNoStormDuration = (np.random.gamma(fit_alpha, scale=np.var(self.NoStormDuration) / (
                             sum(self.NoStormDuration) / len(self.NoStormDuration))))
-                    GeneratedNoStormDuration = math.ceil(GeneratedNoStormDuration)
+                    GeneratedNoStormDuration = ceil(GeneratedNoStormDuration)
                     if GeneratedNoStormDuration < 0:
                         GeneratedNoStormDuration = 0
                     # print(GeneratedNoStormDuration, "generatednostormduration")
@@ -2239,7 +2255,7 @@ class Copula():
 
         for i in self.var:
             for j in range(len(i)):
-                i[j] = i[j] / math.sqrt(self.cov[j][j])
+                i[j] = i[j] / sqrt(self.cov[j][j])
         self.cdfs = self.norm.cdf(self.var)
         data = [[np.percentile(self.data[:, j], 100 * i[j]) for j in range(len(i))] for i in self.cdfs]
         return data
