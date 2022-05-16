@@ -1065,7 +1065,7 @@ class RainGenerator(object):
 
     def StormAnalysis_GriddedData(self):
 
-        #replaces a value in list with another
+        # replaces a value in list with another
         def FindandReplace(arr, find, replace):
             # fast and readable
             base = 0
@@ -1134,6 +1134,8 @@ class RainGenerator(object):
                 'Rain Generator',
                 'Could Not Read Given Data file...!'
             )
+            self.dialog.StatusIndicator.setText("Ready")
+            return
 
         for row in df2.iloc:
             self.CellCoordinates.append(row)
@@ -1145,6 +1147,7 @@ class RainGenerator(object):
                     'Rain Generator',
                     'Could Not Read Given Data file...! Please Check the Selected Delimiter...'
                 )
+                self.dialog.StatusIndicator.setText("Ready")
                 return
 
         # reading data
@@ -1160,6 +1163,17 @@ class RainGenerator(object):
                 'Rain Generator',
                 'Could Not Read Given Data file...!'
             )
+            self.dialog.StatusIndicator.setText("Ready")
+            return
+
+        # checking if the number of rows and columns are not too much
+        if len(df.columns) < self.nx * self.ny:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'Number of Entered Cells are More than the Data File!'
+            )
+            self.dialog.StatusIndicator.setText("Ready")
+            return
 
         StormThreshhold = self.dialog.StormThreshholdBox.value()
         numberofcells = self.nx * self.ny
@@ -1198,7 +1212,8 @@ class RainGenerator(object):
                         pass
 
                     try:
-                        if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (i - self.nx - 1) >= 0:
+                        if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (
+                                i - self.nx - 1) >= 0:
                             StormConnectivity[i] = StormConnectivity[i - self.nx - 1]
                             continue
                     except:
@@ -1388,7 +1403,7 @@ class RainGenerator(object):
 
     def StormAnalysis(self):
 
-        #replaces a value in list with another
+        # replaces a value in list with another
         def FindandReplace(arr, find, replace):
             # fast and readable
             base = 0
@@ -1496,7 +1511,8 @@ class RainGenerator(object):
                         pass
 
                     try:
-                        if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (i - self.nx - 1) >= 0:
+                        if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (
+                                i - self.nx - 1) >= 0:
                             StormConnectivity[i] = StormConnectivity[i - self.nx - 1]
                             continue
                     except:
@@ -1785,32 +1801,30 @@ class RainGenerator(object):
             return
 
         # csv file
-        if self.dialog.CSVOutputBox.isChecked():
-            filepath3 = os.path.join(self.dialog.folderEdit.text(), "GeneratedRainfall_CSV" + '.txt')
-            try:  # deletes previous files
-                if os.path.isfile(filepath3):
-                    os.remove(filepath3)
-            except:
-                pass
+        filepath3 = os.path.join(self.dialog.folderEdit.text(), "GeneratedRainfall_CSV" + '.txt')
+        try:  # deletes previous files
+            if os.path.isfile(filepath3):
+                os.remove(filepath3)
+        except:
+            pass
 
-            try:
-                file = open(filepath3, 'w')
-                file.close()
-            except:
-                pass
+        try:
+            file = open(filepath3, 'w')
+            file.close()
+        except:
+            pass
 
         #####################################################
 
         # csv file
-        if self.dialog.CSVOutputBox.isChecked():
-            TexttobeWritten = "Timestep/CellID "
-            for i in range(self.nx * self.ny):
-                TexttobeWritten += str(i) + " "
-            with open(filepath3, 'a') as CSVGeneratedRainfall:
-                CSVGeneratedRainfall.write(TexttobeWritten + "\n")
+        TexttobeWritten = "Timestep/CellID "
+        for i in range(self.nx * self.ny):
+            TexttobeWritten += str(i) + " "
+        with open(filepath3, 'a') as CSVGeneratedRainfall:
+            CSVGeneratedRainfall.write(TexttobeWritten + "\n")
 
         #########################################################################################
-        self.NoStormDuration = [i for i in self.NoStormDuration if i != 0]   #removing the zeros
+        self.NoStormDuration = [i for i in self.NoStormDuration if i != 0]  # removing the zeros
         # alpha for fitting no storm durations to gamma
         fit_alpha = (sum(self.NoStormDuration) / len(self.NoStormDuration)) ** 2 / np.var(self.NoStormDuration)
 
