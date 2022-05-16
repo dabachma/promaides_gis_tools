@@ -1865,40 +1865,40 @@ class RainGenerator(object):
                     ###############################################################
                     # determing storm season
                     if self.dialog.InputDataUnitBox.currentText() == "minutely":
-                        if 0 <= timestep < 91 * 24 * 60:
+                        if 0 <= timestep < 131040:
                             StormSeason = "WINTER"
-                        elif 91 * 24 * 60 <= timestep < 182 * 24 * 60:
+                        elif 131040 <= timestep < 262080:
                             StormSeason = "SPRING"
-                        elif 182 * 24 * 60 <= timestep < 273 * 24 * 60:
+                        elif 262080 <= timestep < 393120:
                             StormSeason = "SUMMER"
-                        elif 273 * 24 * 60 <= timestep:
+                        elif 393120 <= timestep:
                             StormSeason = "FALL"
                     elif self.dialog.InputDataUnitBox.currentText() == "10-minutely":
-                        if 0 <= timestep < 91 * 24 * 6:
+                        if 0 <= timestep < 13104:
                             StormSeason = "WINTER"
-                        elif 91 * 24 * 6 <= timestep < 182 * 24 * 6:
+                        elif 13104 <= timestep < 26208:
                             StormSeason = "SPRING"
-                        elif 182 * 24 * 6 <= timestep < 273 * 24 * 6:
+                        elif 26208 <= timestep < 39312:
                             StormSeason = "SUMMER"
-                        elif 273 * 24 * 6 <= timestep:
+                        elif 39312 <= timestep:
                             StormSeason = "FALL"
                     elif self.dialog.InputDataUnitBox.currentText() == "30-minutely":
-                        if 0 <= timestep < 91 * 24 * 2:
+                        if 0 <= timestep < 4368:
                             StormSeason = "WINTER"
-                        elif 91 * 24 * 2 <= timestep < 182 * 24 * 2:
+                        elif 4368 <= timestep < 8736:
                             StormSeason = "SPRING"
-                        elif 182 * 24 * 2 <= timestep < 273 * 24 * 2:
+                        elif 8736 <= timestep < 13104:
                             StormSeason = "SUMMER"
-                        elif 273 * 24 * 2 <= timestep:
+                        elif 13104 <= timestep:
                             StormSeason = "FALL"
                     elif self.dialog.InputDataUnitBox.currentText() == "hourly":
-                        if 0 <= timestep < 91 * 24:
+                        if 0 <= timestep < 2184:
                             StormSeason = "WINTER"
-                        elif 91 * 24 <= timestep < 182 * 24:
+                        elif 2184 <= timestep < 4368:
                             StormSeason = "SPRING"
-                        elif 182 * 24 <= timestep < 273 * 24:
+                        elif 4368 <= timestep < 6552:
                             StormSeason = "SUMMER"
-                        elif 273 * 24 <= timestep:
+                        elif 6552 <= timestep:
                             StormSeason = "FALL"
                     elif self.dialog.InputDataUnitBox.currentText() == "daily":
                         if 0 <= timestep < 91:
