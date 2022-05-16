@@ -1345,6 +1345,11 @@ class RainGenerator(object):
                 direction = "Not Available"
             self.StormDirection[ID].append(direction)
 
+        #tolerance options
+        for ID in range(0, len(self.StormVolume)):
+            if self.StormDuration[ID] < self.dialog.StormDurationToleranceBox.value() or self.StormSize[ID] < self.dialog.StormExtentToleranceBox.value():
+                self.StormStartingTimestep[ID] = 0
+
         # print(self.StormPeakIntensity[:self.StormCount+1],"peak")
         # print(self.StormSize[:self.StormCount+1],"size")
         # print(self.StormDuration[:self.StormCount+1],"duration")
@@ -1374,18 +1379,13 @@ class RainGenerator(object):
         for p, value3 in enumerate(self.StormStartingTimestep):
             if value3 != 0:
                 self.StormSeasons[p] = getSeason(value3)
-        # print(self.StormSeasons)
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
             self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
             QTimer.singleShot(50, self.WriteStormStatistics)
 
-        N = 0
-        for i in self.StormDuration:
-            if i > 0:
-                N = N + 1
-        # print(N, "N")
-        # print(len(self.StormIDs), "len")
+        N = len([i for i, e in enumerate(self.StormSeasons) if e != 0])
+
         self.dialog.StatusIndicator.setText("Processing Complete, %s Storms Identified" % (N))
         self.iface.messageBar().pushSuccess(
             'Rain Generator',
@@ -1401,6 +1401,7 @@ class RainGenerator(object):
         self.dialog.groupBox_3.setEnabled(True)
         self.data = []
 
+    #for point data
     def StormAnalysis(self):
 
         # replaces a value in list with another
@@ -1610,6 +1611,11 @@ class RainGenerator(object):
             self.StormSize[ID] = stormarea
             self.StormVolume[ID] = stormvolume
 
+        # tolerance options
+        for ID in range(0, len(self.StormVolume)):
+            if self.StormDuration[ID] < self.dialog.StormDurationToleranceBox.value() or self.StormSize[ID] < self.dialog.StormExtentToleranceBox.value():
+                self.StormStartingTimestep[ID] = 0
+
         # print(self.StormPeakIntensity[:self.StormCount+1],"peak")
         # print(self.StormSize[:self.StormCount+1],"size")
         # print(self.StormDuration[:self.StormCount+1],"duration")
@@ -1642,10 +1648,8 @@ class RainGenerator(object):
             self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
             QTimer.singleShot(50, self.WriteStormStatistics)
 
-        N = 0
-        for i in self.StormDuration:
-            if i > 0:
-                N = N + 1
+        N = len([i for i, e in enumerate(self.StormSeasons) if e != 0])
+
         self.dialog.StatusIndicator.setText("Processing Complete, %s Storms Identified" % (N))
         self.iface.messageBar().pushSuccess(
 
@@ -1660,7 +1664,7 @@ class RainGenerator(object):
             )
             return
         self.dialog.groupBox_3.setEnabled(True)
-        self.data = []
+        #self.data = []
 
     # function to write storm statistics to file
     def WriteStormStatistics(self):
@@ -1680,7 +1684,7 @@ class RainGenerator(object):
             StormStatistics.write(
                 'Storm_id Storm_Starting_Timestep Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea Storm_TraveledDistance StormMainDirection\n')
             for count, i in enumerate(range(1, self.StormCount + 1)):
-                if self.StormDuration[i] == 0:
+                if self.StormDuration[i] == 0 or self.StormSeasons[i] == 0:
                     continue
                 StormStatistics.write('%s %s %s %s %s %s %s %s\n' % (
                     count + 1, self.StormStartingTimestep[i], self.StormDuration[i], self.StormVolume[i],
@@ -1734,6 +1738,7 @@ class RainGenerator(object):
                 self.StormDataFall[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
                 FallStormIDs.append(i)
                 FallStormIDsTemp.append(i)
+        print(self.StormDataFall,"fall")
 
         StormDataWithoutZerosWinter = []
         StormDataWithoutZerosSpring = []

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>571</width>
-    <height>870</height>
+    <width>719</width>
+    <height>918</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -269,6 +269,19 @@
          <string>Options</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_4">
+         <item row="0" column="3">
+          <widget class="QLabel" name="label_41">
+           <property name="maximumSize">
+            <size>
+             <width>200</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Max number of Storms</string>
+           </property>
+          </widget>
+         </item>
          <item row="0" column="0">
           <widget class="QLabel" name="label_35">
            <property name="maximumSize">
@@ -292,29 +305,46 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="2">
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+         <item row="3" column="0" colspan="2">
+          <widget class="QCheckBox" name="SaveSpatialInterpolationBox">
+           <property name="toolTip">
+            <string/>
            </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
+           <property name="text">
+            <string>Save spatial interpolation of input time series</string>
            </property>
-          </spacer>
+          </widget>
          </item>
-         <item row="0" column="3">
-          <widget class="QLabel" name="label_41">
+         <item row="4" column="0">
+          <widget class="QCheckBox" name="TimeVieweLayerBox">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string>Output layer for Time Viewer</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QCheckBox" name="SaveStormStatisticsBox">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string>Save storm statistics</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="4">
+          <widget class="QPushButton" name="browseButton_dataanalysis">
            <property name="maximumSize">
             <size>
-             <width>200</width>
+             <width>50</width>
              <height>16777215</height>
             </size>
            </property>
            <property name="text">
-            <string>Max number of Storms</string>
+            <string>...</string>
            </property>
           </widget>
          </item>
@@ -334,50 +364,7 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="0" colspan="2">
-          <widget class="QCheckBox" name="SaveSpatialInterpolationBox">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Save spatial interpolation of input time series</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QCheckBox" name="TimeVieweLayerBox">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Output layer for Time Viewer</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QCheckBox" name="SaveStormStatisticsBox">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Save storm statistics</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="4">
-          <widget class="QPushButton" name="browseButton_dataanalysis">
-           <property name="maximumSize">
-            <size>
-             <width>50</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>...</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0" colspan="4">
+         <item row="6" column="0" colspan="4">
           <widget class="QLineEdit" name="folderEdit_dataanalysis">
            <property name="toolTip">
             <string>Set output folder</string>
@@ -386,6 +373,50 @@
             <string>&lt;output folder&gt;</string>
            </property>
           </widget>
+         </item>
+         <item row="1" column="3">
+          <widget class="QLabel" name="label_44">
+           <property name="text">
+            <string>Storm extent tolerance [number of cells] &gt;=</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QSpinBox" name="StormDurationToleranceBox">
+           <property name="maximum">
+            <number>999999999</number>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_43">
+           <property name="text">
+            <string>Storm duration tolerance [same as input] &gt;=</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="4">
+          <widget class="QSpinBox" name="StormExtentToleranceBox">
+           <property name="maximum">
+            <number>999999999</number>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Minimum</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>30</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </widget>
@@ -620,7 +651,7 @@
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>300</width>
+          <width>500</width>
           <height>20</height>
          </size>
         </property>
@@ -655,17 +686,14 @@
       <string>Output</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="3" column="0" colspan="3">
-       <widget class="QLineEdit" name="folderEdit">
-        <property name="toolTip">
-         <string>Set output folder</string>
-        </property>
-        <property name="placeholderText">
-         <string>&lt;output folder&gt;</string>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_27">
+        <property name="text">
+         <string>Generation duration [y]</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1" rowspan="2">
+      <item row="0" column="1">
        <widget class="QSpinBox" name="RequestedGenerationDurationBox">
         <property name="minimum">
          <number>1</number>
@@ -678,7 +706,17 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
+      <item row="0" column="2">
+       <widget class="QLabel" name="label_42">
+        <property name="text">
+         <string>Input data unit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3" colspan="2">
+       <widget class="QComboBox" name="InputDataUnitBox"/>
+      </item>
+      <item row="3" column="0">
        <widget class="QCheckBox" name="SaveStormStatisticsBox2">
         <property name="toolTip">
          <string/>
@@ -691,7 +729,20 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="4">
+      <item row="4" column="3">
+       <widget class="QPushButton" name="browseButton">
+        <property name="maximumSize">
+         <size>
+          <width>27</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="4">
        <widget class="QPushButton" name="GenerateButton">
         <property name="font">
          <font>
@@ -705,35 +756,15 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
-       <widget class="QPushButton" name="browseButton">
-        <property name="maximumSize">
-         <size>
-          <width>27</width>
-          <height>16777215</height>
-         </size>
+      <item row="4" column="0" colspan="3">
+       <widget class="QLineEdit" name="folderEdit">
+        <property name="toolTip">
+         <string>Set output folder</string>
         </property>
-        <property name="text">
-         <string>...</string>
+        <property name="placeholderText">
+         <string>&lt;output folder&gt;</string>
         </property>
        </widget>
-      </item>
-      <item row="0" column="0" rowspan="2">
-       <widget class="QLabel" name="label_27">
-        <property name="text">
-         <string>Generation duration [y]</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QLabel" name="label_42">
-        <property name="text">
-         <string>Input data unit</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="3" colspan="2">
-       <widget class="QComboBox" name="InputDataUnitBox"/>
       </item>
      </layout>
     </widget>
