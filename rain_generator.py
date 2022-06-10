@@ -1065,7 +1065,7 @@ class RainGenerator(object):
 
     def StormAnalysis_GriddedData(self):
 
-        #replaces a value in list with another
+        # replaces a value in list with another
         def FindandReplace(arr, find, replace):
             # fast and readable
             base = 0
@@ -1134,6 +1134,8 @@ class RainGenerator(object):
                 'Rain Generator',
                 'Could Not Read Given Data file...!'
             )
+            self.dialog.StatusIndicator.setText("Ready")
+            return
 
         for row in df2.iloc:
             self.CellCoordinates.append(row)
@@ -1145,6 +1147,7 @@ class RainGenerator(object):
                     'Rain Generator',
                     'Could Not Read Given Data file...! Please Check the Selected Delimiter...'
                 )
+                self.dialog.StatusIndicator.setText("Ready")
                 return
 
         # reading data
@@ -1160,6 +1163,17 @@ class RainGenerator(object):
                 'Rain Generator',
                 'Could Not Read Given Data file...!'
             )
+            self.dialog.StatusIndicator.setText("Ready")
+            return
+
+        # checking if the number of rows and columns are not too much
+        if len(df.columns) < self.nx * self.ny:
+            self.iface.messageBar().pushCritical(
+                'Rain Generator',
+                'Number of Entered Cells are More than the Data File!'
+            )
+            self.dialog.StatusIndicator.setText("Ready")
+            return
 
         StormThreshhold = self.dialog.StormThreshholdBox.value()
         numberofcells = self.nx * self.ny
@@ -1171,51 +1185,51 @@ class RainGenerator(object):
                 Storm.append(float(rain))
                 if i + 1 == self.nx * self.ny:  # only reads number of cells that user has defined
                     break
-
             # print(Storm, "storm timstep")
 
-            StormConnectivity = [0] * numberofcells
-            ###################################################################################
-            # storm cluster identification
-            for i, value in enumerate(Storm):
-                try:
-                    if Storm[i - 1] > StormThreshhold and value > StormThreshhold and (i - 1) >= 0:
-                        StormConnectivity[i] = StormConnectivity[i - 1]
-                        continue
-                except:
-                    pass
-
-                try:
-                    if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx) >= 0:
-                        StormConnectivity[i] = StormConnectivity[i - self.nx]
-                        continue
-                except:
-                    pass
-
-                try:
-                    if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (i - self.nx - 1) >= 0:
-                        StormConnectivity[i] = StormConnectivity[i - self.nx - 1]
-                        continue
-                except:
-                    pass
-
-                if value > StormThreshhold:
-                    self.StormCount = self.StormCount + 1
-                    StormConnectivity[i] = self.StormCount
-            ####################################################################################
-            # find overlapping storms
-            for i, value in enumerate(StormConnectivity):
-                for j, previousvalue in enumerate(PreviousStormConnectivity):
-                    if i == j and 0 < value != previousvalue > 0:
-                        FindandReplace(StormConnectivity, value, previousvalue)
-            ######################################################################################
-            # getting storm statistics
-            if all(i <= self.dialog.StormThreshholdBox.value() for i in Storm):
+            if all(i <= StormThreshhold for i in Storm):
                 nostormcount = nostormcount + 1
             else:
                 self.NoStormDuration.append(nostormcount)
                 nostormcount = 0
 
+                StormConnectivity = [0] * numberofcells
+                ###################################################################################
+                # storm cluster identification
+                for i, value in enumerate(Storm):
+                    try:
+                        if Storm[i - 1] > StormThreshhold and value > StormThreshhold and (i - 1) >= 0:
+                            StormConnectivity[i] = StormConnectivity[i - 1]
+                            continue
+                    except:
+                        pass
+
+                    try:
+                        if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx) >= 0:
+                            StormConnectivity[i] = StormConnectivity[i - self.nx]
+                            continue
+                    except:
+                        pass
+
+                    try:
+                        if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (
+                                i - self.nx - 1) >= 0:
+                            StormConnectivity[i] = StormConnectivity[i - self.nx - 1]
+                            continue
+                    except:
+                        pass
+
+                    if value > StormThreshhold:
+                        self.StormCount = self.StormCount + 1
+                        StormConnectivity[i] = self.StormCount
+                ####################################################################################
+                # find overlapping storms
+                for i, value in enumerate(StormConnectivity):
+                    for j, previousvalue in enumerate(PreviousStormConnectivity):
+                        if i == j and 0 < value != previousvalue > 0:
+                            FindandReplace(StormConnectivity, value, previousvalue)
+                ######################################################################################
+                # getting storm statistics
                 # loops over unique storm ids
                 for stormid in list(set(StormConnectivity)):
                     if stormid == 0:
@@ -1331,6 +1345,11 @@ class RainGenerator(object):
                 direction = "Not Available"
             self.StormDirection[ID].append(direction)
 
+        #tolerance options
+        for ID in range(0, len(self.StormVolume)):
+            if self.StormDuration[ID] < self.dialog.StormDurationToleranceBox.value() or self.StormSize[ID] < self.dialog.StormExtentToleranceBox.value():
+                self.StormStartingTimestep[ID] = 0
+
         # print(self.StormPeakIntensity[:self.StormCount+1],"peak")
         # print(self.StormSize[:self.StormCount+1],"size")
         # print(self.StormDuration[:self.StormCount+1],"duration")
@@ -1360,18 +1379,13 @@ class RainGenerator(object):
         for p, value3 in enumerate(self.StormStartingTimestep):
             if value3 != 0:
                 self.StormSeasons[p] = getSeason(value3)
-        # print(self.StormSeasons)
 
         if self.dialog.SaveStormStatisticsBox.isChecked():
             self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
             QTimer.singleShot(50, self.WriteStormStatistics)
 
-        N = 0
-        for i in self.StormDuration:
-            if i > 0:
-                N = N + 1
-        # print(N, "N")
-        # print(len(self.StormIDs), "len")
+        N = len([i for i, e in enumerate(self.StormSeasons) if e != 0])
+
         self.dialog.StatusIndicator.setText("Processing Complete, %s Storms Identified" % (N))
         self.iface.messageBar().pushSuccess(
             'Rain Generator',
@@ -1387,9 +1401,10 @@ class RainGenerator(object):
         self.dialog.groupBox_3.setEnabled(True)
         self.data = []
 
+    #for point data
     def StormAnalysis(self):
 
-        #replaces a value in list with another
+        # replaces a value in list with another
         def FindandReplace(arr, find, replace):
             # fast and readable
             base = 0
@@ -1462,6 +1477,7 @@ class RainGenerator(object):
         f = open(filepath)
         lines = f.readlines()
         StartingLine = 2
+        StormThreshhold = self.dialog.StormThreshholdBox.value()
         for linecount in range(len(self.data[0][0])):
             for i in range(StartingLine, StartingLine + ((self.nx * self.ny - 1) * (len(self.data[0][0]) + 4)) + 1,
                            len(self.data[0][0]) + 3 + 1):
@@ -1469,53 +1485,51 @@ class RainGenerator(object):
 
             # place to put test arrays
 
-            for i in range(len(Storm)):
-                StormConnectivity.append(0)
             Storm = [float(i) for i in Storm]
             StartingLine = StartingLine + 1
-
-            ###################################################################################
-            # storm cluster identification
-            StormThreshhold = self.dialog.StormThreshholdBox.value()
-            for i, value in enumerate(Storm):
-                try:
-                    if Storm[i - 1] > StormThreshhold and value > StormThreshhold and (i - 1) >= 0:
-                        StormConnectivity[i] = StormConnectivity[i - 1]
-                        continue
-                except:
-                    pass
-
-                try:
-                    if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx) >= 0:
-                        StormConnectivity[i] = StormConnectivity[i - self.nx]
-                        continue
-                except:
-                    pass
-
-                try:
-                    if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (i - self.nx - 1) >= 0:
-                        StormConnectivity[i] = StormConnectivity[i - self.nx - 1]
-                        continue
-                except:
-                    pass
-
-                if value > StormThreshhold:
-                    self.StormCount = self.StormCount + 1
-                    StormConnectivity[i] = self.StormCount
-            ####################################################################################
-            # find overlapping storms
-            for i, value in enumerate(StormConnectivity):
-                for j, previousvalue in enumerate(PreviousStormConnectivity):
-                    if i == j and 0 < value != previousvalue > 0:
-                        FindandReplace(StormConnectivity, value, previousvalue)
-            ######################################################################################
-            # getting storm statistics
-
-            if all(i <= self.dialog.StormThreshholdBox.value() for i in Storm):
+            if all(i <= StormThreshhold for i in Storm):
                 nostormcount = nostormcount + 1
             else:
                 self.NoStormDuration.append(nostormcount)
                 nostormcount = 0
+                for i in range(len(Storm)):
+                    StormConnectivity.append(0)
+                ###################################################################################
+                # storm cluster identification
+                for i, value in enumerate(Storm):
+                    try:
+                        if Storm[i - 1] > StormThreshhold and value > StormThreshhold and (i - 1) >= 0:
+                            StormConnectivity[i] = StormConnectivity[i - 1]
+                            continue
+                    except:
+                        pass
+
+                    try:
+                        if Storm[i - self.nx] > StormThreshhold and value > StormThreshhold and (i - self.nx) >= 0:
+                            StormConnectivity[i] = StormConnectivity[i - self.nx]
+                            continue
+                    except:
+                        pass
+
+                    try:
+                        if Storm[i - self.nx - 1] > StormThreshhold and value > StormThreshhold and (
+                                i - self.nx - 1) >= 0:
+                            StormConnectivity[i] = StormConnectivity[i - self.nx - 1]
+                            continue
+                    except:
+                        pass
+
+                    if value > StormThreshhold:
+                        self.StormCount = self.StormCount + 1
+                        StormConnectivity[i] = self.StormCount
+                ####################################################################################
+                # find overlapping storms
+                for i, value in enumerate(StormConnectivity):
+                    for j, previousvalue in enumerate(PreviousStormConnectivity):
+                        if i == j and 0 < value != previousvalue > 0:
+                            FindandReplace(StormConnectivity, value, previousvalue)
+                ######################################################################################
+                # getting storm statistics
 
                 # saving the storm id
                 for stormid in list(set(StormConnectivity)):
@@ -1597,6 +1611,11 @@ class RainGenerator(object):
             self.StormSize[ID] = stormarea
             self.StormVolume[ID] = stormvolume
 
+        # tolerance options
+        for ID in range(0, len(self.StormVolume)):
+            if self.StormDuration[ID] < self.dialog.StormDurationToleranceBox.value() or self.StormSize[ID] < self.dialog.StormExtentToleranceBox.value():
+                self.StormStartingTimestep[ID] = 0
+
         # print(self.StormPeakIntensity[:self.StormCount+1],"peak")
         # print(self.StormSize[:self.StormCount+1],"size")
         # print(self.StormDuration[:self.StormCount+1],"duration")
@@ -1629,10 +1648,8 @@ class RainGenerator(object):
             self.dialog.StatusIndicator.setText("Writing Storm Statistics to File...")
             QTimer.singleShot(50, self.WriteStormStatistics)
 
-        N = 0
-        for i in self.StormDuration:
-            if i > 0:
-                N = N + 1
+        N = len([i for i, e in enumerate(self.StormSeasons) if e != 0])
+
         self.dialog.StatusIndicator.setText("Processing Complete, %s Storms Identified" % (N))
         self.iface.messageBar().pushSuccess(
 
@@ -1647,7 +1664,7 @@ class RainGenerator(object):
             )
             return
         self.dialog.groupBox_3.setEnabled(True)
-        self.data = []
+        #self.data = []
 
     # function to write storm statistics to file
     def WriteStormStatistics(self):
@@ -1667,7 +1684,7 @@ class RainGenerator(object):
             StormStatistics.write(
                 'Storm_id Storm_Starting_Timestep Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea Storm_TraveledDistance StormMainDirection\n')
             for count, i in enumerate(range(1, self.StormCount + 1)):
-                if self.StormDuration[i] == 0:
+                if self.StormDuration[i] == 0 or self.StormSeasons[i] == 0:
                     continue
                 StormStatistics.write('%s %s %s %s %s %s %s %s\n' % (
                     count + 1, self.StormStartingTimestep[i], self.StormDuration[i], self.StormVolume[i],
@@ -1721,6 +1738,7 @@ class RainGenerator(object):
                 self.StormDataFall[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
                 FallStormIDs.append(i)
                 FallStormIDsTemp.append(i)
+        print(self.StormDataFall,"fall")
 
         StormDataWithoutZerosWinter = []
         StormDataWithoutZerosSpring = []
@@ -1788,32 +1806,30 @@ class RainGenerator(object):
             return
 
         # csv file
-        if self.dialog.CSVOutputBox.isChecked():
-            filepath3 = os.path.join(self.dialog.folderEdit.text(), "GeneratedRainfall_CSV" + '.txt')
-            try:  # deletes previous files
-                if os.path.isfile(filepath3):
-                    os.remove(filepath3)
-            except:
-                pass
+        filepath3 = os.path.join(self.dialog.folderEdit.text(), "GeneratedRainfall_CSV" + '.txt')
+        try:  # deletes previous files
+            if os.path.isfile(filepath3):
+                os.remove(filepath3)
+        except:
+            pass
 
-            try:
-                file = open(filepath3, 'w')
-                file.close()
-            except:
-                pass
+        try:
+            file = open(filepath3, 'w')
+            file.close()
+        except:
+            pass
 
         #####################################################
 
         # csv file
-        if self.dialog.CSVOutputBox.isChecked():
-            TexttobeWritten = "Timestep/CellID "
-            for i in range(self.nx * self.ny):
-                TexttobeWritten += str(i) + " "
-            with open(filepath3, 'a') as CSVGeneratedRainfall:
-                CSVGeneratedRainfall.write(TexttobeWritten + "\n")
+        TexttobeWritten = "Timestep/CellID "
+        for i in range(self.nx * self.ny):
+            TexttobeWritten += str(i) + " "
+        with open(filepath3, 'a') as CSVGeneratedRainfall:
+            CSVGeneratedRainfall.write(TexttobeWritten + "\n")
 
         #########################################################################################
-        # self.NoStormDuration = [i for i in self.NoStormDuration if i != 0]   #removing the zeros
+        self.NoStormDuration = [i for i in self.NoStormDuration if i != 0]  # removing the zeros
         # alpha for fitting no storm durations to gamma
         fit_alpha = (sum(self.NoStormDuration) / len(self.NoStormDuration)) ** 2 / np.var(self.NoStormDuration)
 
@@ -1849,40 +1865,40 @@ class RainGenerator(object):
                     ###############################################################
                     # determing storm season
                     if self.dialog.InputDataUnitBox.currentText() == "minutely":
-                        if 0 <= timestep < 91 * 24 * 60:
+                        if 0 <= timestep < 131040:
                             StormSeason = "WINTER"
-                        elif 91 * 24 * 60 <= timestep < 182 * 24 * 60:
+                        elif 131040 <= timestep < 262080:
                             StormSeason = "SPRING"
-                        elif 182 * 24 * 60 <= timestep < 273 * 24 * 60:
+                        elif 262080 <= timestep < 393120:
                             StormSeason = "SUMMER"
-                        elif 273 * 24 * 60 <= timestep:
+                        elif 393120 <= timestep:
                             StormSeason = "FALL"
                     elif self.dialog.InputDataUnitBox.currentText() == "10-minutely":
-                        if 0 <= timestep < 91 * 24 * 6:
+                        if 0 <= timestep < 13104:
                             StormSeason = "WINTER"
-                        elif 91 * 24 * 6 <= timestep < 182 * 24 * 6:
+                        elif 13104 <= timestep < 26208:
                             StormSeason = "SPRING"
-                        elif 182 * 24 * 6 <= timestep < 273 * 24 * 6:
+                        elif 26208 <= timestep < 39312:
                             StormSeason = "SUMMER"
-                        elif 273 * 24 * 6 <= timestep:
+                        elif 39312 <= timestep:
                             StormSeason = "FALL"
                     elif self.dialog.InputDataUnitBox.currentText() == "30-minutely":
-                        if 0 <= timestep < 91 * 24 * 2:
+                        if 0 <= timestep < 4368:
                             StormSeason = "WINTER"
-                        elif 91 * 24 * 2 <= timestep < 182 * 24 * 2:
+                        elif 4368 <= timestep < 8736:
                             StormSeason = "SPRING"
-                        elif 182 * 24 * 2 <= timestep < 273 * 24 * 2:
+                        elif 8736 <= timestep < 13104:
                             StormSeason = "SUMMER"
-                        elif 273 * 24 * 2 <= timestep:
+                        elif 13104 <= timestep:
                             StormSeason = "FALL"
                     elif self.dialog.InputDataUnitBox.currentText() == "hourly":
-                        if 0 <= timestep < 91 * 24:
+                        if 0 <= timestep < 2184:
                             StormSeason = "WINTER"
-                        elif 91 * 24 <= timestep < 182 * 24:
+                        elif 2184 <= timestep < 4368:
                             StormSeason = "SPRING"
-                        elif 182 * 24 <= timestep < 273 * 24:
+                        elif 4368 <= timestep < 6552:
                             StormSeason = "SUMMER"
-                        elif 273 * 24 <= timestep:
+                        elif 6552 <= timestep:
                             StormSeason = "FALL"
                     elif self.dialog.InputDataUnitBox.currentText() == "daily":
                         if 0 <= timestep < 91:
