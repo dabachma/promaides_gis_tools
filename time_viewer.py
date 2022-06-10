@@ -11,7 +11,6 @@ import sys
 import glob
 import webbrowser
 
-
 # QGIS modules
 from qgis.core import *
 from qgis.PyQt.QtCore import *
@@ -24,11 +23,10 @@ from qgis.utils import iface
 
 from .environment import get_ui_path
 
-
 UI_PATH = get_ui_path('ui_time_viewer.ui')
 
+
 class PluginDialog(QDockWidget):
-    
     ClosingSignal = pyqtSignal()
     try:
         def __init__(self, iface, parent=None, flags=Qt.WindowFlags()):
@@ -37,27 +35,25 @@ class PluginDialog(QDockWidget):
 
             self.iface = iface
 
-            #self.InputLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
+            # self.InputLayerBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
             self.InputLayerBox.setLayer(None)
             self.InputLayerBox.layerChanged.connect(self.UpdateFrameID)
             self.FieldIDBox.fieldChanged.connect(self.UpdateProcessButton)
             self.TimeSlider.valueChanged.connect(self.SliderUpdated)
 
-            #reads if the plugin was open or not
+            # reads if the plugin was open or not
             s = QgsSettings()
             pluginstatus = s.value("TimeViewer", "default text")
-            if pluginstatus=="open":
+            if pluginstatus == "open":
                 QTimer.singleShot(1000, self.ReadSettings)
 
-            #sets the plugin status to open
+            # sets the plugin status to open
             s.setValue("TimeViewer", "open")
-
 
             self.SaveBox.addItem('PNG')
             self.SaveBox.addItem('JPEG')
 
             self.Displayer.setText("Hello!")
-
 
             self.SaveBox.setEnabled(False)
             self.folderEdit.setEnabled(False)
@@ -111,8 +107,8 @@ class PluginDialog(QDockWidget):
                         layer.setSubsetString(self.InitialFilters[n])
         del self.layers[:]
         del self.InitialFilters[:]
-        self.layers=[]
-        self.InitialFilters=[]
+        self.layers = []
+        self.InitialFilters = []
         self.StopPlay()
         self.ExportVideoState = False
         self.scrollArea.setEnabled(True)
@@ -121,10 +117,9 @@ class PluginDialog(QDockWidget):
         self.RestorePreferenceButton.setEnabled(True)
         self.ClosingSignal.emit()
 
-
     def SaveSettings(self):
         proj = QgsProject.instance()
-        proj.writeEntry("TimeViewer", "Counter" , self.count)
+        proj.writeEntry("TimeViewer", "Counter", self.count)
         proj.writeEntry("TimeViewer", "Field", self.FieldIDBox.currentText())
         for n, layer in enumerate(self.layers):
             proj.writeEntry("TimeViewer", "LayersList" + str(n), layer.name())
@@ -145,12 +140,11 @@ class PluginDialog(QDockWidget):
         )
         return
 
-
     def ReadSettings(self):
         try:
             self.listWidget_input.clear()
             proj = QgsProject.instance()
-            field=proj.readEntry("TimeViewer","Field")
+            field = proj.readEntry("TimeViewer", "Field")
             self.FieldIDBox.setField(str(field[0]))
             self.count, type_conversion_ok = proj.readNumEntry("TimeViewer", "Counter")
             self.TimeSlider.setValue(self.count + 1)
@@ -160,17 +154,16 @@ class PluginDialog(QDockWidget):
             self.FPSBox.setValue(fps)
             outputlocation, type_conversion_ok = proj.readEntry("TimeViewer", "Output")
             self.folderEdit.setText(outputlocation)
-            self.layers=[]
-            self.layerlist2=[]
-            self.FrameIDs=[]
-            #self.InitialFilters = []
+            self.layers = []
+            self.layerlist2 = []
+            self.FrameIDs = []
+            # self.InitialFilters = []
             self.layerlist = ""
             for i in range(Nlayers):
-                layer, type_conversion_ok = proj.readEntry("TimeViewer","LayersList" + str(i))
-                initialfilter, type_conversion_ok = proj.readEntry("TimeViewer","InitialFilters" + str(i))
+                layer, type_conversion_ok = proj.readEntry("TimeViewer", "LayersList" + str(i))
+                initialfilter, type_conversion_ok = proj.readEntry("TimeViewer", "InitialFilters" + str(i))
                 self.layerlist2.append(layer)
                 self.InitialFilters.append(initialfilter)
-
 
             for i in range(Nframeids):
                 frameid, type_conversion_ok = proj.readEntry("TimeViewer", "FrameIDs" + str(i))
@@ -186,19 +179,20 @@ class PluginDialog(QDockWidget):
                 layer = QgsProject.instance().mapLayersByName(layername)[0]
                 self.layers.append(layer)
                 self.InputLayerBox.setLayer(layer)
-                #self.InitialFilters.append("")
+                # self.InitialFilters.append("")
                 self.listWidget_input.addItem(layer.name())
 
             for n, layer in enumerate(self.layers):
                 layer.setSubsetString('')
                 field = self.FieldIDBox.currentText()
-                if len(self.FrameIDs)>0:
+                if len(self.FrameIDs) > 0:
                     self.value = self.FrameIDs[self.count]
                     self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
                     if str(self.InitialFilters[n]) == "":
                         layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
                     else:
-                        layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
+                        layer.setSubsetString(
+                            "\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
                 self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
 
             self.ProcessButton.setEnabled(True)
@@ -226,10 +220,9 @@ class PluginDialog(QDockWidget):
             )
             return
 
+    layerlist = ""
+    layers = []
 
-
-    layerlist=""
-    layers=[]
     def AddLayer(self):
         if type(self.InputLayerBox.currentLayer()) == type(None):
             self.iface.messageBar().pushCritical(
@@ -259,16 +252,14 @@ class PluginDialog(QDockWidget):
         self.folderEdit.setEnabled(False)
         self.browseButton.setEnabled(False)
         for n, layer in enumerate(self.layers):
-            if len(self.InitialFilters)>0:
-                if n <= (len(self.InitialFilters)-1):
+            if len(self.InitialFilters) > 0:
+                if n <= (len(self.InitialFilters) - 1):
                     layer.setSubsetString(self.InitialFilters[n])
 
         self.InitialFilters = []
 
-
-
     def RemoveLayer(self):
-        if len(self.listWidget_input.selectedItems())==0:
+        if len(self.listWidget_input.selectedItems()) == 0:
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
                 'No Layer Selected !'
@@ -276,10 +267,10 @@ class PluginDialog(QDockWidget):
             return
 
         for item in self.listWidget_input.selectedItems():
-            newlayername=item.text()
+            newlayername = item.text()
             row = self.listWidget_input.row(item)
             self.listWidget_input.takeItem(row)
-        layer= QgsProject.instance().mapLayersByName(newlayername)[0]
+        layer = QgsProject.instance().mapLayersByName(newlayername)[0]
         if layer not in self.layers:
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
@@ -287,7 +278,7 @@ class PluginDialog(QDockWidget):
             )
             return
         for n, l in enumerate(self.layers):
-            if len(self.InitialFilters)>0:
+            if len(self.InitialFilters) > 0:
                 if n <= (len(self.InitialFilters) - 1):
                     l.setSubsetString(self.InitialFilters[n])
         self.layers.remove(layer)
@@ -302,9 +293,8 @@ class PluginDialog(QDockWidget):
         self.browseButton.setEnabled(False)
 
         self.InitialFilters = []
-        if self.listWidget_input.count()==0:
+        if self.listWidget_input.count() == 0:
             self.ProcessButton.setEnabled(False)
-
 
     def UpdateFrameID(self, layer):
         self.FieldIDBox.setLayer(self.InputLayer())
@@ -315,35 +305,37 @@ class PluginDialog(QDockWidget):
         self.folderEdit.setEnabled(False)
         self.browseButton.setEnabled(False)
 
-
     def WriteProcessing(self):
         self.Displayer.setText("Processing...")
         self.StopPlay()
         self.count = 0
-        self.InitialFilters=[]
+
+        ResetFilter = True
         if type(self.InputLayerBox.currentLayer()) != type(None):
+            field = self.FieldIDBox.currentText()
             for layer in self.layers:
-                field = self.FieldIDBox.currentText()
                 if field in layer.subsetString():
-                    self.InitialFilters.append("")
-                else:
+                    ResetFilter = False
+            if ResetFilter:
+                self.InitialFilters = []
+                for layer in self.layers:
                     self.InitialFilters.append(layer.subsetString())
 
-        if type(self.InputLayerBox.currentLayer()) != type(None) and len(self.FrameIDs)>0:
+        if type(self.InputLayerBox.currentLayer()) != type(None) and len(self.FrameIDs) > 0:
             for n, layer in enumerate(self.layers):
                 layer.setSubsetString('')
 
         QTimer.singleShot(10, self.ReadFrameIDs)
 
-
     FrameIDs = []
     InitialFilters = []
+
     def ReadFrameIDs(self):
         self.FrameIDs = []
         for layer in self.layers:
             field = self.FieldIDBox.currentText()
             idx = layer.fields().indexOf('{index}'.format(index=field))
-            if idx==-1:
+            if idx == -1:
                 self.Displayer.setText("Ready!")
                 self.iface.messageBar().pushCritical(
                     'Time Viewer',
@@ -376,26 +368,26 @@ class PluginDialog(QDockWidget):
         self.TimeSlider.setSingleStep(1)
         self.TimeSlider.setValue(1)
 
-
     def SliderUpdated(self):
         self.count = self.TimeSlider.value() - 1
-        if self.Playing==True:
+        if self.Playing == True:
             return
         else:
             if type(self.InputLayerBox.currentLayer()) != type(None):
                 for n, layer in enumerate(self.layers):
                     layer.setSubsetString('')
                     field = self.FieldIDBox.currentText()
-                    if len(self.FrameIDs)>0:
+                    if len(self.FrameIDs) > 0:
                         self.value = self.FrameIDs[self.count]
                         self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
                         if str(self.InitialFilters[n]) == "":
                             layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
                         else:
-                            layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
+                            layer.setSubsetString(
+                                "\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
 
     def UpdateProcessButton(self):
-        if len(self.layers)>0:
+        if len(self.layers) > 0:
             self.ProcessButton.setEnabled(True)
         self.PlayButton.setEnabled(False)
         self.TimeSlider.setEnabled(False)
@@ -403,12 +395,11 @@ class PluginDialog(QDockWidget):
         self.PreviousButton.setEnabled(False)
         self.Displayer.setText("Hello!")
 
-
     def InputLayer(self):
         return self.InputLayerBox.currentLayer()
 
     def PausePlay(self):
-        self.PausePressed=True
+        self.PausePressed = True
 
     def Next(self):
         if self.count == len(self.FrameIDs) - 1:
@@ -429,7 +420,6 @@ class PluginDialog(QDockWidget):
             else:
                 layer.setSubsetString("\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
 
-
     def Previous(self):
         if self.count == 0:
             self.iface.messageBar().pushCritical(
@@ -438,7 +428,7 @@ class PluginDialog(QDockWidget):
             )
             return
         self.count = self.count - 1
-        self.TimeSlider.setValue(self.count+1)
+        self.TimeSlider.setValue(self.count + 1)
         for n, layer in enumerate(self.layers):
             layer.setSubsetString(self.InitialFilters[n])
             field = self.FieldIDBox.currentText()
@@ -452,7 +442,7 @@ class PluginDialog(QDockWidget):
     def StopPlay(self):
         if self.Playing == True:
             self.TimeSlider.setValue(1)
-            self.StopPressed=True
+            self.StopPressed = True
 
     def onBrowseButtonClicked(self):
         currentFolder = self.folderEdit.text()
@@ -464,20 +454,21 @@ class PluginDialog(QDockWidget):
     def outFolder(self):
         return self.folderEdit.text()
 
-    def check_fps(self,value):
+    def check_fps(self, value):
         if value <= 0:
             return 1
         else:
             return 0
 
     count = 0
-    StopPressed=False
-    PausePressed=False
+    StopPressed = False
+    PausePressed = False
     Playing = False
-    value=0
+    value = 0
+
     def play1(self):
-        self.Playing=True
-        self.TimeSlider.setValue(self.count+1)
+        self.Playing = True
+        self.TimeSlider.setValue(self.count + 1)
         self.PlayButton.setEnabled(False)
         self.PauseButton.setEnabled(True)
         self.StopButton.setEnabled(True)
@@ -489,7 +480,7 @@ class PluginDialog(QDockWidget):
         self.SavePreferenceButton.setEnabled(False)
         self.RestorePreferenceButton.setEnabled(False)
         for n, layer in enumerate(self.layers):
-            if self.PausePressed==True:
+            if self.PausePressed == True:
                 self.Playing = False
                 self.PlayButton.setEnabled(True)
                 self.PauseButton.setEnabled(False)
@@ -507,7 +498,7 @@ class PluginDialog(QDockWidget):
                 return
             if self.StopPressed == True:
                 self.Playing = False
-                self.count=0
+                self.count = 0
                 self.PlayButton.setEnabled(True)
                 self.PauseButton.setEnabled(False)
                 self.StopButton.setEnabled(False)
@@ -537,10 +528,9 @@ class PluginDialog(QDockWidget):
         self.iface.mapCanvas().renderComplete.connect(self.renderLabel)
         QTimer.singleShot(FPS, self.play2)
 
-
     def play2(self):
         global count
-        if self.ExportVideoState==True:
+        if self.ExportVideoState == True:
             self.iface.messageBar().pushInfo(
                 'Time Viewer',
                 'Exporting Video, Please Wait !'
@@ -548,16 +538,18 @@ class PluginDialog(QDockWidget):
             iface.mapCanvas().saveAsImage(str(self.VideoTempFolder) + "/" + "TimeViewer" + str(self.count + 1) + ".png")
             os.remove(str(self.VideoTempFolder) + "/" + "TimeViewer" + str(self.count + 1) + ".pgw")
         if self.SaveFrameBox.isChecked():
-            if self.SaveBox.currentText()=="PNG":
+            if self.SaveBox.currentText() == "PNG":
                 if str(self.outFolder()) != "":
-                    iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + "TimeViewer"  + str(self.count+1) + ".png")
-                    os.remove(str(self.outFolder()) + "/" + "TimeViewer"  + str(self.count+1) + ".pgw")
-            if self.SaveBox.currentText()=="JPEG":
+                    iface.mapCanvas().saveAsImage(
+                        str(self.outFolder()) + "/" + "TimeViewer" + str(self.count + 1) + ".png")
+                    os.remove(str(self.outFolder()) + "/" + "TimeViewer" + str(self.count + 1) + ".pgw")
+            if self.SaveBox.currentText() == "JPEG":
                 if str(self.outFolder()) != "":
-                    iface.mapCanvas().saveAsImage(str(self.outFolder()) + "/" + "TimeViewer" + str(self.count+1) + ".jpg")
-                    os.remove(str(self.outFolder()) + "/" + "TimeViewer"  + str(self.count+1) + ".jgw")
+                    iface.mapCanvas().saveAsImage(
+                        str(self.outFolder()) + "/" + "TimeViewer" + str(self.count + 1) + ".jpg")
+                    os.remove(str(self.outFolder()) + "/" + "TimeViewer" + str(self.count + 1) + ".jgw")
         for n, layer in enumerate(self.layers):
-            if self.PausePressed==True:
+            if self.PausePressed == True:
                 self.Playing = False
                 self.PlayButton.setEnabled(True)
                 self.PauseButton.setEnabled(False)
@@ -575,7 +567,7 @@ class PluginDialog(QDockWidget):
                 return
             if self.StopPressed == True:
                 self.Playing = False
-                self.count=0
+                self.count = 0
                 self.PlayButton.setEnabled(True)
                 self.PauseButton.setEnabled(False)
                 self.StopButton.setEnabled(False)
@@ -591,33 +583,35 @@ class PluginDialog(QDockWidget):
                 layer.setSubsetString(self.InitialFilters[n])
                 self.Displayer.setText("Ready!")
                 return
-            #layer.setSubsetString(self.InitialFilters[n])
+            # layer.setSubsetString(self.InitialFilters[n])
 
-        if self.count <= len(self.FrameIDs)-2:
-            QTimer.singleShot(1, self.play1) # Wait a second (1000) and prepare next map
+        if self.count <= len(self.FrameIDs) - 2:
+            QTimer.singleShot(1, self.play1)  # Wait a second (1000) and prepare next map
             self.count += 1
         else:
-            if self.LoopBox.isChecked() and self.ExportVideoState==False:
-                self.count=0
+            if self.LoopBox.isChecked() and self.ExportVideoState == False:
+                self.count = 0
                 self.play1()
                 return
-            if self.ExportVideoState==True:
+            if self.ExportVideoState == True:
                 try:
-                    if self.VideoFileNameBox.text()=="":
-                        VideoFileName="TimeViewerOutput"
+                    if self.VideoFileNameBox.text() == "":
+                        VideoFileName = "TimeViewerOutput"
                     else:
-                        VideoFileName=self.VideoFileNameBox.text()
+                        VideoFileName = self.VideoFileNameBox.text()
                     if os.path.isfile(self.VideoTempFolder + VideoFileName + ".mp4"):
                         os.remove(self.VideoTempFolder + VideoFileName + ".mp4")
                     os.chdir(self.VideoTempFolder)
                     Executable = os.path.normpath(self.ffmpegaddress)
-                    Videofps=self.FPSBox2.value()
-                    myCommand = "\"" + "\"" + Executable + "\"" + " -r " + str(Videofps) + " -f image2 -s 1920x1080" + " -i " + " TimeViewer%d.png"  +  " -vcodec libx264 -crf 25  -pix_fmt yuv420p -vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\"" + " " + VideoFileName + ".mp4"+"\""
+                    Videofps = self.FPSBox2.value()
+                    myCommand = "\"" + "\"" + Executable + "\"" + " -r " + str(
+                        Videofps) + " -f image2 -s 1920x1080" + " -i " + " TimeViewer%d.png" + " -vcodec libx264 -crf 25  -pix_fmt yuv420p -vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\"" + " " + VideoFileName + ".mp4" + "\""
                     os.system(myCommand)
                     if os.path.isfile(str(self.outFolder()) + "/" + VideoFileName + ".mp4"):
                         os.remove(str(self.outFolder()) + "/" + VideoFileName + ".mp4")
-                    os.rename(self.VideoTempFolder + VideoFileName + ".mp4" , str(self.outFolder()) + "/" + VideoFileName + ".mp4")
-                    files = glob.glob(self.VideoTempFolder+"*")
+                    os.rename(self.VideoTempFolder + VideoFileName + ".mp4",
+                              str(self.outFolder()) + "/" + VideoFileName + ".mp4")
+                    files = glob.glob(self.VideoTempFolder + "*")
                     for f in files:
                         os.remove(f)
                     self.iface.messageBar().pushSuccess(
@@ -630,7 +624,7 @@ class PluginDialog(QDockWidget):
                         'Failed to Export Video !'
                     )
 
-                self.ExportVideoState=False
+                self.ExportVideoState = False
                 self.scrollArea.setEnabled(True)
                 self.FPSBox.setValue(15)
 
@@ -647,12 +641,11 @@ class PluginDialog(QDockWidget):
             self.RestorePreferenceButton.setEnabled(True)
             self.StopPressed = False
             self.PausePressed = False
-            self.count=0
+            self.count = 0
             self.TimeSlider.setValue(1)
             self.Displayer.setText("Ready!")
             for n, layer in enumerate(self.layers):
                 layer.setSubsetString(self.InitialFilters[n])
-
 
     def renderLabel(self, painter):
         font = "Arial"
@@ -663,7 +656,7 @@ class PluginDialog(QDockWidget):
         pixelRatio = painter.device().devicePixelRatio()
         width = painter.device().width() / pixelRatio
         height = painter.device().height() / pixelRatio
-        labelString=str(self.value)
+        labelString = str(self.value)
 
         painter.setRenderHint(painter.Antialiasing, True)
         txt = QTextDocument()
@@ -707,13 +700,14 @@ class PluginDialog(QDockWidget):
                     settingsfile = open(os.path.dirname(os.path.realpath(__file__)) + "/ffmpegpath.ini", 'r')
                     tempaddress = settingsfile.read()
                     if os.path.isfile(tempaddress):
-                        self.ffmpegaddress=tempaddress
+                        self.ffmpegaddress = tempaddress
             except:
                 pass
-        if self.ffmpegaddress=="":
-            new_filename, __ = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Please select ffmpeg.exe', "*ffmpeg.exe")
+        if self.ffmpegaddress == "":
+            new_filename, __ = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Please select ffmpeg.exe',
+                                                           "*ffmpeg.exe")
             if new_filename != '':
-                self.ffmpegaddress=new_filename
+                self.ffmpegaddress = new_filename
                 try:
                     settingsfile = os.path.dirname(os.path.realpath(__file__)) + "/ffmpegpath.ini"
                     with open(settingsfile, 'w') as file:
@@ -729,13 +723,13 @@ class PluginDialog(QDockWidget):
         else:
             self.ExportVideo()
 
+    ExportVideoState = False
+    VideoTempFolder = ""
+    ffmpegaddress = ""
 
-    ExportVideoState=False
-    VideoTempFolder=""
-    ffmpegaddress=""
     def ExportVideo(self):
 
-        if self.ffmpegaddress=="":
+        if self.ffmpegaddress == "":
             self.iface.messageBar().pushCritical(
                 'Time Viewer',
                 'Invalid Location for ffmpeg.exe !'
@@ -746,13 +740,12 @@ class PluginDialog(QDockWidget):
             print("")
         else:
             os.mkdir(self.VideoTempFolder)
-        self.count=0
-        self.ExportVideoState=True
+        self.count = 0
+        self.ExportVideoState = True
         self.FPSBox.setValue(60)
         self.Displayer.setText("Exporting Video... Please Wait")
         self.scrollArea.setEnabled(False)
         self.play1()
-
 
 
 class TimeViewer(object):
@@ -765,11 +758,10 @@ class TimeViewer(object):
         self.act.triggered.connect(self.execDialog)
 
         s = QgsSettings()
-        pluginstatus=s.value("TimeViewer", "default text")
-        if pluginstatus=="open":
+        pluginstatus = s.value("TimeViewer", "default text")
+        if pluginstatus == "open":
             QTimer.singleShot(6000, self.execDialog)
-            #self.execDialog()
-
+            # self.execDialog()
 
     def initGui(self, menu=None):
         if menu is not None:
@@ -783,16 +775,14 @@ class TimeViewer(object):
         else:
             self.iface.removeToolBarIcon(self.act)
 
-
     def execDialog(self):
         """
         """
         self.dialog = PluginDialog(self.iface, self.iface.mainWindow())
-        #self.dialog.setModal(False)
-        #self.act.setEnabled(False)
+        # self.dialog.setModal(False)
+        # self.act.setEnabled(False)
         iface.addDockWidget(Qt.BottomDockWidgetArea, self.dialog)
         self.dialog.ClosingSignal.connect(self.quitDialog)
-
 
     def scheduleAbort(self):
         self.cancel = True
@@ -802,9 +792,7 @@ class TimeViewer(object):
         s = QgsSettings()
         s.setValue("TimeViewer", "closed")
 
-        #self.dialog = None
+        # self.dialog = None
         self.act.setEnabled(True)
         self.cancel = False
         self.dialog.hide()
-
-
