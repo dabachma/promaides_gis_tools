@@ -278,6 +278,7 @@ class CINPointImport(object):
         layerFields.append(QgsField('recovery', QVariant.Double))   #7
         layerFields.append(QgsField('regular', QVariant.Bool))      #8
         layerFields.append(QgsField('active', QVariant.Double))     #9
+        layerFields.append(QgsField('osm_id', QVariant.String))     #10
         
         writer = QgsVectorFileWriter(fn, 'UTF-8', layerFields, QgsWkbTypes.Point, QgsCoordinateReferenceSystem(self.dialog.crs), 'ESRI Shapefile')
         feat = QgsFeature()
@@ -300,12 +301,17 @@ class CINPointImport(object):
                             name = element['tags']['name']       
                         else:
                             name = "NULL"
+                    
+                    type = str(element['type'])
+                    id = str(element['id'])
+                    osm_id = type +"/"+ id
+                    
                     idx += 1
 
                     pt = self.dialog.coordinateTransform(lon,lat,False)
 
                     feat.setGeometry(QgsGeometry.fromPointXY(pt))
-                    feat.setAttributes([idx, name, sec_id, tagList.pop(0), NULL, NULL, NULL, NULL, NULL]) 
+                    feat.setAttributes([idx, name, sec_id, tagList.pop(0), NULL, NULL, NULL, NULL, NULL, osm_id]) 
                     writer.addFeature(feat)
 
         layer = self.iface.addVectorLayer(fn, '', 'ogr')
