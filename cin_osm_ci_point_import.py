@@ -276,7 +276,7 @@ class CINPointImport(object):
         layerFields.append(QgsField('sec_level', QVariant.Int))     #5
         layerFields.append(QgsField('threshold', QVariant.Double))  #6
         layerFields.append(QgsField('recovery', QVariant.Double))   #7
-        layerFields.append(QgsField('regular', QVariant.Bool))      #8
+        layerFields.append(QgsField('regular', QVariant.String))    #8
         layerFields.append(QgsField('active', QVariant.Double))     #9
         layerFields.append(QgsField('osm_id', QVariant.String))     #10
         
@@ -369,7 +369,7 @@ class CINPointImport(object):
             osm_dict['tag'].append('water_well')
 
             osm_dict['key'].append('man_made')
-            osm_dict['tag'].append('reservoir_coverd')
+            osm_dict['tag'].append('reservoir_covered')
             
             sec_id = 3  
         if search == 'Water treatment':
