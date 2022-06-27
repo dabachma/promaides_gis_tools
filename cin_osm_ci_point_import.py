@@ -284,6 +284,7 @@ class CINPointImport(object):
         feat = QgsFeature()
         idx = 0
         north, east, south, west = self.direction()
+        inputValues = {"name":[], "sec_id":[], "tagList":[], "lon":[], "lat":[], "osm_id":[]}
         for search in searchList:
             dataList, sec_id, tagList = self.query(search, north, east, south, west)
 
@@ -305,14 +306,22 @@ class CINPointImport(object):
                     type = str(element['type'])
                     id = str(element['id'])
                     osm_id = type +"/"+ id
+
+                    inputValues['name'].append(name)
+                    inputValues['sec_id'].append(sec_id)
+                    inputValues['tagList'].append(tagList.pop(0))
+                    inputValues['lon'].append(lon)
+                    inputValues['lat'].append(lat)
+                    inputValues['osm_id'].append(osm_id)
                     
-                    idx += 1
-
-                    pt = self.dialog.coordinateTransform(lon,lat,False)
-
-                    feat.setGeometry(QgsGeometry.fromPointXY(pt))
-                    feat.setAttributes([idx, name, sec_id, tagList.pop(0), NULL, NULL, NULL, NULL, NULL, osm_id]) 
-                    writer.addFeature(feat)
+        
+        outputValues = self.checkValues(inputValues)
+        for name, sec_id ,tagList, lon, lat, osm_id in zip(outputValues['name'], outputValues['sec_id'], outputValues['tagList'], outputValues['lon'], outputValues['lat'], outputValues['osm_id']):     
+            idx += 1
+            pt = self.dialog.coordinateTransform(lon,lat,False)
+            feat.setGeometry(QgsGeometry.fromPointXY(pt))
+            feat.setAttributes([idx, name, sec_id, tagList, NULL, NULL, NULL, NULL, NULL, osm_id]) 
+            writer.addFeature(feat)
 
         layer = self.iface.addVectorLayer(fn, '', 'ogr')
         del(writer)
@@ -523,5 +532,20 @@ class CINPointImport(object):
                     n += 1      
         return dataList, sec_id, tagList
             
-            
-
+    def checkValues(self, inputValues):
+        start_time = time.time()
+        begin = len(inputValues["osm_id"])
+        for osm_id in inputValues["osm_id"]:
+            location = [i for i,x in enumerate(inputValues["osm_id"]) if x==osm_id]
+            while len(location) > 1:
+                del inputValues["name"][location[1]]
+                del inputValues["sec_id"][location[1]]
+                del inputValues['tagList'][location[1]]
+                del inputValues['lon'][location[1]]
+                del inputValues['lat'][location[1]]
+                del inputValues["osm_id"][location[1]]
+                location = [i for i,x in enumerate(inputValues["osm_id"]) if x==osm_id]
+        outputValues = inputValues
+        print("Processing time: {}".format(round(time.time()-start_time,2)))
+        print("del of {} points".format(begin-len(outputValues["osm_id"])))
+        return outputValues
