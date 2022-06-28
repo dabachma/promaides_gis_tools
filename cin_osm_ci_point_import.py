@@ -48,8 +48,15 @@ class PluginDialog(QDialog):
         project = QgsProject.instance()
         self.crs = project.crs()
         self.HelpButton.clicked.connect(self.Help)
-        
+
         self.searchWidget()
+
+        #self variables 
+        self.areaName = "Search Area"
+        self.minX = 0
+        self.minY = 0
+        self.maxX = 0
+        self.maxY = 0
 
     def closeEvent(self, event):
         self.ClosingSignal.emit()
@@ -88,8 +95,8 @@ class PluginDialog(QDialog):
         self.listWidget_search.clear()                 
 
     def enableMapPicker(self, clicked):
-        self.lst1 = []
-        self.lst2 = []
+        self.list_of_Points = []
+
         if clicked:
             self.picker.canvasClicked.connect(self.onMapClicked)
             self.iface.mapCanvas().setMapTool(self.picker)
@@ -99,42 +106,29 @@ class PluginDialog(QDialog):
 
     def onMapClicked(self, point, button):
         if button == Qt.LeftButton:
-            if self.lst1 and self.lst2:
-                distA = math.sqrt((self.lst1[0]-point.x())**2+(self.lst1[1]-point.y())**2)
-                distB = math.sqrt((self.lst2[0]-point.x())**2+(self.lst2[1]-point.y())**2)    
+            ptnX = point.x()
+            ptnY = point.y()
+            self.list_of_Points.append(QgsPointXY(ptnX,ptnY))
 
-                if distA < distB:
-                    self.lst1[0] = point.x()
-                    self.lst1[1] = point.y()
-                else:
-                    self.lst2[0] = point.x()
-                    self.lst2[1] = point.y()
-                
+        if button == Qt.RightButton and len(self.list_of_Points) != 0:
+            del self.list_of_Points[-1]
 
-            if self.lst1 and not self.lst2:
-                self.lst2.append(point.x())
-                self.lst2.append(point.y())
-            
-            if not self.lst1:
-                self.lst1.append(point.x())
-                self.lst1.append(point.y())
+        print(len(self.list_of_Points))
 
-            if self.lst1 and self.lst2:
-                self.minmaxpoints()
-
-        if button == Qt.RightButton:
-            self.button_searchArea.toggle()
-            self.enableMapPicker(False)
+        self.polygon(self.list_of_Points)
         
-    def polygon(self, xmin, ymin, xmax, ymax):
-        self.areaName = "Search Area"
+    def polygon(self, list_of_Points):
         self.deleteShapefile(self.areaName)
+
         project = QgsProject().instance()
-        rect = QgsRectangle(xmin, ymin, xmax, ymax)
-        geom = QgsGeometry().fromRect(rect)
+
+        self.geom = QgsGeometry().fromPolygonXY([list_of_Points])
+
         ftr = QgsFeature()
-        ftr.setGeometry(geom)
+        ftr.setGeometry(self.geom)
+
         crs = 'crs='+self.crs.authid()
+
         lyr = QgsVectorLayer('Polygon?{}'.format(crs), self.areaName,'memory')
 
         symbol = QgsFillSymbol.createSimple({'border_width_map_unit_scale': '3x:0,0,0,0,0,0', 'color': '0,0,0,0', 
@@ -144,24 +138,7 @@ class PluginDialog(QDialog):
         lyr.renderer().setSymbol(symbol)
         with edit(lyr):
             lyr.addFeature(ftr)
-        project.addMapLayer(lyr)
-        
-    def minmaxpoints(self):
-        if self.lst1[0] < self.lst2[0]:
-            self.xmin = self.lst1[0]
-            self.xmax = self.lst2[0]
-        else:
-            self.xmin = self.lst2[0]
-            self.xmax = self.lst1[0]
-        
-        if self.lst1[1] < self.lst2[1]:
-            self.ymin = self.lst1[1]
-            self.ymax = self.lst2[1]
-        else:
-            self.ymin = self.lst2[1]
-            self.ymax = self.lst1[1]
-    
-        self.polygon(self.xmin, self.ymin, self.xmax, self.ymax)
+        project.addMapLayer(lyr)   
 
     def coordinateTransform(self, x, y, toWGS=bool):
         crsSrc = QgsCoordinateReferenceSystem(self.crs)
@@ -174,7 +151,7 @@ class PluginDialog(QDialog):
         else:
             return xform.transform(QgsPointXY(x,y), QgsCoordinateTransform.ReverseTransform)
     
-    def deleteShapefile(self, name = str):
+    def deleteShapefile(self, name):
         layers = self.iface.mapCanvas().layers()
         for layer in layers:
             if layer.name() == name:
@@ -214,10 +191,7 @@ class CINPointImport(object):
         self.cancel = True
         
     def quitDialog(self):
-        try:
-            self.dialog.deleteShapefile(self.dialog.areaName)
-        except:
-            pass
+        self.dialog.deleteShapefile(self.dialog.areaName)
         self.act.setEnabled(True)
         self.cancel = False
         self.dialog.close()
@@ -245,13 +219,16 @@ class CINPointImport(object):
             self.execTool()
 
     def direction(self):
-        pt = self.dialog.coordinateTransform(self.dialog.xmin, self.dialog.ymin, True)
+        boundingBox = self.dialog.geom.boundingBox()
+
+        pt = self.dialog.coordinateTransform(boundingBox.xMinimum(), boundingBox.yMinimum(), True)
         west = pt.x()
         south = pt.y()
         
-        pt = self.dialog.coordinateTransform(self.dialog.xmax, self.dialog.ymax, True)
+        pt = self.dialog.coordinateTransform(boundingBox.xMaximum(), boundingBox.yMaximum(), True)
         east = pt.x()
         north = pt.y()
+        
         return north, east, south, west
 
     def execTool(self):
@@ -266,7 +243,7 @@ class CINPointImport(object):
 
         filename =  os.path.basename(fn).split(".")[0]
 
-        self.dialog.deleteShapefile(filename)
+        #self.dialog.deleteShapefile(filename)
 
         layerFields = QgsFields()
         layerFields.append(QgsField('id', QVariant.Int))            #1
@@ -307,16 +284,23 @@ class CINPointImport(object):
                     id = str(element['id'])
                     osm_id = type +"/"+ id
 
-                    inputValues['name'].append(name)
-                    inputValues['sec_id'].append(sec_id)
-                    inputValues['tagList'].append(tagList.pop(0))
-                    inputValues['lon'].append(lon)
-                    inputValues['lat'].append(lat)
-                    inputValues['osm_id'].append(osm_id)
+                    pt = self.dialog.coordinateTransform(lon,lat,False)
+
+                    if self.dialog.geom.contains(pt):
+                        inputValues['name'].append(name)
+                        inputValues['sec_id'].append(sec_id)
+                        inputValues['tagList'].append(tagList.pop(0))
+                        inputValues['lon'].append(lon)
+                        inputValues['lat'].append(lat)
+                        inputValues['osm_id'].append(osm_id)
                     
-        
         outputValues = self.checkValues(inputValues)
-        for name, sec_id ,tagList, lon, lat, osm_id in zip(outputValues['name'], outputValues['sec_id'], outputValues['tagList'], outputValues['lon'], outputValues['lat'], outputValues['osm_id']):     
+        for name, sec_id ,tagList, lon, lat, osm_id in zip(outputValues['name'], 
+                                                        outputValues['sec_id'], 
+                                                        outputValues['tagList'], 
+                                                        outputValues['lon'], 
+                                                        outputValues['lat'], 
+                                                        outputValues['osm_id']):     
             idx += 1
             pt = self.dialog.coordinateTransform(lon,lat,False)
             feat.setGeometry(QgsGeometry.fromPointXY(pt))
@@ -507,6 +491,7 @@ class CINPointImport(object):
             osm_dict['tag'].append('university')
 
             sec_id = 18
+        
         for key, tag in zip(osm_dict['key'], osm_dict['tag']):
             n = 0
             while n < 5:
