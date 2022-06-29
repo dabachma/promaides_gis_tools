@@ -113,8 +113,6 @@ class PluginDialog(QDialog):
         if button == Qt.RightButton and len(self.list_of_Points) != 0:
             del self.list_of_Points[-1]
 
-        print(len(self.list_of_Points))
-
         self.polygon(self.list_of_Points)
         
     def polygon(self, list_of_Points):
@@ -276,7 +274,8 @@ class CINPointImport(object):
 
                     if 'tags' in element:
                         if 'name' in element['tags']:
-                            name = element['tags']['name']       
+                            name = element['tags']['name'] 
+                            name = name.replace(" ", "_")      
                         else:
                             name = "NULL"
                     
@@ -518,8 +517,6 @@ class CINPointImport(object):
         return dataList, sec_id, tagList
             
     def checkValues(self, inputValues):
-        start_time = time.time()
-        begin = len(inputValues["osm_id"])
         for osm_id in inputValues["osm_id"]:
             location = [i for i,x in enumerate(inputValues["osm_id"]) if x==osm_id]
             while len(location) > 1:
@@ -531,6 +528,4 @@ class CINPointImport(object):
                 del inputValues["osm_id"][location[1]]
                 location = [i for i,x in enumerate(inputValues["osm_id"]) if x==osm_id]
         outputValues = inputValues
-        print("Processing time: {}".format(round(time.time()-start_time,2)))
-        print("del of {} points".format(begin-len(outputValues["osm_id"])))
         return outputValues
