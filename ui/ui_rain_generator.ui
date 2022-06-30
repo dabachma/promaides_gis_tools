@@ -31,6 +31,10 @@
   <property name="windowTitle">
    <string>Rain Generator</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../icons/01_20X20_REG.png</normaloff>../icons/01_20X20_REG.png</iconset>
+  </property>
   <property name="modal">
    <bool>false</bool>
   </property>
