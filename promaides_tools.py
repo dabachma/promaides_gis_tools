@@ -17,6 +17,7 @@ from .river_profile_export import RiverProfileExport
 from .dem_export import DEMExport
 from .database_export import DatabaseExport
 from .hello_world import HelloWorld
+from .quick_visualize import QuickVisualize
 from .crosssectioncreator import CrossSectionCreator
 from .time_viewer import TimeViewer
 from .rain_generator import RainGenerator
@@ -59,10 +60,11 @@ class PromaidesToolbox(object):
         self.cin_polygon = CINPolygonExport(self.iface)
         self.cin_connector = CINConnectorExport(self.iface)
         self.cin_connector_automatic = CINConnectorExportAuto(self.iface)
-        self.cin_osm_ci_point_import = CINPointImport(self.iface) 
+        self.cin_osm_ci_point_import = CINPointImport(self.iface)
 
         #General
         self.hello_world = HelloWorld(self.iface)
+        self.quick_visualize = QuickVisualize(self.iface)
         self.db_exprt = DatabaseExport(self.iface)
 
 
@@ -71,7 +73,7 @@ class PromaidesToolbox(object):
         """
         """
         self.plugin_menu = QMenu('ProMaIDes Toolbox', self.iface.mainWindow())
-        #Add a submenu
+        #Add a sub-menu
         self.submenu_general = self.plugin_menu.addMenu('General')
         self.submenu_haz = self.plugin_menu.addMenu('HAZ')
         self.submenu_hyd = self.plugin_menu.addMenu('HYD')
@@ -80,7 +82,7 @@ class PromaidesToolbox(object):
         self.submenu_cin = self.plugin_menu.addMenu('CIN')
 
 
-        #Add and coonnect to funtions in other .py-files
+        #Add and connect to functions in other .py-files
         #HYD
 
         self.observationpoint_exprt.initGui(self.submenu_hyd)
@@ -104,16 +106,17 @@ class PromaidesToolbox(object):
 
         #DAM
         self.dam_raster.initGui(self.submenu_dam)
-        
+
         #CIN
         self.cin_point.initGui(self.submenu_cin)
         self.cin_polygon.initGui(self.submenu_cin)
         self.cin_connector.initGui(self.submenu_cin)
         self.cin_connector_automatic.initGui(self.submenu_cin)
-        self.cin_osm_ci_point_import.initGui(self.submenu_cin)   
+        self.cin_osm_ci_point_import.initGui(self.submenu_cin)
 
         #General
         self.hello_world.initGui(self.submenu_general)
+        self.quick_visualize.initGui(self.submenu_general)
         self.db_exprt.initGui(self.submenu_general)
 
 
@@ -141,17 +144,18 @@ class PromaidesToolbox(object):
 
         #DAM
         self.dam_raster.unload(self.submenu_dam)
-        
+
         #CIN
         self.cin_point.unload(self.submenu_cin)
         self.cin_connector.unload(self.submenu_cin)
         self.cin_polygon.unload(self.submenu_cin)
         self.cin_connector_automatic.unload(self.submenu_cin)
-        self.cin_osm_ci_point_import.unload(self.submenu_cin) 
+        self.cin_osm_ci_point_import.unload(self.submenu_cin)
 
         #General
         self.db_exprt.unload(self.submenu_general)
         self.hello_world.unload(self.submenu_general)
+        self.quick_visualize.unload(self.submenu_general)
         
         self.iface.pluginMenu().removeAction(self.plugin_menu.menuAction())
 
