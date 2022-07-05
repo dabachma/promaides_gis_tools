@@ -83,14 +83,14 @@ class PluginDialog(QDialog):
                                          'Please select a polypoint layer.</i>'
                                          .format(layer_name))
 
-        self.expression_field_ids.setExpression("id")
-        self.expression_field_names.setExpression("name")
+        self.expression_field_ids.setExpression("point_id")
+        self.expression_field_names.setExpression("point_name")
         self.expression_field_sectors.setExpression("sec_id")
         self.expression_field_levels.setExpression("sec_level")
-        self.expression_field_thresholds.setExpression("threshold")
-        self.expression_field_regulars.setExpression("regular")
-        self.expression_field_recoverys.setExpression("recovery")
-        self.expression_field_actives.setExpression("active")
+        self.expression_field_thresholds.setExpression("boundary_v")
+        self.expression_field_regulars.setExpression("regular_fl")
+        self.expression_field_recoverys.setExpression("recovery_t")
+        self.expression_field_actives.setExpression("activation")
 
         self.expression_field_names.setLayer(self.input_layer)
         self.expression_field_ids.setLayer(self.input_layer)
@@ -302,7 +302,7 @@ class CINPointExport(object):
                     'Level input "{}" of "{}" is not a valid input (Required typ: Integer)'.format(attrs[levels_pos],attrs[name_pos]))              
                 return False
             
-            #thresholds controll
+            #thresholds control
             if attrs[thresholds_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
@@ -322,7 +322,7 @@ class CINPointExport(object):
                 )
                 return False
             
-            #regular controll
+            #regular control
             if attrs[regular_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
@@ -332,7 +332,7 @@ class CINPointExport(object):
             if not isinstance(attrs[regular_pos], str):
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
-                    'Regulat input "{}" of "{}" is not a valid input (Required typ: String)'.format(attrs[regular_pos],attrs[name_pos]))              
+                    'Regular input "{}" of "{}" is not a valid input (Required typ: String)'.format(attrs[regular_pos],attrs[name_pos]))              
                 return False     
 
             if str(attrs[regular_pos]).lower() == "true" or str(attrs[regular_pos]).lower() == "false":
@@ -343,7 +343,7 @@ class CINPointExport(object):
                     'Regular input of "{}" must be true or false'.format(attrs[name_pos]))
                 return False
             
-            #recovery time controll
+            #recovery time control
             if attrs[recoverys_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
