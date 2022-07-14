@@ -146,7 +146,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>360</y>
+     <y>340</y>
      <width>721</width>
      <height>28</height>
     </rect>
@@ -290,6 +290,35 @@
    </property>
    <property name="text">
     <string>Search List</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="Poly_Button">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>370</y>
+     <width>95</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Polygon</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="Rect_Button">
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>370</y>
+     <width>95</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Rectangle</string>
    </property>
   </widget>
  </widget>
