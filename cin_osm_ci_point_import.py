@@ -22,6 +22,7 @@ import time
 import requests
 import json
 import os
+from multiprocessing.pool import ThreadPool as Pool
 
 UI_PATH = get_ui_path('ui_cin_2promaides_osm_point_import.ui')
 
@@ -53,10 +54,6 @@ class PluginDialog(QDialog):
 
         #self variables 
         self.areaName = "Search Area"
-        self.minX = 0
-        self.minY = 0
-        self.maxX = 0
-        self.maxY = 0
 
     def closeEvent(self, event):
         self.ClosingSignal.emit()
@@ -96,6 +93,8 @@ class PluginDialog(QDialog):
 
     def enableMapPicker(self, clicked):
         self.list_of_Points = []
+        self.coordinate1 = ()
+        self.coordinate2 = ()
 
         if clicked:
             self.picker.canvasClicked.connect(self.onMapClicked)
@@ -105,22 +104,69 @@ class PluginDialog(QDialog):
             self.iface.mapCanvas().unsetMapTool(self.picker)
 
     def onMapClicked(self, point, button):
-        if button == Qt.LeftButton:
-            ptnX = point.x()
-            ptnY = point.y()
-            self.list_of_Points.append(QgsPointXY(ptnX,ptnY))
+        if self.Poly_Button.isChecked():
+            if button == Qt.LeftButton:
+                ptnX = point.x()
+                ptnY = point.y()
+                self.list_of_Points.append(QgsPointXY(ptnX,ptnY))
 
-        if button == Qt.RightButton and len(self.list_of_Points) != 0:
-            del self.list_of_Points[-1]
+            if button == Qt.RightButton and len(self.list_of_Points) != 0:
+                del self.list_of_Points[-1]
 
-        self.polygon(self.list_of_Points)
+            self.polygon(self.list_of_Points)
+        
+        if self.Rect_Button.isChecked():
+            if button == Qt.LeftButton:
+                if self.coordinate1 and self.coordinate2:
+                    distA = point.distance(self.coordinate1[0], self.coordinate1[1])    
+                    distB = point.distance(self.coordinate2[0], self.coordinate2[1])
+
+                    if distA < distB:
+                        self.coordinate1 = point.x(), point.y()
+                    else:
+                        self.coordinate2 = point.x(), point.y()
+
+                elif self.coordinate1 and not self.coordinate2:
+                    self.coordinate2 = point.x(), point.y()
+                
+                elif not self.coordinate1:
+                    self.coordinate1 = point.x(), point.y()
+
+            if self.coordinate1 and self.coordinate2:
+                self.rectangle(self.coordinate1, self.coordinate2)
+
+            if button == Qt.RightButton:
+                self.button_searchArea.toggle()
+                self.enableMapPicker(False)
+            
         
     def polygon(self, list_of_Points):
+        geom = QgsGeometry().fromPolygonXY([list_of_Points])
+        self.drawer(geom)
+
+    def rectangle(self, coordinate1, coordinate2):
+        if coordinate1[0] < coordinate2[0]:
+            xmin = coordinate1[0]
+            xmax = coordinate2[0]
+        else:
+            xmin = coordinate2[0]
+            xmax = coordinate1[0]
+        
+        if coordinate1[1] < coordinate2[1]:
+            ymin = coordinate1[1]
+            ymax = coordinate2[1]
+        else:
+            ymin = coordinate2[1]
+            ymax = coordinate1[1]
+        
+        rect = QgsRectangle(xmin, ymin, xmax, ymax)
+        geom = QgsGeometry().fromRect(rect)
+        self.drawer(geom)
+
+    def drawer(self, geom):
+        self.geom = geom
         self.deleteShapefile(self.areaName)
-
         project = QgsProject().instance()
-
-        self.geom = QgsGeometry().fromPolygonXY([list_of_Points])
 
         ftr = QgsFeature()
         ftr.setGeometry(self.geom)
@@ -136,7 +182,7 @@ class PluginDialog(QDialog):
         lyr.renderer().setSymbol(symbol)
         with edit(lyr):
             lyr.addFeature(ftr)
-        project.addMapLayer(lyr)   
+        project.addMapLayer(lyr)
 
     def coordinateTransform(self, x, y, toWGS=bool):
         crsSrc = QgsCoordinateReferenceSystem(self.crs)
@@ -257,14 +303,24 @@ class CINPointImport(object):
         
         writer = QgsVectorFileWriter(fn, 'UTF-8', layerFields, QgsWkbTypes.Point, QgsCoordinateReferenceSystem(self.dialog.crs), 'ESRI Shapefile')
         feat = QgsFeature()
-        idx = 0
         north, east, south, west = self.direction()
+        
         inputValues = {"name":[], "sec_id":[], "tagList":[], "lon":[], "lat":[], "osm_id":[]}
-        for search in searchList:
-            dataList, sec_id, tagList = self.query(search, north, east, south, west)
+        
+        #Multiprocessing 
+        with Pool(10) as p:
+            all_sectors = p.map(self.query, searchList)
 
-            for data in dataList:
-                for element in data['elements']:
+        max_lenght = 0
+        for sector in all_sectors:
+            sector_result, sec_id, tagList = sector
+            sector_lenght = 0
+            for result in sector_result:   #goes through all results of a sector
+                sector_lenght += len(result['elements'])
+
+                for element in result['elements']:    #goes through all elements in the tag
+                    tag_name = tagList.pop(0)
+                    
                     if 'center' in element:
                         lon = element['center']['lon']
                         lat = element['center']['lat']
@@ -277,50 +333,72 @@ class CINPointImport(object):
                             name = element['tags']['name'] 
                             name = name.replace(" ", "_")      
                         else:
-                            name = "NULL"
+                            name = tag_name
                     
-                    type = str(element['type'])
+                    typ = str(element['type'])
                     id = str(element['id'])
-                    osm_id = type +"/"+ id
+                    osm_id = typ +"/"+ id
 
                     pt = self.dialog.coordinateTransform(lon,lat,False)
 
                     if self.dialog.geom.contains(pt):
                         inputValues['name'].append(name)
                         inputValues['sec_id'].append(sec_id)
-                        inputValues['tagList'].append(tagList.pop(0))
+                        inputValues['tagList'].append(tag_name)
                         inputValues['lon'].append(lon)
                         inputValues['lat'].append(lat)
                         inputValues['osm_id'].append(osm_id)
-                    
+            if sector_lenght >= max_lenght:
+                max_lenght = sector_lenght
+        
+        num = 1
+        new_tag_name = ""
+        old_sec_id = ""
         outputValues = self.checkValues(inputValues)
-        for name, sec_id ,tagList, lon, lat, osm_id in zip(outputValues['name'], 
+        multiplier = len(str(max_lenght))
+        for feature_count, (name, sec_id ,tagList, lon, lat, osm_id) in enumerate(zip(outputValues['name'], 
                                                         outputValues['sec_id'], 
                                                         outputValues['tagList'], 
                                                         outputValues['lon'], 
-                                                        outputValues['lat'], 
-                                                        outputValues['osm_id']):     
+                                                        outputValues['lat'],
+                                                        outputValues['osm_id']), 1):   
+            if sec_id != old_sec_id:
+                old_sec_id = sec_id
+                idx = 1
+            idx_sec = sec_id * (10**multiplier)
+            idx_num = idx_sec + idx
             idx += 1
+            
+            if tagList != new_tag_name:
+                new_tag_name = tagList
+                num = 1
+            if name == new_tag_name:
+                name = f"{name}_{num}"
+                num += 1    
+
             pt = self.dialog.coordinateTransform(lon,lat,False)
             feat.setGeometry(QgsGeometry.fromPointXY(pt))
-            feat.setAttributes([idx, name, sec_id, tagList, NULL, NULL, NULL, NULL, NULL, osm_id]) 
+            
+            feat.setAttributes([idx_num, name, sec_id, tagList, 5, 0.2, 14, "true", 0, osm_id]) 
             writer.addFeature(feat)
 
         layer = self.iface.addVectorLayer(fn, '', 'ogr')
         del(writer)
         end_time = time.time()
         length = round(end_time-start_time,2)
+
         self.iface.messageBar().pushInfo(
             'OSM CI Point Import',
-            'Inport finished successfully! {num} Points in {duration} sec. found.'.format(num=idx, duration=length)
-           )
+            f'Inport finished successfully! {feature_count} Points in {length} sec. found.')
+           
         self.quitDialog()
    
-    def query(self, search, north, east, south, west):
+    def query(self, search):
+        north, east, south, west = self.direction()
         overpass_url = "https://lz4.overpass-api.de/api/interpreter"
         osm_dict = {'key':[], 'tag':[]}
         dataList = []
-        tagList = []
+        tagList = []     
 
         if search == 'Electricity':
             osm_dict['key'].append('power')
@@ -439,8 +517,8 @@ class CINPointImport(object):
             osm_dict['key'].append('amenity')
             osm_dict['tag'].append('courthouse')
             
-            # osm_dict['key'].append('government') #less results than office = government
-            # osm_dict['tag'].append('ministry')
+            osm_dict['key'].append('government') 
+            osm_dict['tag'].append('ministry')
 
             osm_dict['key'].append('office')
             osm_dict['tag'].append('government')
@@ -493,7 +571,7 @@ class CINPointImport(object):
         
         for key, tag in zip(osm_dict['key'], osm_dict['tag']):
             n = 0
-            while n < 5:
+            while n <= 100:
                 overpass_query = """
                 [out:json];
                 (
@@ -508,12 +586,14 @@ class CINPointImport(object):
                     response = requests.get(overpass_url, params={'data': overpass_query})
                     data = response.json()
                     for i in range(len(data['elements'])):
-                        tagList.append(tag)
-                    
+                        tagList.append(tag)                    
                     dataList.append(data)
                     break
                 except:
-                    n += 1      
+                    n += 1
+                    if n == 100:
+                        print("abort")
+        
         return dataList, sec_id, tagList
             
     def checkValues(self, inputValues):
@@ -525,7 +605,7 @@ class CINPointImport(object):
                 del inputValues['tagList'][location[1]]
                 del inputValues['lon'][location[1]]
                 del inputValues['lat'][location[1]]
-                del inputValues["osm_id"][location[1]]
+                del inputValues['osm_id'][location[1]]
                 location = [i for i,x in enumerate(inputValues["osm_id"]) if x==osm_id]
         outputValues = inputValues
         return outputValues
