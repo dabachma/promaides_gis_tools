@@ -79,7 +79,6 @@ class PromaidesToolbox(object):
         self.submenu_hyd = self.plugin_menu.addMenu('HYD')
 
         self.submenu_dam = self.plugin_menu.addMenu('DAM')
-        self.submenu_cin = self.plugin_menu.addMenu('CIN')
 
 
         #Add and connect to functions in other .py-files
@@ -106,13 +105,11 @@ class PromaidesToolbox(object):
 
         #DAM
         self.dam_raster.initGui(self.submenu_dam)
-
-        #CIN
-        self.cin_point.initGui(self.submenu_cin)
-        self.cin_polygon.initGui(self.submenu_cin)
-        self.cin_connector.initGui(self.submenu_cin)
-        self.cin_connector_automatic.initGui(self.submenu_cin)
-        self.cin_osm_ci_point_import.initGui(self.submenu_cin)
+        self.cin_point.initGui(self.submenu_dam)
+        self.cin_polygon.initGui(self.submenu_dam)
+        self.cin_connector.initGui(self.submenu_dam)
+        self.cin_connector_automatic.initGui(self.submenu_dam)
+        self.cin_osm_ci_point_import.initGui(self.submenu_dam) 
 
         #General
         self.hello_world.initGui(self.submenu_general)
