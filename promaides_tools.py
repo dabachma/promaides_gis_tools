@@ -143,11 +143,11 @@ class PromaidesToolbox(object):
         self.dam_raster.unload(self.submenu_dam)
 
         #CIN
-        self.cin_point.unload(self.submenu_cin)
-        self.cin_connector.unload(self.submenu_cin)
-        self.cin_polygon.unload(self.submenu_cin)
-        self.cin_connector_automatic.unload(self.submenu_cin)
-        self.cin_osm_ci_point_import.unload(self.submenu_cin)
+        self.cin_point.unload(self.submenu_dam)
+        self.cin_connector.unload(self.submenu_dam)
+        self.cin_polygon.unload(self.submenu_dam)
+        self.cin_connector_automatic.unload(self.submenu_dam)
+        self.cin_osm_ci_point_import.unload(self.submenu_dam)
 
         #General
         self.db_exprt.unload(self.submenu_general)
