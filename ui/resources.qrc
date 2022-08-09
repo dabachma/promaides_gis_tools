@@ -1,5 +1,6 @@
 <RCC>
   <qresource>
+    <file alias="remove_icon">../icons/remove_icon.png</file>
     <file alias="hyd_icon">../icons/hyd.png</file>
     <file alias="database_icon">../icons/database.png</file>
   </qresource>
