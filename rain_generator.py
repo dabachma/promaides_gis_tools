@@ -195,6 +195,7 @@ class RainGenerator(object):
         self.act = QAction('Rain Generator', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
 
+
     def initGui(self, menu=None):
         if menu is not None:
             menu.addAction(self.act)
@@ -224,9 +225,10 @@ class RainGenerator(object):
         self.dialog.GenerateButton.clicked.connect(self.PreGeneration)
         self.dialog.UpdateButton.clicked.connect(self.PreCheckFiles)
 
-        self.MaxNumberofStorms = int(self.dialog.MaxNumberofStormsBox.value())
-
+    MaxNumberofStorms=0
     def ProcessButtonPressed(self):
+        self.MaxNumberofStorms = self.dialog.MaxNumberofStormsBox.value()
+        print(self.MaxNumberofStorms)
         if self.dialog.groupBox_7.isChecked():
             self.PreStormAnalysis_GriddedData()
         else:
@@ -1044,7 +1046,7 @@ class RainGenerator(object):
     StormDataFall = []
     #############################################
     StormCount = 0
-    MaxNumberofStorms = 500000
+    #MaxNumberofStorms = 20000000
     StormStartingTimestep = []
     StormCenters = []
 
@@ -1177,7 +1179,7 @@ class RainGenerator(object):
 
         StormThreshhold = self.dialog.StormThreshholdBox.value()
         numberofcells = self.nx * self.ny
-
+        print(self.MaxNumberofStorms)
         # start of for loop
         TimestepCounter = 0  # for getting the starting time of storms in data file
         for row in df.iloc:
