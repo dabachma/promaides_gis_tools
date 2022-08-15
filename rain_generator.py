@@ -228,7 +228,6 @@ class RainGenerator(object):
     MaxNumberofStorms=0
     def ProcessButtonPressed(self):
         self.MaxNumberofStorms = self.dialog.MaxNumberofStormsBox.value()
-        print(self.MaxNumberofStorms)
         if self.dialog.groupBox_7.isChecked():
             self.PreStormAnalysis_GriddedData()
         else:
@@ -1179,7 +1178,6 @@ class RainGenerator(object):
 
         StormThreshhold = self.dialog.StormThreshholdBox.value()
         numberofcells = self.nx * self.ny
-        print(self.MaxNumberofStorms)
         # start of for loop
         TimestepCounter = 0  # for getting the starting time of storms in data file
         for row in df.iloc:
@@ -1740,7 +1738,6 @@ class RainGenerator(object):
                 self.StormDataFall[i] = [self.StormVolume[i], self.StormPeakIntensity[i], self.StormSize[i]]
                 FallStormIDs.append(i)
                 FallStormIDsTemp.append(i)
-        print(self.StormDataFall,"fall")
 
         StormDataWithoutZerosWinter = []
         StormDataWithoutZerosSpring = []
