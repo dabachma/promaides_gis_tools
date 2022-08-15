@@ -200,6 +200,7 @@ class PluginDialog(QDialog):
         for layer in layers:
             if layer.name() == name:
                 QgsProject.instance().removeMapLayers([layer.id()]) 
+                self.iface.mapCanvas().refresh()
  
 class CINPointImport(object):
 
@@ -585,7 +586,7 @@ class CINPointImport(object):
                 try:
                     response = requests.get(overpass_url, params={'data': overpass_query})
                     data = response.json()
-                    for i in range(len(data['elements'])):
+                    for _ in range(len(data['elements'])):
                         tagList.append(tag)                    
                     dataList.append(data)
                     break
