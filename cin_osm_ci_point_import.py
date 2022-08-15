@@ -237,6 +237,7 @@ class CINPointImport(object):
         
     def quitDialog(self):
         self.dialog.deleteShapefile(self.dialog.areaName)
+        self.iface.mapCanvas().unsetMapTool(self.dialog.picker)
         self.act.setEnabled(True)
         self.cancel = False
         self.dialog.close()
