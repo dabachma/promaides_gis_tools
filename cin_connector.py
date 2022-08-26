@@ -119,8 +119,8 @@ class PluginDialog(QDialog):
                     self.input_layer = layer
                     if self.verificationInput(layer):
                         for feature in layer.getFeatures():
-                            self.listWidget_input.addItem(feature["name"])
-                            self.list_of_input.append([feature["name"], feature["id"]])
+                            self.listWidget_input.addItem(feature["point_name"])
+                            self.list_of_input.append([feature["point_name"], feature["point_id"]])
 
                             if layer.featureCount():
                                 self.input_label.setText('<i>Input layer is "{}" with {} feature(s). </i>'
@@ -151,10 +151,10 @@ class PluginDialog(QDialog):
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
     def verificationInput(self, layer):
-        field_names = ["name", "id", "sec_level", "sec_id"] #"final_flag",
+        field_names = ["point_name", "point_id", "sec_level", "sec_id"] #"final_flag",
                                             #"boundary_value"]
         
-        point_dict = {"ID":[], "Name":[]}
+        point_dict = {"point_id":[], "point_name":[]}
 
         for field_name in field_names:
 
@@ -165,12 +165,12 @@ class PluginDialog(QDialog):
                                         .format(layer.name(), field_name))
                 return False
             
-        pos_id = layer.fields().indexOf("id")
-        pos_name = layer.fields().indexOf("name")
+        pos_id = layer.fields().indexOf("point_id")
+        pos_name = layer.fields().indexOf("point_name")
 
         for feature in self.input_layer.getFeatures():
-            point_dict['ID'].append(feature[pos_id])
-            point_dict['Name'].append(feature[pos_name])
+            point_dict['point_id'].append(feature[pos_id])
+            point_dict['point_name'].append(feature[pos_name])
 
             if feature[pos_id] == NULL and feature[pos_name] == NULL:
                 self.input_label.setText('<i>Selected layer "{}" is missing features.<br>'
@@ -190,7 +190,7 @@ class PluginDialog(QDialog):
                                         .format(layer.name(), feature[pos_id], feature[pos_name]))
                 return False  
 
-            if point_dict['ID'].count(feature[pos_id]) > 1:
+            if point_dict['point_id'].count(feature[pos_id]) > 1:
                 self.input_label.setText('<i>Selected layer "{}" has an incorrect input.<br>'
                                         'ID "{}" occurs multiple times</i>'
                                         .format(layer.name(), feature[pos_id]))
@@ -208,7 +208,7 @@ class PluginDialog(QDialog):
                                         .format(layer.name(), feature[pos_name], feature[pos_id]))
                 return False  
 
-            if point_dict['Name'].count(feature[pos_name]) > 1:
+            if point_dict['point_name'].count(feature[pos_name]) > 1:
                 self.input_label.setText('<i>Selected layer "{}" has an incorrect input.<br>'
                                         'Name "{}" occurs multiple times</i>'
                                         .format(layer.name(), feature[pos_name]))

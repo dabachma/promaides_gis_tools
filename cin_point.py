@@ -87,10 +87,10 @@ class PluginDialog(QDialog):
         self.expression_field_names.setExpression("point_name")
         self.expression_field_sectors.setExpression("sec_id")
         self.expression_field_levels.setExpression("sec_level")
-        self.expression_field_thresholds.setExpression("boundary_v")
-        self.expression_field_regulars.setExpression("regular_fl")
-        self.expression_field_recoverys.setExpression("recovery_t")
-        self.expression_field_actives.setExpression("activation")
+        self.expression_field_thresholds.setExpression("boundary_value")
+        self.expression_field_regulars.setExpression("regular_flag")
+        self.expression_field_recoverys.setExpression("recovery_time")
+        self.expression_field_actives.setExpression("activation_time")
 
         self.expression_field_names.setLayer(self.input_layer)
         self.expression_field_ids.setLayer(self.input_layer)
@@ -145,7 +145,7 @@ class CINPointExport(object):
         self.dialog.expression_field_sectors.setFilters(QgsFieldProxyModel.Int | QgsFieldProxyModel.LongLong | QgsFieldProxyModel.Double | QgsFieldProxyModel.String)
         self.dialog.expression_field_levels.setFilters(QgsFieldProxyModel.Int | QgsFieldProxyModel.LongLong | QgsFieldProxyModel.Double | QgsFieldProxyModel.String)
         self.dialog.expression_field_thresholds.setFilters(QgsFieldProxyModel.Int | QgsFieldProxyModel.LongLong | QgsFieldProxyModel.Double | QgsFieldProxyModel.String)
-        self.dialog.expression_field_regulars.setFilters(QgsFieldProxyModel.Int | QgsFieldProxyModel.LongLong | QgsFieldProxyModel.Double | QgsFieldProxyModel.String) # try to change this to boolean in QT
+        self.dialog.expression_field_regulars.setFilters(QgsFieldProxyModel.AllTypes)
         self.dialog.expression_field_recoverys.setFilters(QgsFieldProxyModel.Int | QgsFieldProxyModel.LongLong | QgsFieldProxyModel.Double | QgsFieldProxyModel.String)
         self.dialog.expression_field_actives.setFilters(QgsFieldProxyModel.Int | QgsFieldProxyModel.LongLong | QgsFieldProxyModel.Double | QgsFieldProxyModel.String)
         self.dialog.show()
@@ -177,49 +177,49 @@ class CINPointExport(object):
         try:
             ids_pos = field_names.index(ids_field)
         except:
-            self.iface.messageBar().pushCritical("CIN Point Export","Field ID has no input")
+            self.iface.messageBar().pushCritical("CIN Point Export","Field point_id has no input")
             return False
         
         try:
             name_pos = field_names.index(names_field)                
         except:
-            self.iface.messageBar().pushCritical("CIN Point Export","Field Name has no input")
+            self.iface.messageBar().pushCritical("CIN Point Export","Field point_name has no input")
             return False
        
         try:
             sector_pos = field_names.index(sectors_field)
         except:
-            self.iface.messageBar().pushCritical("CIN Point Export","Field Sector has no input")
+            self.iface.messageBar().pushCritical("CIN Point Export","Field sec_id has no input")
             return False
         
         try:              
             levels_pos = field_names.index(levels_field)
         except:
-            self.iface.messageBar().pushCritical("CIN Point Export","Field Level has no input")
+            self.iface.messageBar().pushCritical("CIN Point Export","Field sec_level has no input")
             return False
         
         try:    
             thresholds_pos = field_names.index(thresholds_field)
         except:
-            self.iface.messageBar().pushCritical("CIN Point Export","Field Threshold has no input")
+            self.iface.messageBar().pushCritical("CIN Point Export","Field boundary_value has no input")
             return False
         
         try:
             regular_pos = field_names.index(regular_field)
         except:
-            self.iface.messageBar().pushCritical("CIN Point Export","Field Regular has no input")
+            self.iface.messageBar().pushCritical("CIN Point Export","Field regular_flag has no input")
             return False    
         
         try:
             recoverys_pos = field_names.index(recoverys_field)
         except:
-            self.iface.messageBar().pushCritical("CIN Point Export","Field Recovery Time has no input")
+            self.iface.messageBar().pushCritical("CIN Point Export","Field recovery_time has no input")
             return False   
         
         try:
             actives_pos = field_names.index(actives_field)
         except:
-            self.iface.messageBar().pushCritical("CIN Point Export","Field Activation Time has no input")
+            self.iface.messageBar().pushCritical("CIN Point Export","Field activation_time has no input")
             return False
         
         for x in range(0 , idx):
@@ -234,44 +234,44 @@ class CINPointExport(object):
             if attrs[ids_pos] == NULL and attrs[name_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
-                    'There is a point without name and id')
+                    'There is a point without point_name and point_id')
                 return False
             
             if attrs[ids_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
-                    'ID input of "{}" is NULL'.format(attrs[name_pos]))
+                    'point_id input of "{}" is NULL'.format(attrs[name_pos]))
                 return False
 
             if not isinstance(attrs[ids_pos], int):
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
-                    'ID input "{}" of "{}" is not a valid input (Required typ: Integer)'.format(attrs[ids_pos],attrs[name_pos]))              
+                    'point_id input "{}" of "{}" is not a valid input (Required typ: Integer)'.format(attrs[ids_pos],attrs[name_pos]))              
                 return False
 
             if ListIDs.count(attrs[ids_pos]) > 1:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
-                    'ID "{}" occurs multiple times'.format(attrs[ids_pos]))              
+                    'point_id "{}" occurs multiple times'.format(attrs[ids_pos]))              
                 return False 
 
             #name controll
             if attrs[name_pos] == NULL:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
-                    'Name input of ID "{}" is NULL'.format(attrs[ids_pos]))
+                    'point_name input of point_id "{}" is NULL'.format(attrs[ids_pos]))
                 return False
             
             if not isinstance(attrs[name_pos], str):
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
-                    'Name input "{}" of ID "{}" is not a valid input (Required typ: String) '.format(attrs[name_pos], attrs[ids_pos]))
+                    'point_name input "{}" of point_id "{}" is not a valid input (Required typ: String) '.format(attrs[name_pos], attrs[ids_pos]))
                 return False
 
             if ListNames.count(attrs[name_pos]) > 1:
                 self.iface.messageBar().pushCritical(
                     'CIN Point Export',
-                    'Name "{}" occurs multiple times'.format(attrs[name_pos]))              
+                    'point_name "{}" occurs multiple times'.format(attrs[name_pos]))              
                 return False 
             
             #sector controll

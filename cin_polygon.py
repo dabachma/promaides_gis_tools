@@ -87,8 +87,8 @@ class PluginDialog(QDialog):
                                          'Please select a polygon layer.</i>'
                                          .format(layer_name))
 
-        self.expression_field_names.setExpression("name")
-        self.expression_field_ids.setExpression("id")
+        self.expression_field_names.setExpression("polygon_name")
+        self.expression_field_ids.setExpression("polygon_id")
         self.expression_field_sectors.setExpression("sec_id")
         self.expression_field_endusers.setExpression("end_user")
 
