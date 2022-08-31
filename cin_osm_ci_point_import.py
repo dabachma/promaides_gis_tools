@@ -167,6 +167,7 @@ class PluginDialog(QDialog):
         self.geom = geom
         self.deleteShapefile(self.areaName)
         project = QgsProject().instance()
+        layerTree = self.iface.layerTreeCanvasBridge().rootGroup()
 
         ftr = QgsFeature()
         ftr.setGeometry(self.geom)
@@ -175,6 +176,7 @@ class PluginDialog(QDialog):
 
         lyr = QgsVectorLayer('Polygon?{}'.format(crs), self.areaName,'memory')
 
+
         symbol = QgsFillSymbol.createSimple({'border_width_map_unit_scale': '3x:0,0,0,0,0,0', 'color': '0,0,0,0', 
         'joinstyle': 'bevel', 'offset': '0,0', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 
         'outline_color': '228,26,28,255', 'outline_style': 'solid', 'outline_width': '0.96', 'outline_width_unit': 'MM', 'style': 'solid'})
@@ -182,7 +184,8 @@ class PluginDialog(QDialog):
         lyr.renderer().setSymbol(symbol)
         with edit(lyr):
             lyr.addFeature(ftr)
-        project.addMapLayer(lyr)
+        project.addMapLayer(lyr, False)
+        layerTree.insertChildNode(0, QgsLayerTreeLayer(lyr))
 
     def coordinateTransform(self, x, y, toWGS=bool):
         crsSrc = QgsCoordinateReferenceSystem(self.crs)
@@ -201,6 +204,7 @@ class PluginDialog(QDialog):
             if layer.name() == name:
                 QgsProject.instance().removeMapLayers([layer.id()]) 
                 self.iface.mapCanvas().refresh()
+
  
 class CINPointImport(object):
 
@@ -287,25 +291,20 @@ class CINPointImport(object):
 
         fn = self.dialog.filename_edit.text()
 
-        filename =  os.path.basename(fn).split(".")[0]
-
-        #self.dialog.deleteShapefile(filename)
-
         layerFields = QgsFields()
-        layerFields.append(QgsField('id', QVariant.Int))            #1
-        layerFields.append(QgsField('name', QVariant.String))       #2
-        layerFields.append(QgsField('sec_id', QVariant.Int))        #3
-        layerFields.append(QgsField('tag_name', QVariant.String))   #4
-        layerFields.append(QgsField('sec_level', QVariant.Int))     #5
-        layerFields.append(QgsField('threshold', QVariant.Double))  #6
-        layerFields.append(QgsField('recovery', QVariant.Double))   #7
-        layerFields.append(QgsField('regular', QVariant.String))    #8
-        layerFields.append(QgsField('active', QVariant.Double))     #9
-        layerFields.append(QgsField('osm_id', QVariant.String))     #10
+        layerFields.append(QgsField('point_id', QVariant.Int))            
+        layerFields.append(QgsField('point_name', QVariant.String))       
+        layerFields.append(QgsField('sec_id', QVariant.Int))        
+        layerFields.append(QgsField('tag_name', QVariant.String))   
+        layerFields.append(QgsField('sec_level', QVariant.Int))     
+        layerFields.append(QgsField('boundary_v', QVariant.Double))    
+        layerFields.append(QgsField('regular_fl', QVariant.String))    
+        layerFields.append(QgsField('recovery_t', QVariant.Double)) 
+        layerFields.append(QgsField('activation_t', QVariant.Double))     
+        layerFields.append(QgsField('osm_id', QVariant.String))     
         
         writer = QgsVectorFileWriter(fn, 'UTF-8', layerFields, QgsWkbTypes.Point, QgsCoordinateReferenceSystem(self.dialog.crs), 'ESRI Shapefile')
         feat = QgsFeature()
-        north, east, south, west = self.direction()
         
         inputValues = {"name":[], "sec_id":[], "tagList":[], "lon":[], "lat":[], "osm_id":[]}
         
@@ -358,12 +357,13 @@ class CINPointImport(object):
         old_sec_id = ""
         outputValues = self.checkValues(inputValues)
         multiplier = len(str(max_lenght))
-        for feature_count, (name, sec_id ,tagList, lon, lat, osm_id) in enumerate(zip(outputValues['name'], 
+        feature_count = 0
+        for name, sec_id ,tagList, lon, lat, osm_id in zip(outputValues['name'], 
                                                         outputValues['sec_id'], 
                                                         outputValues['tagList'], 
                                                         outputValues['lon'], 
                                                         outputValues['lat'],
-                                                        outputValues['osm_id']), 1):   
+                                                        outputValues['osm_id']):   
             if sec_id != old_sec_id:
                 old_sec_id = sec_id
                 idx = 1
@@ -380,11 +380,11 @@ class CINPointImport(object):
 
             pt = self.dialog.coordinateTransform(lon,lat,False)
             feat.setGeometry(QgsGeometry.fromPointXY(pt))
-            
-            feat.setAttributes([idx_num, name, sec_id, tagList, 5, 0.2, 14, "true", 0, osm_id]) 
+            feat.setAttributes([idx_num, name, sec_id, tagList, 5, 0.2, "true", 14, 0, osm_id]) 
             writer.addFeature(feat)
-
+            feature_count += 1
         layer = self.iface.addVectorLayer(fn, '', 'ogr')
+
         del(writer)
         end_time = time.time()
         length = round(end_time-start_time,2)
