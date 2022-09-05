@@ -26,8 +26,8 @@ from .cin_point import CINPointExport
 from .cin_connector import CINConnectorExport
 from .cin_polygon import CINPolygonExport
 from .cin_connector_automatic import CINConnectorExportAuto
-
 from .cin_osm_ci_point_import import CINPointImport
+from .sc_osm_point_import import SCPointImport
 
 import os
 
@@ -61,7 +61,8 @@ class PromaidesToolbox(object):
         self.cin_connector = CINConnectorExport(self.iface)
         self.cin_connector_automatic = CINConnectorExportAuto(self.iface)
         self.cin_osm_ci_point_import = CINPointImport(self.iface)
-
+        #SC
+        self.sc_osm_point_import = SCPointImport(self.iface)
         #General
         self.hello_world = HelloWorld(self.iface)
         self.quick_visualize = QuickVisualize(self.iface)
@@ -77,7 +78,6 @@ class PromaidesToolbox(object):
         self.submenu_general = self.plugin_menu.addMenu('General')
         self.submenu_haz = self.plugin_menu.addMenu('HAZ')
         self.submenu_hyd = self.plugin_menu.addMenu('HYD')
-
         self.submenu_dam = self.plugin_menu.addMenu('DAM')
 
 
@@ -105,11 +105,14 @@ class PromaidesToolbox(object):
 
         #DAM
         self.dam_raster.initGui(self.submenu_dam)
+        self.submenu_dam.addSeparator()
         self.cin_point.initGui(self.submenu_dam)
         self.cin_polygon.initGui(self.submenu_dam)
         self.cin_connector.initGui(self.submenu_dam)
         self.cin_connector_automatic.initGui(self.submenu_dam)
         self.cin_osm_ci_point_import.initGui(self.submenu_dam) 
+        self.submenu_dam.addSeparator()
+        self.sc_osm_point_import.initGui(self.submenu_dam)
 
         #General
         self.hello_world.initGui(self.submenu_general)
@@ -148,6 +151,9 @@ class PromaidesToolbox(object):
         self.cin_polygon.unload(self.submenu_dam)
         self.cin_connector_automatic.unload(self.submenu_dam)
         self.cin_osm_ci_point_import.unload(self.submenu_dam)
+
+        #SC
+        self.sc_osm_point_import.unload(self.submenu_dam)
 
         #General
         self.db_exprt.unload(self.submenu_general)
