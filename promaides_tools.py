@@ -27,7 +27,7 @@ from .cin_connector import CINConnectorExport
 from .cin_polygon import CINPolygonExport
 from .cin_connector_automatic import CINConnectorExportAuto
 from .cin_osm_ci_point_import_v2 import CINPointImport
-from .sc_osm_point_import import SCPointImport
+from .sc_osm_point_import_v2 import SCPointImport
 
 import os
 
