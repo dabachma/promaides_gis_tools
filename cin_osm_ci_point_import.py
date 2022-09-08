@@ -24,7 +24,7 @@ import json
 import os
 from multiprocessing.pool import ThreadPool as Pool
 
-UI_PATH = get_ui_path('ui_cin_2promaides_osm_point_import.ui')
+UI_PATH = get_ui_path('ui_cin_2promaides_osm_point_import_v1.ui')
 
 class PluginDialog(QDialog):
 
@@ -176,7 +176,6 @@ class PluginDialog(QDialog):
 
         lyr = QgsVectorLayer('Polygon?{}'.format(crs), self.areaName,'memory')
 
-
         symbol = QgsFillSymbol.createSimple({'border_width_map_unit_scale': '3x:0,0,0,0,0,0', 'color': '0,0,0,0', 
         'joinstyle': 'bevel', 'offset': '0,0', 'offset_map_unit_scale': '3x:0,0,0,0,0,0', 'offset_unit': 'MM', 
         'outline_color': '228,26,28,255', 'outline_style': 'solid', 'outline_width': '0.96', 'outline_width_unit': 'MM', 'style': 'solid'})
@@ -205,7 +204,6 @@ class PluginDialog(QDialog):
                 QgsProject.instance().removeMapLayers([layer.id()]) 
                 self.iface.mapCanvas().refresh()
 
- 
 class CINPointImport(object):
 
     def __init__(self, iface):
@@ -295,7 +293,7 @@ class CINPointImport(object):
         layerFields.append(QgsField('point_id', QVariant.Int))            
         layerFields.append(QgsField('point_name', QVariant.String))       
         layerFields.append(QgsField('sec_id', QVariant.Int))        
-        layerFields.append(QgsField('tag_name', QVariant.String))   
+        layerFields.append(QgsField('value_name', QVariant.String))   
         layerFields.append(QgsField('sec_level', QVariant.Int))     
         layerFields.append(QgsField('boundary_v', QVariant.Double))    
         layerFields.append(QgsField('regular_fl', QVariant.String))    
@@ -306,7 +304,7 @@ class CINPointImport(object):
         writer = QgsVectorFileWriter(fn, 'UTF-8', layerFields, QgsWkbTypes.Point, QgsCoordinateReferenceSystem(self.dialog.crs), 'ESRI Shapefile')
         feat = QgsFeature()
         
-        inputValues = {"name":[], "sec_id":[], "tagList":[], "lon":[], "lat":[], "osm_id":[]}
+        inputValues = {"name":[], "sec_id":[], "valueList":[], "lon":[], "lat":[], "osm_id":[]}
         
         #Multiprocessing 
         with Pool(10) as p:
@@ -314,13 +312,13 @@ class CINPointImport(object):
 
         max_lenght = 0
         for sector in all_sectors:
-            sector_result, sec_id, tagList = sector
+            sector_result, sec_id, valueList = sector
             sector_lenght = 0
             for result in sector_result:   #goes through all results of a sector
                 sector_lenght += len(result['elements'])
 
-                for element in result['elements']:    #goes through all elements in the tag
-                    tag_name = tagList.pop(0)
+                for element in result['elements']:    #goes through all elements in the value
+                    value_name = valueList.pop(0)
                     
                     if 'center' in element:
                         lon = element['center']['lon']
@@ -334,7 +332,7 @@ class CINPointImport(object):
                             name = element['tags']['name'] 
                             name = name.replace(" ", "_")      
                         else:
-                            name = tag_name
+                            name = value_name
                     
                     typ = str(element['type'])
                     id = str(element['id'])
@@ -345,7 +343,7 @@ class CINPointImport(object):
                     if self.dialog.geom.contains(pt):
                         inputValues['name'].append(name)
                         inputValues['sec_id'].append(sec_id)
-                        inputValues['tagList'].append(tag_name)
+                        inputValues['valueList'].append(value_name)
                         inputValues['lon'].append(lon)
                         inputValues['lat'].append(lat)
                         inputValues['osm_id'].append(osm_id)
@@ -358,9 +356,9 @@ class CINPointImport(object):
         outputValues = self.checkValues(inputValues)
         multiplier = len(str(max_lenght))
         feature_count = 0
-        for name, sec_id ,tagList, lon, lat, osm_id in zip(outputValues['name'], 
+        for name, sec_id ,value, lon, lat, osm_id in zip(outputValues['name'], 
                                                         outputValues['sec_id'], 
-                                                        outputValues['tagList'], 
+                                                        outputValues['valueList'], 
                                                         outputValues['lon'], 
                                                         outputValues['lat'],
                                                         outputValues['osm_id']):   
@@ -371,8 +369,8 @@ class CINPointImport(object):
             idx_num = idx_sec + idx
             idx += 1
             
-            if tagList != new_tag_name:
-                new_tag_name = tagList
+            if value != new_tag_name:
+                new_tag_name = value
                 num = 1
             if name == new_tag_name:
                 name = f"{name}_{num}"
@@ -380,7 +378,7 @@ class CINPointImport(object):
 
             pt = self.dialog.coordinateTransform(lon,lat,False)
             feat.setGeometry(QgsGeometry.fromPointXY(pt))
-            feat.setAttributes([idx_num, name, sec_id, tagList, 5, 0.2, "true", 14, 0, osm_id]) 
+            feat.setAttributes([idx_num, name, sec_id, value, 5, 0.2, "true", 14, 0, osm_id]) 
             writer.addFeature(feat)
             feature_count += 1
         layer = self.iface.addVectorLayer(fn, '', 'ogr')
@@ -398,197 +396,198 @@ class CINPointImport(object):
     def query(self, search):
         north, east, south, west = self.direction()
         overpass_url = "https://lz4.overpass-api.de/api/interpreter"
-        osm_dict = {'key':[], 'tag':[]}
+        osm_dict = {'key':[], 'value':[]}
         dataList = []
-        tagList = []     
+        valueList = []     
 
         if search == 'Electricity':
             osm_dict['key'].append('power')
-            osm_dict['tag'].append('plant')
+            osm_dict['value'].append('plant')
 
             osm_dict['key'].append('power')
-            osm_dict['tag'].append('substation')
+            osm_dict['value'].append('substation')
 
             osm_dict['key'].append('power')
-            osm_dict['tag'].append('transformer')
+            osm_dict['value'].append('transformer')
             
             sec_id = 1
         if search == 'Information technology':
             osm_dict['key'].append('man_made')
-            osm_dict['tag'].append('antenna')
+            osm_dict['value'].append('antenna')
 
             osm_dict['key'].append('tower:type')
-            osm_dict['tag'].append('communication')
+            osm_dict['value'].append('communication')
 
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('telephone')
+            osm_dict['value'].append('telephone')
 
             osm_dict['key'].append('studio')
-            osm_dict['tag'].append('radio')
+            osm_dict['value'].append('radio')
 
             osm_dict['key'].append('studio')
-            osm_dict['tag'].append('televison')
+            osm_dict['value'].append('televison')
             
             sec_id = 2
         if search == 'Water supply':
             osm_dict['key'].append('man_made')
-            osm_dict['tag'].append('water_works')
+            osm_dict['value'].append('water_works')
 
             osm_dict['key'].append('man_made')
-            osm_dict['tag'].append('water_tower')
+            osm_dict['value'].append('water_tower')
 
             osm_dict['key'].append('man_made')
-            osm_dict['tag'].append('water_well')
+            osm_dict['value'].append('water_well')
 
             osm_dict['key'].append('man_made')
-            osm_dict['tag'].append('reservoir_covered')
+            osm_dict['value'].append('reservoir_covered')
             
             sec_id = 3  
         if search == 'Water treatment':
             osm_dict['key'].append('man_made')
-            osm_dict['tag'].append('wastewater_plant')
+            osm_dict['value'].append('wastewater_plant')
             
             sec_id = 4
+
         if search == 'Emergency service':
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('police')
+            osm_dict['value'].append('police')
 
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('fire_station')
+            osm_dict['value'].append('fire_station')
 
             osm_dict['key'].append('emergency')
-            osm_dict['tag'].append('ambulance_station')
+            osm_dict['value'].append('ambulance_station')
 
             #different approches for disaster response 
             osm_dict['key'].append('emergency_service')
-            osm_dict['tag'].append('technical')
+            osm_dict['value'].append('technical')
 
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('emergency_service')
+            osm_dict['value'].append('emergency_service')
 
             osm_dict['key'].append('emergency')
-            osm_dict['tag'].append('disaster_response')
+            osm_dict['value'].append('disaster_response')
 
             sec_id = 10
         if search == 'Health and Care System':
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('hospital')
+            osm_dict['value'].append('hospital')
 
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('clinic')
+            osm_dict['value'].append('clinic')
 
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('pharmacy')
+            osm_dict['value'].append('pharmacy')
 
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('doctors')
+            osm_dict['value'].append('doctors')
 
             osm_dict['key'].append('social_facility')
-            osm_dict['tag'].append('nursing_home')
+            osm_dict['value'].append('nursing_home')
 
             sec_id = 11
         if search == 'Transport and logistics goods':
             osm_dict['key'].append('industrial')
-            osm_dict['tag'].append('port')
+            osm_dict['value'].append('port')
 
             sec_id = 12
         if search == 'Transport and logistics person':
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('bus_station')
+            osm_dict['value'].append('bus_station')
 
             osm_dict['key'].append('railway')
-            osm_dict['tag'].append('station')
+            osm_dict['value'].append('station')
             
             osm_dict['key'].append('aeroway')
-            osm_dict['tag'].append('aerodrome')
+            osm_dict['value'].append('aerodrome')
             
             osm_dict['key'].append('aeroway')
-            osm_dict['tag'].append('helipad')
+            osm_dict['value'].append('helipad')
 
             osm_dict['key'].append('leisure')
-            osm_dict['tag'].append('marina')
+            osm_dict['value'].append('marina')
             
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('ferry_terminal')
+            osm_dict['value'].append('ferry_terminal')
             
             sec_id = 13
         if search == 'Official and Governmental Institutions':
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('prison')
+            osm_dict['value'].append('prison')
 
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('courthouse')
+            osm_dict['value'].append('courthouse')
             
             osm_dict['key'].append('government') 
-            osm_dict['tag'].append('ministry')
+            osm_dict['value'].append('ministry')
 
             osm_dict['key'].append('office')
-            osm_dict['tag'].append('government')
+            osm_dict['value'].append('government')
 
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('townhall')
+            osm_dict['value'].append('townhall')
             
             sec_id = 14          
         if search == 'Hazardous Materials':
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('fuel')
+            osm_dict['value'].append('fuel')
             
             sec_id = 15
         if search == 'Industry and Production sites':
             osm_dict['key'].append('industrial')
-            osm_dict['tag'].append('oil')
+            osm_dict['value'].append('oil')
             
             osm_dict['key'].append('industrial')
-            osm_dict['tag'].append('factory')
+            osm_dict['value'].append('factory')
 
             osm_dict['key'].append('industrial')
-            osm_dict['tag'].append('warehouse')
+            osm_dict['value'].append('warehouse')
 
             osm_dict['key'].append('industrial')
-            osm_dict['tag'].append('mine')
+            osm_dict['value'].append('mine')
 
             osm_dict['key'].append('landuse')
-            osm_dict['tag'].append('quarry')
+            osm_dict['value'].append('quarry')
 
             sec_id = 16
         if search == 'Cultural or Religious sites':
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('place_of_worship')
+            osm_dict['value'].append('place_of_worship')
             
             sec_id = 17
         if search == 'Education':
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('school')
+            osm_dict['value'].append('school')
 
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('kindergarten')
+            osm_dict['value'].append('kindergarten')
 
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('college')
+            osm_dict['value'].append('college')
 
             osm_dict['key'].append('amenity')
-            osm_dict['tag'].append('university')
+            osm_dict['value'].append('university')
 
             sec_id = 18
         
-        for key, tag in zip(osm_dict['key'], osm_dict['tag']):
+        for key, value in zip(osm_dict['key'], osm_dict['value']):
             n = 0
             while n <= 100:
                 overpass_query = """
                 [out:json];
                 (
-                node["{key}"="{tag}"]({south},{west},{north},{east});
-                way["{key}"="{tag}"]({south},{west},{north},{east});
-                relation["{key}"="{tag}"]({south},{west},{north},{east});
+                node["{key}"="{value}"]({south},{west},{north},{east});
+                way["{key}"="{value}"]({south},{west},{north},{east});
+                relation["{key}"="{value}"]({south},{west},{north},{east});
                 );
                 out center;
-                """.format(key=key, tag=tag, south=south, west=west, north=north, east=east)
+                """.format(key=key, value=value, south=south, west=west, north=north, east=east)
 
                 try:
                     response = requests.get(overpass_url, params={'data': overpass_query})
                     data = response.json()
                     for _ in range(len(data['elements'])):
-                        tagList.append(tag)                    
+                        valueList.append(value)                    
                     dataList.append(data)
                     break
                 except:
@@ -596,7 +595,7 @@ class CINPointImport(object):
                     if n == 100:
                         print("abort")
         
-        return dataList, sec_id, tagList
+        return dataList, sec_id, valueList
             
     def checkValues(self, inputValues):
         for osm_id in inputValues["osm_id"]:
@@ -604,7 +603,7 @@ class CINPointImport(object):
             while len(location) > 1:
                 del inputValues["name"][location[1]]
                 del inputValues["sec_id"][location[1]]
-                del inputValues['tagList'][location[1]]
+                del inputValues['valueList'][location[1]]
                 del inputValues['lon'][location[1]]
                 del inputValues['lat'][location[1]]
                 del inputValues['osm_id'][location[1]]
