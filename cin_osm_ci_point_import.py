@@ -24,7 +24,7 @@ import json
 import os
 from multiprocessing.pool import ThreadPool as Pool
 
-UI_PATH = get_ui_path('ui_cin_2promaides_osm_point_import_v1.ui')
+UI_PATH = get_ui_path('ui_cin_2promaides_osm_point_import.ui')
 
 class PluginDialog(QDialog):
 
