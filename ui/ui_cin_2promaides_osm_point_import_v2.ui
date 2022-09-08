@@ -369,6 +369,19 @@
     </property>
    </widget>
   </widget>
+  <widget class="QCheckBox" name="checkBox_safeArea">
+   <property name="geometry">
+    <rect>
+     <x>420</x>
+     <y>430</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Safe Search Area</string>
+   </property>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>
