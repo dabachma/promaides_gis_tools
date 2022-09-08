@@ -54,6 +54,7 @@ class PluginDialog(QDialog):
 
         #self variables 
         self.areaName = "Search Area"
+        self.searchLayerExisting = len(QgsProject.instance().mapLayersByName(self.areaName)) != 0
 
         self.Layer_ComboBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
 
@@ -170,6 +171,7 @@ class PluginDialog(QDialog):
 
     def drawer(self, geom):
         self.geom = geom
+        self.searchLayerExisting = False
         self.deleteShapefile(self.areaName)
         project = QgsProject().instance()
         layerTree = self.iface.layerTreeCanvasBridge().rootGroup()
@@ -243,7 +245,8 @@ class CINPointImport(object):
         self.cancel = True
         
     def quitDialog(self):
-        self.dialog.deleteShapefile(self.dialog.areaName)
+        if not self.dialog.checkBox_safeArea.isChecked() and not self.dialog.searchLayerExisting:
+            self.dialog.deleteShapefile(self.dialog.areaName)
         self.iface.mapCanvas().unsetMapTool(self.dialog.picker)
         self.act.setEnabled(True)
         self.cancel = False
