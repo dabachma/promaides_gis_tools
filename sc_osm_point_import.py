@@ -47,10 +47,6 @@ class PluginDialog(QDialog):
         project = QgsProject.instance()
         self.crs = project.crs()
         self.HelpButton.clicked.connect(self.Help)
-        self.SC1Box.setChecked(False)
-        self.SC2Box.setChecked(False)
-        self.SC3Box.setChecked(False)
-        self.SC4Box.setChecked(False)
 
         self.SC1Box.setSaveCollapsedState(False)
         self.SC2Box.setSaveCollapsedState(False)
