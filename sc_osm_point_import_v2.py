@@ -82,7 +82,7 @@ class PluginDialog(QDialog):
         self.filename_edit.editingFinished.connect(self.subcategoryFile)
 
         self.Txt_Button.toggled.connect(
-            lambda checked: (self.subcategory_edit.setEnabled(checked),
+            lambda checked: (self.subcategory_edit.setEnabled(checked), 
             self.renameFile(checked),
             self.subcategoryFile())
         )
@@ -103,7 +103,7 @@ class PluginDialog(QDialog):
         self.ClosingSignal.emit()
     
     def Help(self):
-        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-81/DAM-CIN---OSM-CI-Point-Import")
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-83/DAM-SC-OSM-Point-Import")
 
     def onBrowseButtonClicked(self):
         current_filename = self.filename_edit.text()
@@ -379,7 +379,7 @@ class SCPointImport(object):
                 if 'tags' in element:
                     if 'name' in element['tags']:
                         name = element['tags']['name'] 
-                        name = name.replace(" ", "_")      
+                        name = name.replace("\n","_").replace(" ", "_")     
                     else:
                         name = value_name
                 osm_id = str(element['type']) +"/"+ str(element['id'])
@@ -526,7 +526,7 @@ class SCPointImport(object):
 
                 f.write(f"{pt.x()} {pt.y()} {id} {point_value} {water_boundary} {name} {id_sub} \n")
                 feature_count += 1
-            f.write("!END")
+            f.write("END!")
 
         with open(subcategory, 'w') as f:
             f.write("########################################\n")
