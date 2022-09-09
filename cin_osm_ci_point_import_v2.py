@@ -349,7 +349,7 @@ class CINPointImport(object):
                     if 'tags' in element:
                         if 'name' in element['tags']:
                             name = element['tags']['name'] 
-                            name = name.replace(" ", "_")      
+                            name = name.replace("\n","_").replace(" ", "_")      
                         else:
                             name = value_name
                     
