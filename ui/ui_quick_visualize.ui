@@ -74,10 +74,16 @@
       </size>
      </property>
      <property name="toolTip">
-      <string>Use this polygon shape for defining the area of the main channel; all points in the polygon get a (Main_channel) 2; just 1 polygon is allowed in the layer</string>
+      <string>Advanced visualization settings</string>
      </property>
      <property name="title">
       <string>Advanced Visualize</string>
+     </property>
+     <property name="collapsed">
+      <bool>true</bool>
+     </property>
+     <property name="saveCollapsedState">
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
       <property name="sizeConstraint">
