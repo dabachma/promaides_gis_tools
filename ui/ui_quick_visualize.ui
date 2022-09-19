@@ -132,7 +132,14 @@
            </widget>
           </item>
           <item>
-           <widget class="QListWidget" name="listView_Layers"/>
+           <widget class="QListWidget" name="listView_Layers">
+            <property name="styleSheet">
+             <string notr="true">QListWidget::item:selected:!active {
+     foreground: #FFFFFF;
+    background: #0f81dc;
+}</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -225,6 +232,9 @@
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
+          </property>
+          <property name="value">
+           <number>5</number>
           </property>
          </widget>
         </item>
@@ -360,7 +370,7 @@
         </size>
        </property>
        <property name="toolTip">
-        <string>Print to console</string>
+        <string/>
        </property>
        <property name="frameShape">
         <enum>QFrame::NoFrame</enum>
@@ -392,6 +402,9 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="toolTip">
+          <string>Search for project by their name</string>
+         </property>
          <property name="placeholderText">
           <string>Search...</string>
          </property>
@@ -416,6 +429,9 @@
            <width>16777215</width>
            <height>999999</height>
           </size>
+         </property>
+         <property name="toolTip">
+          <string>Display results of project name search</string>
          </property>
          <property name="styleSheet">
           <string notr="true">QListWidget::item:selected:!active {
@@ -466,6 +482,9 @@
          <height>0</height>
         </size>
        </property>
+       <property name="toolTip">
+        <string>List of added databases</string>
+       </property>
       </widget>
      </item>
      <item>
@@ -475,6 +494,9 @@
        </property>
        <item>
         <widget class="QPushButton" name="database_manage_button">
+         <property name="toolTip">
+          <string>Manage database dialog</string>
+         </property>
          <property name="text">
           <string>Manage Databases +/-</string>
          </property>
