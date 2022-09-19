@@ -8,8 +8,12 @@ import threading
 
 from qgis.core import *
 from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtCore import pyqtSignal
+from qgis.PyQt.QtCore import QObject
 from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import QColor
 from qgis.PyQt import uic
+
 from .environment import get_ui_path
 from .database_list_management import DatabaseListManagement
 
@@ -37,6 +41,14 @@ class PluginDialog(QDialog):
         self.database_selected_index = 0
         self.firstload = 0
 
+        self.advancedcolor1=QColor("#fafa24")
+        self.advancedcolor2=QColor("#e62323")
+        self.color_selection_1.setStyleSheet("background-color : " +self.advancedcolor1.name()+ "; border: 0px;")
+        self.color_selection_2.setStyleSheet("background-color : " +self.advancedcolor2.name()+ "; border: 0px;")
+
+        print(self.advancedcolor2.name())
+
+
         # Hooking buttons | search text is changed
         self.DatabaseListManage_dialog_instance = DatabaseListManagement(self.iface)
         self.HelpButton.clicked.connect(self.Help)
@@ -46,8 +58,26 @@ class PluginDialog(QDialog):
         self.combobox_databaseSelection.currentIndexChanged.connect(self.on_combobox_changed_of_databaseSelection)
         self.database_manage_button.clicked.connect(self.database_manage_tab)
         self.database_connect.clicked.connect(self.connectedPressed)
+        self.color_selection_1.clicked.connect(self.getColorClick1)
+        self.color_selection_2.clicked.connect(self.getColorClick2)
+
+        self.signalclass = SignalClass()
+        self.signalclass.turnOnOptionsEmittor.connect(self.enableOptions)
+        self.signalclass.turnOffOptionsEmittor.connect(self.disableOptions)
+        self.signalclass.turnOnComboBoxEmittor.connect(self.enableCombo)
 
         self.refreshDatabaseData()
+
+    def getColorClick1(self):
+        color = QColorDialog.getColor()
+        self.advancedcolor1=color
+        self.color_selection_1.setStyleSheet("background-color : " +color.name()+ "; border: 0px;")
+
+    def getColorClick2(self):
+        color = QColorDialog.getColor()
+        self.advancedcolor2=color
+        self.color_selection_2.setStyleSheet("background-color : " +color.name()+ "; border: 0px;")
+
 
     def refreshDatabaseData(self):
         # Connect based on Default setting
@@ -68,10 +98,23 @@ class PluginDialog(QDialog):
         self.database_list = self.tempDatabaseList
 
     def connectedPressed(self):
+        self.signalclass.turnOffOptionsEmittor.emit()
         self.listView_Projects.clear()
         self.listView_Layers.clear()
         self.database_connection_status.setText("Status: Connecting")
         threading.Thread(target=self.tryToConnect, daemon=True).start()
+
+    def enableOptions(self):
+        self.group_river.setEnabled(True)
+        self.group_floodplain.setEnabled(True)
+
+    def disableOptions(self):
+        self.group_river.setEnabled(False)
+        self.combobox_databaseSelection.setEnabled(False)
+        self.group_floodplain.setEnabled(False)
+
+    def enableCombo(self):
+        self.combobox_databaseSelection.setEnabled(True)
 
     def tryToConnect(self):
 
@@ -81,8 +124,7 @@ class PluginDialog(QDialog):
             connectionparameters = self.default_database_connect
             self.firstload += 1
 
-        host, port, name, user, pwrd = connectionparameters[0], int(connectionparameters[1]), connectionparameters[2], \
-                                       connectionparameters[3], connectionparameters[4]
+        host, port, name, user, pwrd = connectionparameters[0], int(connectionparameters[1]), connectionparameters[2],connectionparameters[3], connectionparameters[4]
         try:
             conn_str = "dbname='{}' user='{}' host='{}' port={} password='{}'".format(name, user, host, port, pwrd)
             self.conn = psycopg2.connect(conn_str)
@@ -115,9 +157,12 @@ class PluginDialog(QDialog):
             # Append projects to List-view
             self.listView_Projects.addItems(self.projects_list)
             self.database_connection_status.setText("Status: Connected")
+            self.signalclass.turnOnOptionsEmittor.emit()
 
         except:
             self.database_connection_status.setText("Status: Connection Refused")
+        self.signalclass.turnOnComboBoxEmittor.emit()
+
 
     def on_currentItemChanged_of_listView_Projects(self, now, pre):
         if now is not None:
@@ -184,6 +229,11 @@ class PluginDialog(QDialog):
         self.database_selected_index = index
 
 
+class SignalClass(QObject):
+    turnOnOptionsEmittor = pyqtSignal()
+    turnOffOptionsEmittor = pyqtSignal()
+    turnOnComboBoxEmittor = pyqtSignal()
+
 class QuickVisualize(object):
 
     def __init__(self, iface):
@@ -211,6 +261,7 @@ class QuickVisualize(object):
         self.dialog.accepted.connect(self.execTool)
         self.dialog.rejected.connect(self.quitDialog)
         self.dialog.show()
+        self.dialog.do = 0
         threading.Thread(target=self.dialog.connectedPressed, daemon=True).start()
         # QgsApplication.taskManager().addTask(self.dialog.tryToConnect())
 
@@ -225,6 +276,99 @@ class QuickVisualize(object):
 
     # Execution of the tool by "OK" button
     def execTool(self):
+
+        to_render = [
+            [self.dialog.bt_river_max_1,"hyd_river_profile_max_results_prm","velocity"],
+            [self.dialog.bt_river_max_2,"hyd_river_profile_max_results_prm","discharge"],
+            [self.dialog.bt_river_instat_1,"hyd_river_profile_instat_results_prm","velocity"],
+            [self.dialog.bt_river_instat_2,"hyd_river_profile_instat_results_prm","discharge"],
+            [self.dialog.bt_floodplain_max_x,"hyd_floodplain_elem_max_result_prm","x_velocity"],
+            [self.dialog.bt_floodplain_max_y,"hyd_floodplain_elem_max_result_prm","y_velocity"],
+            [self.dialog.bt_floodplain_instat_x,"hyd_floodplain_elem_instat_result_prm","x_velocity"],
+            [self.dialog.bt_floodplain_instat_y,"hyd_floodplain_elem_instat_result_prm","y_velocity"],
+            [self.dialog.bt_floodplain_goedetic,"hyd_floodplain_element_prm","geodetic_height"]
+        ]
+
+
+        for layer in to_render:
+            if layer[0].isChecked():
+
+                project_name = self.dialog.chosen_project
+                layer_name=layer[1]
+                value_field=layer[2]
+
+                # Get type of selected layer from database
+                curColumnType = self.dialog.conn.cursor()
+                curColumnType.execute(
+                    "SELECT column_name from information_schema.columns WHERE table_schema = '{}' AND table_name='{}' AND data_type = 'USER-DEFINED'".format(
+                        project_name, layer_name))
+
+                ColumnType = curColumnType.fetchone()
+
+                # Check that layer has a valid type
+                if ColumnType is not None:
+                    layer_type = ColumnType[0]
+
+                    #print("Chose: " + layer_name + "  |  " + project_name + "  |  " + layer_type)
+
+                    # Create QGIS layer from source
+                    self.dialog.uri_chosen_layer.setDataSource(project_name, layer_name, layer_type)
+                    vlayer = QgsVectorLayer(self.dialog.uri_chosen_layer.uri(False), layer_name+"_"+value_field, "postgres")
+
+                    # Styling of layer based on its type
+                    if layer_name == "hyd_river_profile_max_results_prm" or layer_name == "hyd_river_profile_instat_results_prm" or "hyd_floodplain_elem_max_result_prm" or layer_name == "hyd_floodplain_elem_instat_result_prm" or layer_name == "hyd_floodplain_element_prm":
+                        if(value_field=="velocity"):
+                            rampcolor2 = QColor(255,0,0)
+                            num_classes = 10
+                        elif(value_field=="discharge"):
+                            rampcolor2 = QColor(255,145,0)
+                            num_classes = 10
+                        elif(value_field=="x_velocity"):
+                            rampcolor2 = QColor(230,35,0)
+                            num_classes = 5
+                        elif(value_field=="y_velocity"):
+                            rampcolor2 = QColor(230,35,0)
+                            num_classes = 5
+                        elif(value_field=="geodetic_height"):
+                            rampcolor2 = QColor(230,35,0)
+                            num_classes = 5
+
+                        renderer = QgsGraduatedSymbolRenderer()
+                        ramp_name = 'Greys'
+                        classification_method = QgsClassificationEqualInterval()
+                        format = QgsRendererRangeLabelFormat()
+                        format.setFormat("%1 - %2")
+                        format.setPrecision(2)
+                        format.setTrimTrailingZeroes(True)
+
+                        default_style = QgsStyle().defaultStyle()
+                        color_ramp = default_style.colorRamp(ramp_name)
+                        color_ramp.setColor1(QColor(250,250,36))
+                        color_ramp.setColor2(rampcolor2)
+
+                        renderer.setClassAttribute(value_field)
+                        renderer.setClassificationMethod(classification_method)
+                        renderer.setLabelFormat(format)
+                        renderer.updateClasses(vlayer, num_classes)
+                        renderer.updateColorRamp(color_ramp)
+
+                        symbol = QgsFillSymbol.createSimple({'color' : '200,200,43,255', 'outline_width' : '0' })
+                        symbol.symbolLayers()[0].setDataDefinedProperty(QgsSymbolLayer.PropertyStrokeColor, QgsProperty.fromExpression("@symbol_color",True))
+                        renderer.updateSymbols(symbol)
+
+                    elif layer_name == "hyd_floodplain_elem_max_result_prm" or layer_name == "hyd_floodplain_elem_instat_result_prm" or layer_name == "hyd_floodplain_element_prm":
+                        print("Debug 13FHD2")
+                    else:
+                        print("Please contact developer! Error in naming of layers. (Maybe there is a change in layer naming, please try using an older version of ProMaides!)")
+
+                    vlayer.setRenderer(renderer)
+                    vlayer.renderer().setSourceSymbol(symbol.clone())
+                    vlayer.triggerRepaint()
+
+                    # Add layer to current QGIS Instance
+                    QgsProject.instance().addMapLayer(vlayer)
+                    vlayer.triggerRepaint()
+                    #self.iface.mapCanvas().refresh()
 
         # Check that a layer is selected
         if self.dialog.listView_Layers.currentItem() is not None:
