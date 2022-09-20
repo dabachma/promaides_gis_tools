@@ -50,8 +50,17 @@ class PluginDialog(QDialog):
         if self.qsettings.contains("spinbox_classes_value"):
             self.spinbox_classes.setValue(self.qsettings.value("spinbox_classes_value"))
 
+        if self.qsettings.contains("crs_value"):
+            #default should be EPSG:25832
+            self.CRS_Select.setCrs(QgsCoordinateReferenceSystem(self.qsettings.value("crs_value")))
+        else:
+            self.CRS_Select.setCrs(QgsCoordinateReferenceSystem("EPSG:25832"))
+
+
         self.iface = iface
         self.conn = ""
+
+
         self.chosen_project = ""
         self.chosen_layer = ""
         self.database_selected_index = 0
@@ -74,6 +83,7 @@ class PluginDialog(QDialog):
         self.color_selection_1.clicked.connect(self.getColorClick1)
         self.color_selection_2.clicked.connect(self.getColorClick2)
         self.spinbox_classes.valueChanged.connect(self.on_ValueChanged_of_spinbox_classes)
+        self.CRS_Select.crsChanged.connect(self.crs_Select_crsChanged)
 
         self.signalclass = SignalClass()
         self.signalclass.turnOnOptionsEmittor.connect(self.enableOptions)
@@ -81,6 +91,9 @@ class PluginDialog(QDialog):
         self.signalclass.turnOnComboBoxEmittor.connect(self.enableCombo)
 
         self.refreshDatabaseData()
+
+    def crs_Select_crsChanged(self):
+        self.qsettings.setValue("crs_value", self.CRS_Select.crs().authid())
 
     def on_ValueChanged_of_spinbox_classes(self, value):
         self.qsettings.setValue("spinbox_classes_value", value)
@@ -252,7 +265,7 @@ class PluginDialog(QDialog):
 
     # Help button press function
     def Help(self):
-        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-52/Hello-World")
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-84/Quick-Visualize")
 
     # Database Management Tab
     def database_manage_tab(self):
@@ -419,12 +432,27 @@ class QuickVisualize(object):
                             "Please contact developer! Error in naming of layers. (Maybe there is a change in layer naming, please try using an older version of ProMaides!)")
 
                     vlayer.setRenderer(renderer)
-                    vlayer.renderer().setSourceSymbol(symbol.clone())
+                    vlayer.setCrs(self.dialog.CRS_Select.crs())
                     vlayer.triggerRepaint()
 
                     # Add layer to current QGIS Instance
                     QgsProject.instance().addMapLayer(vlayer)
-                    vlayer.triggerRepaint()
+
+                    if(self.dialog.checkbox_addedtonewgroup.isChecked()):
+                        root = QgsProject.instance().layerTreeRoot()
+                        layer = root.findLayer(vlayer.id())
+
+                        #Create Group if not existing
+                        if(root.findGroup("QuickViz") is None):
+                            root.addGroup("QuickViz")
+                            group = root.findGroup("QuickViz")
+                        else:
+                            group = root.findGroup("QuickViz")
+                        clone = layer.clone()
+                        group.insertChildNode(0, clone)
+                        parent = layer.parent()
+                        parent.removeChildNode(layer)
+
 
         # Check that a layer is selected
         if self.dialog.listView_Layers.currentItem() is not None and self.dialog.combobox_feature.currentText() is not None:
@@ -479,12 +507,26 @@ class QuickVisualize(object):
                 renderer.updateSymbols(symbol)
 
                 vlayer.setRenderer(renderer)
-                vlayer.renderer().setSourceSymbol(symbol.clone())
+                vlayer.setCrs(self.dialog.CRS_Select.crs())
                 vlayer.triggerRepaint()
 
                 # Add layer to current QGIS Instance
                 QgsProject.instance().addMapLayer(vlayer)
-                vlayer.triggerRepaint()
+
+                if(self.dialog.checkbox_addedtonewgroup.isChecked()):
+                    root = QgsProject.instance().layerTreeRoot()
+                    layer = root.findLayer(vlayer.id())
+
+                    #Create Group if not existing
+                    if(root.findGroup("QuickViz") is None):
+                        root.addGroup("QuickViz")
+                        group = root.findGroup("QuickViz")
+                    else:
+                        group = root.findGroup("QuickViz")
+                    clone = layer.clone()
+                    group.insertChildNode(0, clone)
+                    parent = layer.parent()
+                    parent.removeChildNode(layer)
             else:
                 QMessageBox.information(None, "DEBUG:",
                                         "You selected an invalid layer<br><br>Possible Reasons: Layer was not calculated by ProMaides<br><br>Please try to select another layer")
