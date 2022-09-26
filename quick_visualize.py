@@ -275,7 +275,7 @@ class PluginDialog(QDialog):
             # Append projects to List-view
             self.listView_Projects.addItems(self.projects_list)
             self.database_connection_status.setText("Status: Connected")
-            self.signalclass.turnOnOptionsEmittor.emit()
+            self.signalclass.turnOnComboBoxEmittor.emit()
 
         except:
             self.database_connection_status.setText("Status: Connection Refused")
@@ -444,9 +444,8 @@ class QuickVisualize(object):
             [self.dialog.cb_dam_sc_points_damages, "dam_sc_point_erg_prm", "affect_score"]
         ]
 
-
         for layer in to_render:
-            if layer[0].isChecked():
+            if layer[0].isChecked() and layer[1] != "":
 
                 project_name = self.dialog.chosen_project
                 layer_name = layer[1]
