@@ -66,11 +66,26 @@ class PluginDialog(QDialog):
         self.database_selected_index = 0
         self.firstload = 0
         self.text_of_EditText_Search_Layers = ""
+        self.changedbutton=""
 
         self.color_selection_1.setStyleSheet("background-color : " + self.advancedcolor1.name() + "; border: 0px;")
         self.color_selection_2.setStyleSheet("background-color : " + self.advancedcolor2.name() + "; border: 0px;")
 
-        self.allcheckboxes=[self.HYD_Standard_Group,self.HYD_INPUT,self.HYD_IN_RV,self.hyd_in_rv_1,self.hyd_in_rv_2,self.HYD_IN_FD,self.hyd_in_fd_1,self.hyd_in_fd_2,self.HYD_RESULTS,self.HYD_RE_RV,self.hyd_re_rv_1,self.hyd_re_rv_2,self.HYD_RE_FD,self.hyd_re_fd_1,self.hyd_re_fd_2,self.DAM_Standard_Group,self.DAM_INPUT,self.cb_dam_ecn_imm,self.cb_dam_in_pop,self.cb_dam_scpoints,self.Dam_RESULTS,self.cb_dam_ecn_total,self.cb_dam_pop_affected,self.cb_dam_pop_endangered,self.cb_dam_sc_points_damages,self.RISK_Standard_Group]
+        '''
+        Due to limitations within QgsCollapsibleGroupBox and QGroupBox a checkbox system had to be implemented.
+        The limitation comes from two things.
+            1. Checkboxes in these groups are meant to disable or enable the box only and to be used as an option, thus each time the checkbox of a group is pressed, its children must be re-enabled
+            2. When checkbox is clicked it does not pass its id within. This can be bypassed by checking which checkbox has changed. In order to do this a checkboxtree variable is introduced to check which button is changed and from which state to which in order to know if user intends to deselect or to select.
+
+        To Update in the future please note that Added/Removed buttons should be Added/Removed to the checkboxtree and should reflect its hierarchy! 
+        '''
+        self.checkboxtree = [self.HYD_Standard_Group, False, [[self.HYD_INPUT, False, [[self.HYD_IN_RV, False, [[self.hyd_in_rv_1, False],[self.hyd_in_rv_2, False]]], [self.HYD_IN_FD, False, [[self.hyd_in_fd_1, False],[self.hyd_in_fd_2, False]]]]], [self.HYD_RESULTS, False, [[self.HYD_RE_RV, False, [[self.hyd_re_rv_1, False],[self.hyd_re_rv_2, False]]],[self.HYD_RE_FD, False, [[self.hyd_re_fd_1, False],[self.hyd_re_fd_2, False]]]]]]], [self.DAM_Standard_Group, False, [[self.DAM_INPUT, False, [[self.cb_dam_ecn_imm, False],[self.cb_dam_in_pop, False],[self.cb_dam_scpoints, False]]],[self.Dam_RESULTS, False , [[self.cb_dam_ecn_total, False],[self.cb_dam_pop_affected, False],[self.cb_dam_pop_endangered, False],[self.cb_dam_sc_points_damages, False]]]]], [self.RISK_Standard_Group, False]
+
+        self.allcheckboxes = []
+        self.allGroupCheckboxeswithDepth = []
+        self.getAllCheckboxes(self.checkboxtree, 0)
+        self.allGroupCheckboxes = self.makeAllGroupCheckboxes(self.allGroupCheckboxeswithDepth)
+
 
         # Hooking buttons | search text is changed
         self.DatabaseListManage_dialog_instance = DatabaseListManagement(self.iface)
@@ -92,29 +107,69 @@ class PluginDialog(QDialog):
         self.signalclass.turnOffOptionsEmittor.connect(self.disableOptions)
         self.signalclass.turnOnComboBoxEmittor.connect(self.enableCombo)
 
-        #for checkbutton in self.allcheckboxes:
-        #    checkbutton.toggled.connect(self.manageCheckboxSys)
+        for checkbutton in self.allcheckboxes:
+            checkbutton.clicked.connect(self.manageCheckboxSys)
 
         self.refreshDatabaseData()
 
+    def makeAllGroupCheckboxes(self,theList):
+        l = len(theList)
+        for i in range(0, l):
+            for j in range(0, l-i-1):
+                if (theList[j][1] < theList[j + 1][1]):
+                    tempo = theList[j]
+                    theList[j]= theList[j + 1]
+                    theList[j + 1]= tempo
+        newlist=[]
+        for item in theList:
+            if type(item[0]) != QCheckBox:
+                newlist.append(item[0])
+        return newlist
+
+    def getAllCheckboxes(self, checkboxtreeToGet, depth):
+        for part in checkboxtreeToGet:
+            self.allcheckboxes.append(part[0])
+            self.allGroupCheckboxeswithDepth.append([part[0], depth])
+            if len(part) > 2:
+                self.getAllCheckboxes(part[2],depth+1)
+
     def manageCheckboxSys(self):
-        #UNDER CONSTRUCTION
-        for checkbutton in self.allcheckboxes:
-            print(self.childrenState(checkbutton))
+        self.checkCheckboxTreeChanges(self.checkboxtree, True)
+        self.enableDisablechildren(self.changedbutton, self.changedbutton.isChecked())
+        self.checkParent()
+        self.checkCheckboxTreeChanges(self.checkboxtree, False)
+        self.enableAll()
 
-    def childrenState(self, qwidget):
-        #UNDER CONSTRUCTION
-        state=False
-        children = qwidget.findChildren(QCheckBox)
-        if len(children) == 0 and qwidget.checkState() == True:
-            state= True
+    def checkCheckboxTreeChanges(self, checkboxtreeToCheck, doIset):
+        for checkbox in checkboxtreeToCheck:
+            if checkbox[0].isChecked() != checkbox[1] and doIset==True:
+                self.changedbutton = checkbox[0]
+            checkbox[1] = checkbox[0].isChecked()
+            if len(checkbox) > 2:
+                self.checkCheckboxTreeChanges(checkbox[2], doIset)
+
+    def checkParent(self):
+        for group in self.allGroupCheckboxes:
+            children = group.findChildren(QCheckBox)
+            state=False
+            for child in children:
+                if child.isChecked():
+                    state=True
+                    break
+            group.setChecked(state)
+
+    def enableDisablechildren(self, qwidget, state):
+        if state == False:
+            stateno=0
+        else:
+            stateno=1
+        children = qwidget.findChildren(QGroupBox)
         for child in children:
-            if child.checkState() == True:
-                state=True
-                break
-        return state
-
-        
+            self.enableDisablechildren(child, stateno)
+            child.setChecked(stateno)
+        children = qwidget.findChildren(QCheckBox)
+        for child in children:
+            child.setChecked(stateno)
 
     def enableAll(self):
         for checkboxtoenable in self.allcheckboxes:
