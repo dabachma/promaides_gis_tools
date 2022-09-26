@@ -70,6 +70,8 @@ class PluginDialog(QDialog):
         self.color_selection_1.setStyleSheet("background-color : " + self.advancedcolor1.name() + "; border: 0px;")
         self.color_selection_2.setStyleSheet("background-color : " + self.advancedcolor2.name() + "; border: 0px;")
 
+        self.allcheckboxes=[self.HYD_Standard_Group,self.HYD_INPUT,self.HYD_IN_RV,self.hyd_in_rv_1,self.hyd_in_rv_2,self.HYD_IN_FD,self.hyd_in_fd_1,self.hyd_in_fd_2,self.HYD_RESULTS,self.HYD_RE_RV,self.hyd_re_rv_1,self.hyd_re_rv_2,self.HYD_RE_FD,self.hyd_re_fd_1,self.hyd_re_fd_2,self.DAM_Standard_Group,self.DAM_INPUT,self.cb_dam_ecn_imm,self.cb_dam_in_pop,self.cb_dam_scpoints,self.Dam_RESULTS,self.cb_dam_ecn_total,self.cb_dam_pop_affected,self.cb_dam_pop_endangered,self.cb_dam_sc_points_damages,self.RISK_Standard_Group]
+
         # Hooking buttons | search text is changed
         self.DatabaseListManage_dialog_instance = DatabaseListManagement(self.iface)
         self.HelpButton.clicked.connect(self.Help)
@@ -86,11 +88,41 @@ class PluginDialog(QDialog):
         self.CRS_Select.crsChanged.connect(self.crs_Select_crsChanged)
 
         self.signalclass = SignalClass()
-        self.signalclass.turnOnOptionsEmittor.connect(self.enableOptions)
+        self.signalclass.turnOnOptionsEmittor.connect(self.enableAll)
         self.signalclass.turnOffOptionsEmittor.connect(self.disableOptions)
         self.signalclass.turnOnComboBoxEmittor.connect(self.enableCombo)
 
+        #for checkbutton in self.allcheckboxes:
+        #    checkbutton.toggled.connect(self.manageCheckboxSys)
+
         self.refreshDatabaseData()
+
+    def manageCheckboxSys(self):
+        #UNDER CONSTRUCTION
+        for checkbutton in self.allcheckboxes:
+            print(self.childrenState(checkbutton))
+
+    def childrenState(self, qwidget):
+        #UNDER CONSTRUCTION
+        state=False
+        children = qwidget.findChildren(QCheckBox)
+        if len(children) == 0 and qwidget.checkState() == True:
+            state= True
+        for child in children:
+            if child.checkState() == True:
+                state=True
+                break
+        return state
+
+        
+
+    def enableAll(self):
+        for checkboxtoenable in self.allcheckboxes:
+            checkboxtoenable.setEnabled(True)
+
+    def disableAll(self):
+        for checkboxtoenable in self.allcheckboxes:
+            checkboxtoenable.setEnabled(False)
 
     def crs_Select_crsChanged(self):
         self.qsettings.setValue("crs_value", self.CRS_Select.crs().authid())
@@ -139,14 +171,9 @@ class PluginDialog(QDialog):
         self.database_connection_status.setText("Status: Connecting")
         threading.Thread(target=self.tryToConnect, daemon=True).start()
 
-    def enableOptions(self):
-        self.group_river.setEnabled(True)
-        self.group_floodplain.setEnabled(True)
-
     def disableOptions(self):
-        self.group_river.setEnabled(False)
+        self.disableAll()
         self.combobox_databaseSelection.setEnabled(False)
-        self.group_floodplain.setEnabled(False)
 
     def enableCombo(self):
         self.combobox_databaseSelection.setEnabled(True)
@@ -193,8 +220,7 @@ class PluginDialog(QDialog):
             # Append projects to List-view
             self.listView_Projects.addItems(self.projects_list)
             self.database_connection_status.setText("Status: Connected")
-            # self.signalclass.turnOnComboBoxEmittor.emit()
-            # self.signalclass.turnOnOptionsEmittor.emit()
+            self.signalclass.turnOnOptionsEmittor.emit()
 
         except:
             self.database_connection_status.setText("Status: Connection Refused")
@@ -346,16 +372,23 @@ class QuickVisualize(object):
     def execTool(self):
 
         to_render = [
-            [self.dialog.bt_river_max_1, "hyd_river_profile_max_results_prm", "velocity"],
-            [self.dialog.bt_river_max_2, "hyd_river_profile_max_results_prm", "discharge"],
-            [self.dialog.bt_river_instat_1, "hyd_river_profile_instat_results_prm", "velocity"],
-            [self.dialog.bt_river_instat_2, "hyd_river_profile_instat_results_prm", "discharge"],
-            [self.dialog.bt_floodplain_max_x, "hyd_floodplain_elem_max_result_prm", "x_velocity"],
-            [self.dialog.bt_floodplain_max_y, "hyd_floodplain_elem_max_result_prm", "y_velocity"],
-            [self.dialog.bt_floodplain_instat_x, "hyd_floodplain_elem_instat_result_prm", "x_velocity"],
-            [self.dialog.bt_floodplain_instat_y, "hyd_floodplain_elem_instat_result_prm", "y_velocity"],
-            [self.dialog.bt_floodplain_goedetic, "hyd_floodplain_element_prm", "geodetic_height"]
+            [self.dialog.hyd_in_rv_1, "hyd_river_profile_prm", ""],
+            [self.dialog.hyd_in_rv_2, "hyd_river_profile_points_prm", "distance"],
+            [self.dialog.hyd_in_fd_1, "hyd_floodplain_element_prm", "geodetic_height"], ##################
+            [self.dialog.hyd_in_fd_2, "" ""],
+            [self.dialog.hyd_re_rv_1, "hyd_river_profile_max_results_prm", "h_waterlevel"],
+            [self.dialog.hyd_re_rv_2, "hyd_river_profile_max_results_prm", "discharge"],
+            [self.dialog.hyd_re_fd_1, "", ""],
+            [self.dialog.hyd_re_fd_2, "", ""],
+            [self.dialog.cb_dam_ecn_imm, "dam_ecn_elements_prm", "immob_id"],
+            [self.dialog.cb_dam_in_pop, "dam_pop_element_prm", "pop_density"],
+            [self.dialog.cb_dam_scpoints, "dam_sc_point_prm", "cat_id"],
+            [self.dialog.cb_dam_ecn_total, "dam_ecn_results_prm", "total"],
+            [self.dialog.cb_dam_pop_affected, "dam_pop_result_prm", "pop_affected"],
+            [self.dialog.cb_dam_pop_endangered, "dam_pop_result_prm", "pop_endangered"],
+            [self.dialog.cb_dam_sc_points_damages, "dam_sc_point_erg_prm", "affect_score"]
         ]
+
 
         for layer in to_render:
             if layer[0].isChecked():
@@ -366,88 +399,53 @@ class QuickVisualize(object):
 
                 # Get type of selected layer from database
                 curColumnType = self.dialog.conn.cursor()
-                curColumnType.execute(
-                    "SELECT column_name from information_schema.columns WHERE table_schema = '{}' AND table_name='{}' AND data_type = 'USER-DEFINED'".format(
-                        project_name, layer_name))
-
+                curColumnType.execute("SELECT column_name from information_schema.columns WHERE table_schema = '{}' AND table_name='{}' AND data_type = 'USER-DEFINED'".format(project_name, layer_name))
                 ColumnType = curColumnType.fetchone()
 
                 # Check that layer has a valid type
                 if ColumnType is not None:
                     layer_type = ColumnType[0]
+                    layer_toBeNamed = layer_name + "_" + value_field
 
-                    # Create QGIS layer from source
-                    self.dialog.uri_chosen_layer.setDataSource(project_name, layer_name, layer_type)
-                    vlayer = QgsVectorLayer(self.dialog.uri_chosen_layer.uri(False), layer_name + "_" + value_field,
-                                            "postgres")
-
-                    # Styling of layer based on its type
-                    if layer_name == "hyd_river_profile_max_results_prm" or layer_name == "hyd_river_profile_instat_results_prm" or "hyd_floodplain_elem_max_result_prm" or layer_name == "hyd_floodplain_elem_instat_result_prm" or layer_name == "hyd_floodplain_element_prm":
-                        if (value_field == "velocity"):
-                            rampcolor2 = QColor(255, 0, 0)
-                            num_classes = 10
-                        elif (value_field == "discharge"):
-                            rampcolor2 = QColor(255, 145, 0)
-                            num_classes = 10
-                        elif (value_field == "x_velocity"):
-                            rampcolor2 = QColor(230, 35, 0)
-                            num_classes = 5
-                        elif (value_field == "y_velocity"):
-                            rampcolor2 = QColor(230, 35, 0)
-                            num_classes = 5
-                        elif (value_field == "geodetic_height"):
-                            rampcolor2 = QColor(230, 35, 0)
-                            num_classes = 5
-
-                        renderer = QgsGraduatedSymbolRenderer()
-                        ramp_name = 'Greys'
-                        # classification_method = QgsClassificationEqualInterval()
-                        classification_method = QgsClassificationQuantile()
-                        format = QgsRendererRangeLabelFormat()
-                        format.setFormat("%1 - %2")
-                        format.setPrecision(2)
-                        format.setTrimTrailingZeroes(True)
-
-                        default_style = QgsStyle().defaultStyle()
-                        color_ramp = default_style.colorRamp(ramp_name)
-                        color_ramp.setColor1(QColor(250, 250, 36))
-                        color_ramp.setColor2(rampcolor2)
-
-                        renderer.setClassAttribute(value_field)
-                        renderer.setClassificationMethod(classification_method)
-                        renderer.setLabelFormat(format)
-                        renderer.updateClasses(vlayer, num_classes)
-                        renderer.updateColorRamp(color_ramp)
-
-                        symbol = QgsFillSymbol.createSimple({'color': '200,200,43,255', 'outline_width': '0'})
-                        symbol.symbolLayers()[0].setDataDefinedProperty(QgsSymbolLayer.PropertyStrokeColor,
-                                                                        QgsProperty.fromExpression("@symbol_color",
-                                                                                                   True))
-                        renderer.updateSymbols(symbol)
-
-                    elif layer_name == "hyd_floodplain_elem_max_result_prm" or layer_name == "hyd_floodplain_elem_instat_result_prm" or layer_name == "hyd_floodplain_element_prm":
-                        print("Debug 13FHD2")
+                    if layer_name == "hyd_river_profile_prm":
+                        vlayer = self.vlayerMakeradvanced("single", QColor(250, 250, 36), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                    elif layer_name == "hyd_river_profile_points_prm":
+                        vlayer = self.vlayerMakeradvanced("marker", QColor(230, 35, 35), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                    elif layer_name == "hyd_floodplain_element_prm":
+                        vlayer = self.vlayerMakeradvanced("graduated", QColor(230, 35, 35), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                    elif layer_name == "hyd_river_profile_max_results_prm":
+                        vlayer = self.vlayerMakeradvanced("graduated", QColor(230, 35, 35), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                    elif layer_name == "dam_ecn_elements_prm":
+                        vlayer = self.vlayerMakeradvanced("categorized", QColor(230, 35, 35), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                    elif layer_name == "dam_pop_element_prm":
+                        vlayer = self.vlayerMakeradvanced("graduated", QColor(17, 208, 29), QColor(255, 0, 0), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                    elif layer_name == "dam_sc_point_prm":
+                        vlayer = self.vlayerMakeradvanced("labeled", QColor(17, 208, 29), QColor(255, 0, 0), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                    elif layer_name == "dam_ecn_results_prm":
+                        vlayer = self.vlayerMakeradvanced("graduated", QColor(250, 250, 36), QColor(255, 0, 0), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                    elif layer_name == "dam_pop_result_prm":
+                        vlayer = self.vlayerMakeradvanced("dense", QColor(17, 255, 29), QColor(255, 0, 0), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                    elif layer_name == "dam_sc_point_erg_prm":
+                        vlayer = self.vlayerMakeradvanced("labeledwithcolor", QColor(17, 255, 29), QColor(255, 0, 0), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
                     else:
-                        print(
-                            "Please contact developer! Error in naming of layers. (Maybe there is a change in layer naming, please try using an older version of ProMaides!)")
+                        vlayer = self.vlayerMakeradvanced("", QColor(250, 250, 36), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
 
-                    vlayer.setRenderer(renderer)
-                    vlayer.setCrs(self.dialog.CRS_Select.crs())
-                    vlayer.triggerRepaint()
-
-                    # Add layer to current QGIS Instance
                     QgsProject.instance().addMapLayer(vlayer)
+                    layerroot = QgsProject.instance().layerTreeRoot().findLayer(vlayer.id())
+
+                    if(not self.dialog.cb_layervisible.isChecked()):
+                        layerroot.setItemVisibilityChecked(False)
 
                     if(self.dialog.checkbox_addedtonewgroup.isChecked()):
-                        root = QgsProject.instance().layerTreeRoot()
-                        layer = root.findLayer(vlayer.id())
+                        layerroot = QgsProject.instance().layerTreeRoot()
+                        layer = layerroot.findLayer(vlayer.id())
 
                         #Create Group if not existing
-                        if(root.findGroup("QuickViz") is None):
-                            root.addGroup("QuickViz")
-                            group = root.findGroup("QuickViz")
+                        if(layerroot.findGroup("QuickViz") is None):
+                            layerroot.addGroup("QuickViz")
+                            group = layerroot.findGroup("QuickViz")
                         else:
-                            group = root.findGroup("QuickViz")
+                            group = layerroot.findGroup("QuickViz")
                         clone = layer.clone()
                         group.insertChildNode(0, clone)
                         parent = layer.parent()
@@ -474,8 +472,9 @@ class QuickVisualize(object):
 
                 # Create QGIS layer from source
                 self.dialog.uri_chosen_layer.setDataSource(project_name, layer_name, layer_type)
-                vlayer = QgsVectorLayer(self.dialog.uri_chosen_layer.uri(False), layer_name + "_" + value_field,
-                                        "postgres")
+                layer_toBeNamed = layer_name + "_" + value_field
+
+                vlayer = QgsVectorLayer(self.dialog.uri_chosen_layer.uri(False), layer_toBeNamed, "postgres")
 
                 rampcolor1 = self.dialog.advancedcolor1
                 rampcolor2 = self.dialog.advancedcolor2
@@ -508,6 +507,7 @@ class QuickVisualize(object):
 
                 vlayer.setRenderer(renderer)
                 vlayer.setCrs(self.dialog.CRS_Select.crs())
+                vlayer.setVisible(False)
                 vlayer.triggerRepaint()
 
                 # Add layer to current QGIS Instance
@@ -531,3 +531,87 @@ class QuickVisualize(object):
                 QMessageBox.information(None, "DEBUG:",
                                         "You selected an invalid layer<br><br>Possible Reasons: Layer was not calculated by ProMaides<br><br>Please try to select another layer")
         self.quitDialog()
+
+    def vlayerMakeradvanced(self, typeRender, color1, color2, num_classes, project_name, layer_name, layer_type, value_field, layer_toBeNamed, line_width=0.4):
+        self.dialog.uri_chosen_layer.setDataSource(project_name, layer_name, layer_type)
+        vlayer = QgsVectorLayer(self.dialog.uri_chosen_layer.uri(False), layer_toBeNamed, "postgres")
+
+        if typeRender == "single":
+            symbol=QgsLineSymbol.createSimple({'color': '200,200,43,255', 'outline_width': line_width})
+            renderer = QgsSingleSymbolRenderer(symbol)
+        elif typeRender == "graduated" or typeRender == "marker" or typeRender == "dense" or typeRender == "labeledwithcolor":
+            renderer = QgsGraduatedSymbolRenderer()
+            # classification_method = QgsClassificationEqualInterval()
+            classification_method = QgsClassificationQuantile()
+            format = QgsRendererRangeLabelFormat()
+            format.setFormat("%1 - %2")
+            format.setPrecision(2)
+            format.setTrimTrailingZeroes(True)
+
+            default_style = QgsStyle().defaultStyle()
+            color_ramp = default_style.colorRamp('Greys')
+            color_ramp.setColor1(color1)
+            color_ramp.setColor2(color2)
+
+            renderer.setClassAttribute(value_field)
+            renderer.setClassificationMethod(classification_method)
+            renderer.setLabelFormat(format)
+            renderer.updateClasses(vlayer, num_classes)
+            renderer.updateColorRamp(color_ramp)
+
+            if typeRender == "marker":
+                symbol = QgsMarkerSymbol.createSimple({'color': '200,200,43,255', 'size' : '1', 'outline_style' : 'no'})
+            elif typeRender == "labeledwithcolor":
+                renderer.setGraduatedMethod(QgsGraduatedSymbolRenderer.GraduatedSize)
+                renderer.updateClasses(vlayer, num_classes)
+                renderer.setSymbolSizes(2, 8)
+                symbol = QgsMarkerSymbol.createSimple({'outline_style' : 'no'})
+                symbol.symbolLayers()[0].setDataDefinedProperty(QgsSymbolLayer.PropertyFillColor,QgsProperty.fromExpression("if(\"cat_id\" = 1,  color_rgb( 244,22,34),  if(\"cat_id\" = 2, color_rgb(63, 183, 180),  if(\"cat_id\" = 3, color_rgb(215,91,255),  if(\"cat_id\" = 4, color_rgb(221,167,91),  color_rgb( 244,222,34)))))", True))
+                renderer.updateSymbols(symbol)
+                settings  = QgsPalLayerSettings()
+                settings.isExpression = True
+                settings.fieldName = " if(\"cat_id\" = 1, 'Public Building',  if(\"cat_id\" = 2, 'Hazardous Substances Entity',  if(\"cat_id\" = 3, 'Cultural Heritage',  if(\"cat_id\" = 4, 'Buildings with Endangered People',  '?'))))"
+                settings.enabled = True
+
+                root = QgsRuleBasedLabeling.Rule(QgsPalLayerSettings())
+                rule = QgsRuleBasedLabeling.Rule(settings)
+                root.appendChild(rule)
+
+                vlayer.setLabelsEnabled(True)
+                qgsRuleBasedLabeling = QgsRuleBasedLabeling(root)
+                vlayer.setLabeling(qgsRuleBasedLabeling)
+            elif typeRender == "dense":
+                styleUse = 'dense1' if value_field == 'pop_affected' else 'dense2'
+                symbol = QgsFillSymbol.createSimple({'color': '200,200,43,255', 'outline_width': '0', 'style' : styleUse})
+            else:
+                symbol = QgsFillSymbol.createSimple({'color': '200,200,43,255', 'outline_width': '0'})
+                symbol.symbolLayers()[0].setDataDefinedProperty(QgsSymbolLayer.PropertyStrokeColor,QgsProperty.fromExpression("@symbol_color",True))
+            renderer.updateSymbols(symbol)
+        elif typeRender == "categorized" or typeRender == "labeled":
+            unique_values = vlayer.uniqueValues(vlayer.fields().indexFromName(value_field))
+            category_list = []
+            for value in unique_values:
+                symbol = QgsSymbol.defaultSymbol(vlayer.geometryType())
+                category = QgsRendererCategory(value, symbol, str(value))
+                category_list.append(category)
+            renderer = QgsCategorizedSymbolRenderer(value_field, category_list)
+            renderer.updateColorRamp(QgsRandomColorRamp())
+
+            if typeRender == "labeled":
+                settings  = QgsPalLayerSettings()
+                settings.isExpression = True
+                settings.fieldName = " if(\"cat_id\" = 1, 'Public Building',  if(\"cat_id\" = 2, 'Hazardous Substances Entity',  if(\"cat_id\" = 3, 'Cultural Heritage',  if(\"cat_id\" = 4, 'Buildings with Endangered People',  '?'))))"
+                settings.enabled = True
+
+                root = QgsRuleBasedLabeling.Rule(QgsPalLayerSettings())
+                rule = QgsRuleBasedLabeling.Rule(settings)
+                root.appendChild(rule)
+
+                vlayer.setLabelsEnabled(True)
+                qgsRuleBasedLabeling = QgsRuleBasedLabeling(root)
+                vlayer.setLabeling(qgsRuleBasedLabeling)
+
+        vlayer.setRenderer(renderer)
+        vlayer.setCrs(self.dialog.CRS_Select.crs())
+        return vlayer
+
