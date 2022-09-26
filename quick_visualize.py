@@ -51,10 +51,19 @@ class PluginDialog(QDialog):
             self.spinbox_classes.setValue(self.qsettings.value("spinbox_classes_value"))
 
         if self.qsettings.contains("crs_value"):
-            #default should be EPSG:25832
             self.CRS_Select.setCrs(QgsCoordinateReferenceSystem(self.qsettings.value("crs_value")))
         else:
             self.CRS_Select.setCrs(QgsCoordinateReferenceSystem("EPSG:25832"))
+
+        if self.qsettings.contains("Add_to_new_group"):
+            self.checkbox_addedtonewgroup.setChecked(self.str2bool(self.qsettings.value("Add_to_new_group")))
+        else:
+            self.checkbox_addedtonewgroup.setChecked(True)
+
+        if self.qsettings.contains("cb_layervisible"):
+            self.cb_layervisible.setChecked(self.str2bool(self.qsettings.value("cb_layervisible")))
+        else:
+            self.cb_layervisible.setChecked(False)
 
 
         self.iface = iface
@@ -77,7 +86,7 @@ class PluginDialog(QDialog):
             1. Checkboxes in these groups are meant to disable or enable the box only and to be used as an option, thus each time the checkbox of a group is pressed, its children must be re-enabled
             2. When checkbox is clicked it does not pass its id within. This can be bypassed by checking which checkbox has changed. In order to do this a checkboxtree variable is introduced to check which button is changed and from which state to which in order to know if user intends to deselect or to select.
 
-        To Update in the future please note that Added/Removed buttons should be Added/Removed to the checkboxtree and should reflect its hierarchy! 
+        To Update in the future please note that Added/Removed buttons should be Added/Removed to/from the checkboxtree and should reflect its hierarchy! 
         '''
         self.checkboxtree = [self.HYD_Standard_Group, False, [[self.HYD_INPUT, False, [[self.HYD_IN_RV, False, [[self.hyd_in_rv_1, False],[self.hyd_in_rv_2, False]]], [self.HYD_IN_FD, False, [[self.hyd_in_fd_1, False],[self.hyd_in_fd_2, False]]]]], [self.HYD_RESULTS, False, [[self.HYD_RE_RV, False, [[self.hyd_re_rv_1, False],[self.hyd_re_rv_2, False]]],[self.HYD_RE_FD, False, [[self.hyd_re_fd_1, False],[self.hyd_re_fd_2, False]]]]]]], [self.DAM_Standard_Group, False, [[self.DAM_INPUT, False, [[self.cb_dam_ecn_imm, False],[self.cb_dam_in_pop, False],[self.cb_dam_scpoints, False]]],[self.Dam_RESULTS, False , [[self.cb_dam_ecn_total, False],[self.cb_dam_pop_affected, False],[self.cb_dam_pop_endangered, False],[self.cb_dam_sc_points_damages, False]]]]], [self.RISK_Standard_Group, False]
 
@@ -101,6 +110,8 @@ class PluginDialog(QDialog):
         self.color_selection_2.clicked.connect(self.getColorClick2)
         self.spinbox_classes.valueChanged.connect(self.on_ValueChanged_of_spinbox_classes)
         self.CRS_Select.crsChanged.connect(self.crs_Select_crsChanged)
+        self.checkbox_addedtonewgroup.clicked.connect(self.checkbox_addedtonewgroup_clicked)
+        self.cb_layervisible.clicked.connect(self.cb_layervisible_clicked)
 
         self.signalclass = SignalClass()
         self.signalclass.turnOnOptionsEmittor.connect(self.enableAll)
@@ -185,6 +196,12 @@ class PluginDialog(QDialog):
     def on_ValueChanged_of_spinbox_classes(self, value):
         self.qsettings.setValue("spinbox_classes_value", value)
 
+    def checkbox_addedtonewgroup_clicked(self):
+        self.qsettings.setValue("Add_to_new_group", self.checkbox_addedtonewgroup.isChecked())
+
+    def cb_layervisible_clicked(self):
+        self.qsettings.setValue("cb_layervisible", self.cb_layervisible.isChecked())
+
     def getColorClick1(self):
         color = QColorDialog.getColor()
         self.advancedcolor1 = color
@@ -232,6 +249,9 @@ class PluginDialog(QDialog):
 
     def enableCombo(self):
         self.combobox_databaseSelection.setEnabled(True)
+
+    def str2bool(self,v):
+        return v.lower() in ("true")
 
     def tryToConnect(self):
 
@@ -427,21 +447,21 @@ class QuickVisualize(object):
     def execTool(self):
 
         to_render = [
-            [self.dialog.hyd_in_rv_1, "hyd_river_profile_prm", ""],
-            [self.dialog.hyd_in_rv_2, "hyd_river_profile_points_prm", "distance"],
-            [self.dialog.hyd_in_fd_1, "hyd_floodplain_element_prm", "geodetic_height"], ##################
-            [self.dialog.hyd_in_fd_2, "" ""],
-            [self.dialog.hyd_re_rv_1, "hyd_river_profile_max_results_prm", "h_waterlevel"],
-            [self.dialog.hyd_re_rv_2, "hyd_river_profile_max_results_prm", "discharge"],
-            [self.dialog.hyd_re_fd_1, "", ""],
-            [self.dialog.hyd_re_fd_2, "", ""],
-            [self.dialog.cb_dam_ecn_imm, "dam_ecn_elements_prm", "immob_id"],
-            [self.dialog.cb_dam_in_pop, "dam_pop_element_prm", "pop_density"],
-            [self.dialog.cb_dam_scpoints, "dam_sc_point_prm", "cat_id"],
-            [self.dialog.cb_dam_ecn_total, "dam_ecn_results_prm", "total"],
-            [self.dialog.cb_dam_pop_affected, "dam_pop_result_prm", "pop_affected"],
-            [self.dialog.cb_dam_pop_endangered, "dam_pop_result_prm", "pop_endangered"],
-            [self.dialog.cb_dam_sc_points_damages, "dam_sc_point_erg_prm", "affect_score"]
+            [self.dialog.hyd_in_rv_1, "hyd_river_profile_prm", "", ["HYD","Input"]],
+            [self.dialog.hyd_in_rv_2, "hyd_river_profile_points_prm", "distance", ["HYD","Input"]],
+            [self.dialog.hyd_in_fd_1, "hyd_floodplain_element_prm", "geodetic_height", ["HYD","Input"]],
+            [self.dialog.hyd_in_fd_2, "" "", ["HYD","Input"]],
+            [self.dialog.hyd_re_rv_1, "hyd_river_profile_max_results_prm", "h_waterlevel", ["HYD","Results"]],
+            [self.dialog.hyd_re_rv_2, "hyd_river_profile_max_results_prm", "discharge", ["HYD","Results"]],
+            [self.dialog.hyd_re_fd_1, "", "", ["HYD","Results"]],
+            [self.dialog.hyd_re_fd_2, "", "", ["HYD","Results"]],
+            [self.dialog.cb_dam_ecn_imm, "dam_ecn_elements_prm", "immob_id", ["DAM","Input"]],
+            [self.dialog.cb_dam_in_pop, "dam_pop_element_prm", "pop_density", ["DAM","Input"]],
+            [self.dialog.cb_dam_scpoints, "dam_sc_point_prm", "cat_id", ["DAM","Input"]],
+            [self.dialog.cb_dam_ecn_total, "dam_ecn_results_prm", "total", ["DAM","Results"]],
+            [self.dialog.cb_dam_pop_affected, "dam_pop_result_prm", "pop_affected", ["DAM","Results"]],
+            [self.dialog.cb_dam_pop_endangered, "dam_pop_result_prm", "pop_endangered", ["DAM","Results"]],
+            [self.dialog.cb_dam_sc_points_damages, "dam_sc_point_erg_prm", "affect_score", ["DAM","Results"]]
         ]
 
         for layer in to_render:
@@ -484,27 +504,24 @@ class QuickVisualize(object):
                     else:
                         vlayer = self.vlayerMakeradvanced("", QColor(250, 250, 36), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
 
-                    QgsProject.instance().addMapLayer(vlayer)
-                    layerroot = QgsProject.instance().layerTreeRoot().findLayer(vlayer.id())
-
-                    if(not self.dialog.cb_layervisible.isChecked()):
-                        layerroot.setItemVisibilityChecked(False)
 
                     if(self.dialog.checkbox_addedtonewgroup.isChecked()):
-                        layerroot = QgsProject.instance().layerTreeRoot()
-                        layer = layerroot.findLayer(vlayer.id())
+                        QgsProject.instance().addMapLayer(vlayer, False)
+                        root = QgsProject.instance().layerTreeRoot()
+                        layerroot = root
+                        for x in range(2): #len(layer[3])
+                            if(layerroot.findGroup(layer[3][x]) is None):
+                                layerroot.addGroup(layer[3][x])
+                                layerroot = layerroot.findGroup(layer[3][x])
+                            else:
+                                layerroot = layerroot.findGroup(layer[3][x])
+                        layerroot.addLayer(vlayer)
+                    else:
+                        QgsProject.instance().addMapLayer(vlayer)
 
-                        #Create Group if not existing
-                        if(layerroot.findGroup("QuickViz") is None):
-                            layerroot.addGroup("QuickViz")
-                            group = layerroot.findGroup("QuickViz")
-                        else:
-                            group = layerroot.findGroup("QuickViz")
-                        clone = layer.clone()
-                        group.insertChildNode(0, clone)
-                        parent = layer.parent()
-                        parent.removeChildNode(layer)
-
+                    if(not self.dialog.cb_layervisible.isChecked()):
+                        layerlocation = QgsProject.instance().layerTreeRoot().findLayer(vlayer.id())
+                        layerlocation.setItemVisibilityChecked(False)
 
         # Check that a layer is selected
         if self.dialog.listView_Layers.currentItem() is not None and self.dialog.combobox_feature.currentText() is not None:
