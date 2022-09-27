@@ -76,6 +76,7 @@ class PluginDialog(QDialog):
         self.firstload = 0
         self.text_of_EditText_Search_Layers = ""
         self.changedbutton=""
+        self.unavailablebuttons=[]
 
         self.color_selection_1.setStyleSheet("background-color : " + self.advancedcolor1.name() + "; border: 0px;")
         self.color_selection_2.setStyleSheet("background-color : " + self.advancedcolor2.name() + "; border: 0px;")
@@ -96,6 +97,25 @@ class PluginDialog(QDialog):
         self.allGroupCheckboxes = self.makeAllGroupCheckboxes(self.allGroupCheckboxeswithDepth)
 
 
+        self.to_render = [
+            [self.hyd_in_rv_1, "hyd_river_profile_prm", "", ["HYD","Input"]],
+            [self.hyd_in_rv_2, "hyd_river_profile_points_prm", "distance", ["HYD","Input"]],
+            [self.hyd_in_fd_1, "hyd_floodplain_element_prm", "geodetic_height", ["HYD","Input"]],
+            [self.hyd_in_fd_2, "" "", ["HYD","Input"]],
+            [self.hyd_re_rv_1, "hyd_river_profile_max_results_prm", "h_waterlevel", ["HYD","Results"]],
+            [self.hyd_re_rv_2, "hyd_river_profile_max_results_prm", "discharge", ["HYD","Results"]],
+            [self.hyd_re_fd_1, "", "", ["HYD","Results"]],
+            [self.hyd_re_fd_2, "", "", ["HYD","Results"]],
+            [self.cb_dam_ecn_imm, "dam_ecn_elements_prm", "immob_id", ["DAM","Input"]],
+            [self.cb_dam_in_pop, "dam_pop_element_prm", "pop_density", ["DAM","Input"]],
+            [self.cb_dam_scpoints, "dam_sc_point_prm", "cat_id", ["DAM","Input"]],
+            [self.cb_dam_ecn_total, "dam_ecn_results_prm", "total", ["DAM","Results"]],
+            [self.cb_dam_pop_affected, "dam_pop_result_prm", "pop_affected", ["DAM","Results"]],
+            [self.cb_dam_pop_endangered, "dam_pop_result_prm", "pop_endangered", ["DAM","Results"]],
+            [self.cb_dam_sc_points_damages, "dam_sc_point_erg_prm", "affect_score", ["DAM","Results"]]
+        ]
+
+
         # Hooking buttons | search text is changed
         self.DatabaseListManage_dialog_instance = DatabaseListManagement(self.iface)
         self.HelpButton.clicked.connect(self.Help)
@@ -114,7 +134,7 @@ class PluginDialog(QDialog):
         self.cb_layervisible.clicked.connect(self.cb_layervisible_clicked)
 
         self.signalclass = SignalClass()
-        self.signalclass.turnOnOptionsEmittor.connect(self.enableAll)
+        self.signalclass.turnOnOptionsEmittor.connect(self.ResetAllbuttons)
         self.signalclass.turnOffOptionsEmittor.connect(self.disableOptions)
         self.signalclass.turnOnComboBoxEmittor.connect(self.enableCombo)
 
@@ -185,6 +205,15 @@ class PluginDialog(QDialog):
     def enableAll(self):
         for checkboxtoenable in self.allcheckboxes:
             checkboxtoenable.setEnabled(True)
+
+    def ResetAllbuttons(self):
+        for checkboxtoenable in self.allcheckboxes:
+            checkboxtoenable.setEnabled(True)
+            checkboxtoenable.setStyleSheet("")
+            checkboxtoenable.setToolTip("")
+        for group in self.allGroupCheckboxes:
+            group.setToolTip("")
+            group.setStyleSheet("")
 
     def disableAll(self):
         for checkboxtoenable in self.allcheckboxes:
@@ -301,15 +330,56 @@ class PluginDialog(QDialog):
             self.database_connection_status.setText("Status: Connection Refused")
         self.signalclass.turnOnComboBoxEmittor.emit()
 
+    def checkUncalculatedLayers(self):
+        self.unavailablebuttons=[]
+        for checkbox in self.to_render:
+            if checkbox[1] != "" and checkbox[1] in self.curlayerlist:
+                curlayer = self.conn.cursor()
+                try:
+                    curlayer.execute("SELECT COUNT(*) FROM {}".format(self.chosen_project + "." +checkbox[1]))
+                    results = curlayer.fetchone()
+                    for r in results:
+                        num=r
+                        break
+                    if not num>1:
+                        self.checkbuttonNotAva(checkbox[0])
+                except:
+                    self.checkbuttonNotAva(checkbox[0])
+            else:
+                self.checkbuttonNotAva(checkbox[0])
+        self.checkEntireGroupIsMising()
+        self.HYD_Standard_Group.collapseExpandFixes()
+        self.DAM_Standard_Group.collapseExpandFixes()
+        self.RISK_Standard_Group.collapseExpandFixes()
+
+    def checkEntireGroupIsMising(self):
+        for group in self.allGroupCheckboxes:
+            children = group.findChildren(QCheckBox)
+            state = False #all are not calculate
+            for child in children:
+                if not child in self.unavailablebuttons:
+                    state=True #At least one is calculated
+            if state == False:
+                group.setToolTip("All layers in group are not calculated")
+                group.setStyleSheet("QgsCollapsibleGroupBoxBasic::title, QGroupBox::title {color: Red;}")
+
+    def checkbuttonNotAva(self,cbutton):
+        self.unavailablebuttons.append(cbutton)
+        cbutton.setEnabled(False)
+        cbutton.setStyleSheet("QCheckBox { color: red }")
+        cbutton.setToolTip("Layer not calculated")
+
     def on_currentItemChanged_of_listView_Projects(self, now, pre):
         if now is not None:
             self.signalclass.turnOnOptionsEmittor.emit()
+
             # Set Project variable
             self.chosen_project = now.text()
+
             # Grab layers that are in selected project
             self.curlayer = self.conn.cursor()
-            self.curlayer.execute(
-                "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = '{}'".format(now.text()))
+            self.curlayer.execute("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = '{}'".format(now.text()))
+
             # curlayerlist: To allow for filtering using search
             self.curlayerlist = []
             # Clear Layers lists and add new list
@@ -319,6 +389,7 @@ class PluginDialog(QDialog):
                 self.curlayerlist.append(str(layer[0]))
                 if self.text_of_EditText_Search_Layers in str(layer[0]):
                     self.listView_Layers.addItem(str(layer[0]))
+            self.checkUncalculatedLayers()
         else:
             self.signalclass.turnOffOptionsEmittor.emit()
 
@@ -446,23 +517,8 @@ class QuickVisualize(object):
     # Execution of the tool by "OK" button
     def execTool(self):
 
-        to_render = [
-            [self.dialog.hyd_in_rv_1, "hyd_river_profile_prm", "", ["HYD","Input"]],
-            [self.dialog.hyd_in_rv_2, "hyd_river_profile_points_prm", "distance", ["HYD","Input"]],
-            [self.dialog.hyd_in_fd_1, "hyd_floodplain_element_prm", "geodetic_height", ["HYD","Input"]],
-            [self.dialog.hyd_in_fd_2, "" "", ["HYD","Input"]],
-            [self.dialog.hyd_re_rv_1, "hyd_river_profile_max_results_prm", "h_waterlevel", ["HYD","Results"]],
-            [self.dialog.hyd_re_rv_2, "hyd_river_profile_max_results_prm", "discharge", ["HYD","Results"]],
-            [self.dialog.hyd_re_fd_1, "", "", ["HYD","Results"]],
-            [self.dialog.hyd_re_fd_2, "", "", ["HYD","Results"]],
-            [self.dialog.cb_dam_ecn_imm, "dam_ecn_elements_prm", "immob_id", ["DAM","Input"]],
-            [self.dialog.cb_dam_in_pop, "dam_pop_element_prm", "pop_density", ["DAM","Input"]],
-            [self.dialog.cb_dam_scpoints, "dam_sc_point_prm", "cat_id", ["DAM","Input"]],
-            [self.dialog.cb_dam_ecn_total, "dam_ecn_results_prm", "total", ["DAM","Results"]],
-            [self.dialog.cb_dam_pop_affected, "dam_pop_result_prm", "pop_affected", ["DAM","Results"]],
-            [self.dialog.cb_dam_pop_endangered, "dam_pop_result_prm", "pop_endangered", ["DAM","Results"]],
-            [self.dialog.cb_dam_sc_points_damages, "dam_sc_point_erg_prm", "affect_score", ["DAM","Results"]]
-        ]
+        to_render=self.dialog.to_render
+
 
         for layer in to_render:
             if layer[0].isChecked() and layer[1] != "":
