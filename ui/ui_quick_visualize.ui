@@ -402,6 +402,58 @@
       </layout>
      </item>
      <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Scenarios: </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QgsCheckableComboBox" name="cb_scenarios">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>300</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QgsCheckableComboBox{   margin-left: 0px; }</string>
+         </property>
+         <property name="currentText">
+          <string/>
+         </property>
+         <property name="separator">
+          <string>   |   </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>60</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </item>
+     <item>
       <widget class="QgsCollapsibleGroupBox" name="groupbox_StandardViz">
        <property name="enabled">
         <bool>true</bool>
@@ -633,7 +685,7 @@
            <item>
             <widget class="QGroupBox" name="HYD_INPUT">
              <property name="enabled">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -669,7 +721,7 @@
               <item row="0" column="0">
                <widget class="QGroupBox" name="HYD_IN_RV">
                 <property name="enabled">
-                 <bool>true</bool>
+                 <bool>false</bool>
                 </property>
                 <property name="styleSheet">
                  <string notr="true"/>
@@ -1238,6 +1290,11 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>QgsCheckableComboBox</class>
+   <extends>QComboBox</extends>
+   <header>qgis.gui</header>
+  </customwidget>
   <customwidget>
    <class>QgsCollapsibleGroupBox</class>
    <extends>QGroupBox</extends>

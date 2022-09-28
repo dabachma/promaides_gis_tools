@@ -77,6 +77,7 @@ class PluginDialog(QDialog):
         self.text_of_EditText_Search_Layers = ""
         self.changedbutton=""
         self.unavailablebuttons=[]
+        self.senarios=[]
 
         self.color_selection_1.setStyleSheet("background-color : " + self.advancedcolor1.name() + "; border: 0px;")
         self.color_selection_2.setStyleSheet("background-color : " + self.advancedcolor2.name() + "; border: 0px;")
@@ -137,6 +138,7 @@ class PluginDialog(QDialog):
         self.signalclass.turnOnOptionsEmittor.connect(self.ResetAllbuttons)
         self.signalclass.turnOffOptionsEmittor.connect(self.disableOptions)
         self.signalclass.turnOnComboBoxEmittor.connect(self.enableCombo)
+        self.signalclass.portErrorEmittor.connect(self.portErrorMessage)
 
         for checkbutton in self.allcheckboxes:
             checkbutton.clicked.connect(self.manageCheckboxSys)
@@ -290,8 +292,14 @@ class PluginDialog(QDialog):
             connectionparameters = self.default_database_connect
             self.firstload += 1
 
-        host, port, name, user, pwrd = connectionparameters[0], int(connectionparameters[1]), connectionparameters[2], \
-                                       connectionparameters[3], connectionparameters[4]
+
+        host, name, user, pwrd = connectionparameters[0], connectionparameters[2], connectionparameters[3], connectionparameters[4]
+        try:
+            port = int(connectionparameters[1])
+        except:
+            self.signalclass.portErrorEmittor.emit()
+            port = 1
+
         try:
             conn_str = "dbname='{}' user='{}' host='{}' port={} password='{}'".format(name, user, host, port, pwrd)
             self.conn = psycopg2.connect(conn_str)
@@ -352,6 +360,20 @@ class PluginDialog(QDialog):
         self.DAM_Standard_Group.collapseExpandFixes()
         self.RISK_Standard_Group.collapseExpandFixes()
 
+    def AddedScenarios(self):
+        self.senarios=[]
+        self.cb_scenarios.clear()
+        if "hyd_bound_scenario_prm" in self.curlayerlist:
+            curlayer = self.conn.cursor()
+            curlayer.execute("SELECT \"boundary_scenario_id\",\"name\" FROM {}.hyd_bound_scenario_prm".format(self.chosen_project))
+            for senario in curlayer:
+                self.senarios.append([senario[0],senario[1]])
+                self.cb_scenarios.addItem(str(senario[0]) + ": " + senario[1])
+                self.cb_scenarios.setCheckedItems([str(senario[0]) + ": " + senario[1]])
+                print("added")
+
+                
+
     def checkEntireGroupIsMising(self):
         for group in self.allGroupCheckboxes:
             children = group.findChildren(QCheckBox)
@@ -389,6 +411,7 @@ class PluginDialog(QDialog):
                 self.curlayerlist.append(str(layer[0]))
                 if self.text_of_EditText_Search_Layers in str(layer[0]):
                     self.listView_Layers.addItem(str(layer[0]))
+            self.AddedScenarios()
             self.checkUncalculatedLayers()
         else:
             self.signalclass.turnOffOptionsEmittor.emit()
@@ -446,32 +469,30 @@ class PluginDialog(QDialog):
     # Read Databases List:
     def readDatabasesList(self):
         lines = []
-        try:
-            with open("promaides_databases.txt") as file:
-                lines = file.readlines()
-                lines = [line.rstrip().split(",") for line in lines]
-                if lines == []:
-                    lines = ["localhost,5432,promaides,postgres,,1".split(",")]
-                    file = open("promaides_databases.txt", "w")
-                    file.write("localhost,5432,promaides,postgres,,1")
-                    file.close()
-        except:
-            print(
-                "Tried to read Database failed. By default the database list in Documents Folder. Please Check that it exist otherwise please contact developers for support!")
-            file = open("promaides_databases.txt", "w")
-            file.write("localhost,5432,promaides,postgres,,1")
-            file.close()
-            lines = ["localhost,5432,promaides,postgres,,1".split(",")]
+        if self.qsettings.contains("promaides_databases_temp"):
+            if self.qsettings.value("promaides_databases_temp") == "":
+                self.qsettings.setValue("promaides_databases_temp", "localhost,5432,promaides,postgres,,1")
+            else:
+                lines = self.qsettings.value("promaides_databases_temp")
+        else:
+            self.qsettings.setValue("promaides_databases_temp", "localhost,5432,promaides,postgres,,1")
+        datalines = self.qsettings.value("promaides_databases_temp").split("|")
+        lines = [line.split(",") for line in datalines]
         return lines
 
     def on_combobox_changed_of_databaseSelection(self, index):
         self.database_selected_index = index
+
+    def portErrorMessage(self):
+        QMessageBox.information(None, "Message:", "Please check port of your database")
+
 
 
 class SignalClass(QObject):
     turnOnOptionsEmittor = pyqtSignal()
     turnOffOptionsEmittor = pyqtSignal()
     turnOnComboBoxEmittor = pyqtSignal()
+    portErrorEmittor = pyqtSignal()
 
 
 class QuickVisualize(object):
@@ -560,6 +581,7 @@ class QuickVisualize(object):
                     else:
                         vlayer = self.vlayerMakeradvanced("", QColor(250, 250, 36), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
 
+                    vlayer.setSubsetString('"boundary_scenario_id" = 1 ')
 
                     if(self.dialog.checkbox_addedtonewgroup.isChecked()):
                         QgsProject.instance().addMapLayer(vlayer, False)
