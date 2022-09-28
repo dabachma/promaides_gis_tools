@@ -78,6 +78,7 @@ class PluginDialog(QDialog):
         self.changedbutton=""
         self.unavailablebuttons=[]
         self.senarios=[]
+        self.affectedSenarioLayers = []
 
         self.color_selection_1.setStyleSheet("background-color : " + self.advancedcolor1.name() + "; border: 0px;")
         self.color_selection_2.setStyleSheet("background-color : " + self.advancedcolor2.name() + "; border: 0px;")
@@ -99,21 +100,21 @@ class PluginDialog(QDialog):
 
 
         self.to_render = [
-            [self.hyd_in_rv_1, "hyd_river_profile_prm", "", ["HYD","Input"]],
-            [self.hyd_in_rv_2, "hyd_river_profile_points_prm", "distance", ["HYD","Input"]],
-            [self.hyd_in_fd_1, "hyd_floodplain_element_prm", "geodetic_height", ["HYD","Input"]],
-            [self.hyd_in_fd_2, "" "", ["HYD","Input"]],
-            [self.hyd_re_rv_1, "hyd_river_profile_max_results_prm", "h_waterlevel", ["HYD","Results"]],
-            [self.hyd_re_rv_2, "hyd_river_profile_max_results_prm", "discharge", ["HYD","Results"]],
-            [self.hyd_re_fd_1, "", "", ["HYD","Results"]],
-            [self.hyd_re_fd_2, "", "", ["HYD","Results"]],
-            [self.cb_dam_ecn_imm, "dam_ecn_elements_prm", "immob_id", ["DAM","Input"]],
-            [self.cb_dam_in_pop, "dam_pop_element_prm", "pop_density", ["DAM","Input"]],
-            [self.cb_dam_scpoints, "dam_sc_point_prm", "cat_id", ["DAM","Input"]],
-            [self.cb_dam_ecn_total, "dam_ecn_results_prm", "total", ["DAM","Results"]],
-            [self.cb_dam_pop_affected, "dam_pop_result_prm", "pop_affected", ["DAM","Results"]],
-            [self.cb_dam_pop_endangered, "dam_pop_result_prm", "pop_endangered", ["DAM","Results"]],
-            [self.cb_dam_sc_points_damages, "dam_sc_point_erg_prm", "affect_score", ["DAM","Results"]]
+            [self.hyd_in_rv_1, "hyd_river_profile_prm", "", ["HYD","Input"], "RV cross-section type (line)"],
+            [self.hyd_in_rv_2, "hyd_river_profile_points_prm", "distance", ["HYD","Input"], "RV cross-section point height [mNN]"],
+            [self.hyd_in_fd_1, "hyd_floodplain_element_prm", "geodetic_height", ["HYD","Input"], "FP geodetic height [mNN]"],
+            [self.hyd_in_fd_2, "" "", ["HYD","Input"], "FP 1D-dikeline (line)"],
+            [self.hyd_re_rv_1, "hyd_river_profile_max_results_prm", "h_waterlevel", ["HYD","Results"], "RV max result depth [m]"],
+            [self.hyd_re_rv_2, "hyd_river_profile_max_results_prm", "discharge", ["HYD","Results"], "RV max result discharge [m³/s]"],
+            [self.hyd_re_fd_1, "", "", ["HYD","Results"], ""],
+            [self.hyd_re_fd_2, "", "", ["HYD","Results"], ""],
+            [self.cb_dam_ecn_imm, "dam_ecn_elements_prm", "immob_id", ["DAM","Input"], "ECN Immob ID"],
+            [self.cb_dam_in_pop, "dam_pop_element_prm", "pop_density", ["DAM","Input"], "POP Population Density [P/m2]"],
+            [self.cb_dam_scpoints, "dam_sc_point_prm", "cat_id", ["DAM","Input"], "SC points"],
+            [self.cb_dam_ecn_total, "dam_ecn_results_prm", "total", ["DAM","Results"], "ECN Total Damages [Monetary]"],
+            [self.cb_dam_pop_affected, "dam_pop_result_prm", "pop_affected", ["DAM","Results"], "POP Affected Person [P]"],
+            [self.cb_dam_pop_endangered, "dam_pop_result_prm", "pop_endangered", ["DAM","Results"], "POP Endangered Person [P]"],
+            [self.cb_dam_sc_points_damages, "dam_sc_point_erg_prm", "affect_score", ["DAM","Results"], "SC Points Damages"]
         ]
 
 
@@ -267,6 +268,7 @@ class PluginDialog(QDialog):
         self.signalclass.turnOffOptionsEmittor.emit()
         self.listView_Projects.clear()
         self.projects_list = []
+        self.cb_scenarios.clear()
         self.listView_Layers.clear()
         self.curlayerlist = []
         self.combobox_feature.clear()
@@ -370,9 +372,11 @@ class PluginDialog(QDialog):
                 self.senarios.append([senario[0],senario[1]])
                 self.cb_scenarios.addItem(str(senario[0]) + ": " + senario[1])
                 self.cb_scenarios.setCheckedItems([str(senario[0]) + ": " + senario[1]])
-                print("added")
-
-                
+        curlayer = self.conn.cursor()
+        curlayer.execute("SELECT \"table_name\" from information_schema.columns WHERE table_schema = '{}' AND column_name = 'boundary_scenario_id'".format(self.chosen_project))
+        self.affectedSenarioLayers = []
+        for item in curlayer:
+            self.affectedSenarioLayers.append(item[0])
 
     def checkEntireGroupIsMising(self):
         for group in self.allGroupCheckboxes:
@@ -547,6 +551,7 @@ class QuickVisualize(object):
                 project_name = self.dialog.chosen_project
                 layer_name = layer[1]
                 value_field = layer[2]
+                layer_displayname=layer[4]
 
                 # Get type of selected layer from database
                 curColumnType = self.dialog.conn.cursor()
@@ -556,7 +561,10 @@ class QuickVisualize(object):
                 # Check that layer has a valid type
                 if ColumnType is not None:
                     layer_type = ColumnType[0]
-                    layer_toBeNamed = layer_name + "_" + value_field
+                    if layer_displayname == "":
+                        layer_toBeNamed = layer_name + "_" + value_field
+                    else:
+                        layer_toBeNamed= layer_displayname
 
                     if layer_name == "hyd_river_profile_prm":
                         vlayer = self.vlayerMakeradvanced("single", QColor(250, 250, 36), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
@@ -581,25 +589,49 @@ class QuickVisualize(object):
                     else:
                         vlayer = self.vlayerMakeradvanced("", QColor(250, 250, 36), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
 
-                    vlayer.setSubsetString('"boundary_scenario_id" = 1 ')
+                    selected_scenario_ids_list = [item.split(":") for item in self.dialog.cb_scenarios.checkedItems()]
+                    if layer_name in self.dialog.affectedSenarioLayers:
+                        selectedSenarios = self.dialog.cb_scenarios.checkedItems()
+                        for selected_id in selected_scenario_ids_list:
+                            v2layer=vlayer.clone()
+                            v2layer.setName(layer_toBeNamed+ "_SC:"+selected_id[1].strip())
+                            v2layer.setSubsetString('"boundary_scenario_id" = ' + selected_id[0] +' ')
 
-                    if(self.dialog.checkbox_addedtonewgroup.isChecked()):
-                        QgsProject.instance().addMapLayer(vlayer, False)
-                        root = QgsProject.instance().layerTreeRoot()
-                        layerroot = root
-                        for x in range(2): #len(layer[3])
-                            if(layerroot.findGroup(layer[3][x]) is None):
-                                layerroot.addGroup(layer[3][x])
-                                layerroot = layerroot.findGroup(layer[3][x])
+                            if(self.dialog.checkbox_addedtonewgroup.isChecked()):
+                                QgsProject.instance().addMapLayer(v2layer, False)
+                                root = QgsProject.instance().layerTreeRoot()
+                                layerroot = root
+                                for x in range(2): #len(layer[3])
+                                    if(layerroot.findGroup(layer[3][x]) is None):
+                                        layerroot.addGroup(layer[3][x])
+                                        layerroot = layerroot.findGroup(layer[3][x])
+                                    else:
+                                        layerroot = layerroot.findGroup(layer[3][x])
+                                layerroot.addLayer(v2layer)
                             else:
-                                layerroot = layerroot.findGroup(layer[3][x])
-                        layerroot.addLayer(vlayer)
-                    else:
-                        QgsProject.instance().addMapLayer(vlayer)
+                                QgsProject.instance().addMapLayer(v2layer)
 
-                    if(not self.dialog.cb_layervisible.isChecked()):
-                        layerlocation = QgsProject.instance().layerTreeRoot().findLayer(vlayer.id())
-                        layerlocation.setItemVisibilityChecked(False)
+                            if(not self.dialog.cb_layervisible.isChecked()):
+                                layerlocation = QgsProject.instance().layerTreeRoot().findLayer(v2layer.id())
+                                layerlocation.setItemVisibilityChecked(False)
+                    else:
+                        if(self.dialog.checkbox_addedtonewgroup.isChecked()):
+                            QgsProject.instance().addMapLayer(vlayer, False)
+                            root = QgsProject.instance().layerTreeRoot()
+                            layerroot = root
+                            for x in range(2): #len(layer[3])
+                                if(layerroot.findGroup(layer[3][x]) is None):
+                                    layerroot.addGroup(layer[3][x])
+                                    layerroot = layerroot.findGroup(layer[3][x])
+                                else:
+                                    layerroot = layerroot.findGroup(layer[3][x])
+                            layerroot.addLayer(vlayer)
+                        else:
+                            QgsProject.instance().addMapLayer(vlayer)
+
+                        if(not self.dialog.cb_layervisible.isChecked()):
+                            layerlocation = QgsProject.instance().layerTreeRoot().findLayer(vlayer.id())
+                            layerlocation.setItemVisibilityChecked(False)
 
         # Check that a layer is selected
         if self.dialog.listView_Layers.currentItem() is not None and self.dialog.combobox_feature.currentText() is not None:
