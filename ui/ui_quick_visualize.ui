@@ -822,7 +822,7 @@
                  <item>
                   <widget class="QCheckBox" name="hyd_in_fd_2">
                    <property name="text">
-                    <string>FP 1D-Dikeline (line) ???</string>
+                    <string>FP 1D-Dikeline (line)</string>
                    </property>
                    <property name="tristate">
                     <bool>false</bool>
@@ -932,6 +932,13 @@
                    </property>
                   </widget>
                  </item>
+                 <item>
+                  <widget class="QCheckBox" name="hyd_re_rv_3">
+                   <property name="text">
+                    <string>RV Instationary Depth [m]</string>
+                   </property>
+                  </widget>
+                 </item>
                 </layout>
                </widget>
               </item>
@@ -971,7 +978,7 @@
                     <bool>false</bool>
                    </property>
                    <property name="text">
-                    <string>????</string>
+                    <string>FP Max Result Depth [m]</string>
                    </property>
                    <property name="tristate">
                     <bool>false</bool>
@@ -984,7 +991,7 @@
                     <bool>false</bool>
                    </property>
                    <property name="text">
-                    <string>????</string>
+                    <string>FP Instationary Depth [m]</string>
                    </property>
                    <property name="tristate">
                     <bool>false</bool>
