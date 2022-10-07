@@ -79,6 +79,7 @@ class PluginDialog(QDialog):
         self.unavailablebuttons=[]
         self.senarios=[]
         self.affectedSenarioLayers = []
+        self.connectionparameters =[]
 
         self.color_selection_1.setStyleSheet("background-color : " + self.advancedcolor1.name() + "; border: 0px;")
         self.color_selection_2.setStyleSheet("background-color : " + self.advancedcolor2.name() + "; border: 0px;")
@@ -254,13 +255,19 @@ class PluginDialog(QDialog):
         self.database_list = self.readDatabasesList()
 
         for database_entry in self.database_list:
-            if database_entry[5] == "1":
+            if database_entry[0:4] == self.connectionparameters[0:4]:
                 self.tempDatabaseList.append(database_entry)
                 self.combobox_databaseSelection.addItem(database_entry[0] + " " + database_entry[1])
                 self.default_database_connect = database_entry
 
         for database_entry in self.database_list:
-            if database_entry[5] != "1":
+            if database_entry[5] == "1" and database_entry[0:4] != self.connectionparameters[0:4]:
+                self.tempDatabaseList.append(database_entry)
+                self.combobox_databaseSelection.addItem(database_entry[0] + " " + database_entry[1])
+                self.default_database_connect = database_entry
+
+        for database_entry in self.database_list:
+            if database_entry[5] != "1" and database_entry[0:4] != self.connectionparameters[0:4]:
                 self.tempDatabaseList.append(database_entry)
                 self.combobox_databaseSelection.addItem(database_entry[0] + " " + database_entry[1])
         self.database_list = self.tempDatabaseList
@@ -290,15 +297,13 @@ class PluginDialog(QDialog):
     def tryToConnect(self):
 
         if self.firstload != 0:
-            connectionparameters = self.database_list[self.database_selected_index]
+            self.connectionparameters = self.database_list[self.database_selected_index]
         else:
-            connectionparameters = self.default_database_connect
+            self.connectionparameters = self.default_database_connect
             self.firstload += 1
-
-
-        host, name, user, pwrd = connectionparameters[0], connectionparameters[2], connectionparameters[3], connectionparameters[4]
+        host, name, user, pwrd = self.connectionparameters[0], self.connectionparameters[2], self.connectionparameters[3], self.connectionparameters[4]
         try:
-            port = int(connectionparameters[1])
+            port = int(self.connectionparameters[1])
         except:
             self.signalclass.portErrorEmittor.emit()
             port = 1
@@ -344,19 +349,7 @@ class PluginDialog(QDialog):
     def checkUncalculatedLayers(self):
         self.unavailablebuttons=[]
         for checkbox in self.to_render:
-            if checkbox[1] != "" and checkbox[1] in self.curlayerlist:
-                curlayer = self.conn.cursor()
-                try:
-                    curlayer.execute("SELECT COUNT(*) FROM {}".format(self.chosen_project + "." +checkbox[1]))
-                    results = curlayer.fetchone()
-                    for r in results:
-                        num=r
-                        break
-                    if not num>1:
-                        self.checkbuttonNotAva(checkbox[0])
-                except:
-                    self.checkbuttonNotAva(checkbox[0])
-            else:
+            if not (checkbox[1] != "" and checkbox[1] in self.curlayerlist):
                 self.checkbuttonNotAva(checkbox[0])
         self.checkEntireGroupIsMising()
         self.HYD_Standard_Group.collapseExpandFixes()
@@ -366,13 +359,12 @@ class PluginDialog(QDialog):
     def AddedScenarios(self):
         self.senarios=[]
         self.cb_scenarios.clear()
-        if "hyd_bound_scenario_prm" in self.curlayerlist:
-            curlayer = self.conn.cursor()
-            curlayer.execute("SELECT \"boundary_scenario_id\",\"name\" FROM {}.hyd_bound_scenario_prm".format(self.chosen_project))
-            for senario in curlayer:
-                self.senarios.append([senario[0],senario[1]])
-                self.cb_scenarios.addItem(str(senario[0]) + ": " + senario[1])
-                self.cb_scenarios.setCheckedItems([str(senario[0]) + ": " + senario[1]])
+        curlayer = self.conn.cursor()
+        curlayer.execute("SELECT \"boundary_scenario_id\",\"name\" FROM {}.hyd_bound_scenario_prm".format(self.chosen_project))
+        for senario in curlayer:
+            self.senarios.append([senario[0],senario[1]])
+            self.cb_scenarios.addItem(str(senario[0]) + ": " + senario[1])
+            self.cb_scenarios.setCheckedItems([str(senario[0]) + ": " + senario[1]])
         curlayer = self.conn.cursor()
         curlayer.execute("SELECT \"table_name\" from information_schema.columns WHERE table_schema = '{}' AND column_name = 'boundary_scenario_id'".format(self.chosen_project))
         self.affectedSenarioLayers = []
@@ -405,7 +397,8 @@ class PluginDialog(QDialog):
 
             # Grab layers that are in selected project
             self.curlayer = self.conn.cursor()
-            self.curlayer.execute("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = '{}'".format(now.text()))
+            #self.curlayer.execute("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = '{}'".format(now.text()))
+            self.curlayer.execute("SELECT table_name from information_schema.columns WHERE table_schema = '{}' AND data_type = 'USER-DEFINED'".format(now.text()))
 
             # curlayerlist: To allow for filtering using search
             self.curlayerlist = []
@@ -413,9 +406,18 @@ class PluginDialog(QDialog):
             self.listView_Layers.clear()
             self.combobox_feature.clear()
             for layer in self.curlayer:
-                self.curlayerlist.append(str(layer[0]))
-                if self.text_of_EditText_Search_Layers in str(layer[0]):
-                    self.listView_Layers.addItem(str(layer[0]))
+
+                curlayer2 = self.conn.cursor()
+                curlayer2.execute("SELECT 1 FROM {} limit 1 offset 2".format(now.text() + "." +layer[0]))
+                results = curlayer2.fetchone()
+                num=1
+                if results is None:
+                    num=0
+                if num==1:
+                    self.curlayerlist.append(str(layer[0]))
+                    if self.text_of_EditText_Search_Layers in str(layer[0]):
+                        self.listView_Layers.addItem(str(layer[0]))
+
             self.AddedScenarios()
             self.checkUncalculatedLayers()
         else:
@@ -574,13 +576,13 @@ class QuickVisualize(object):
                     elif layer_name == "hyd_floodplain_element_prm":
                         vlayer = self.vlayerMakeradvanced("graduated", QColor(230, 35, 35), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
                     elif layer_name == "hyd_floodplain_elem_max_result_prm":
-                        vlayer = self.vlayerMakeradvanced("graduated", QColor(230, 35, 35), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                        vlayer = self.vlayerMakeradvanced("graduated", QColor(128, 197, 233), QColor(255,255,255), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
                     elif layer_name == "hyd_river_profile_instat_results_prm":
-                        vlayer = self.vlayerMakeradvanced("graduated", QColor(230, 35, 35), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                        vlayer = self.vlayerMakeradvanced("graduated", QColor(128, 197, 233), QColor(255,255,255), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
                     elif layer_name == "hyd_river_profile_max_results_prm":
-                        vlayer = self.vlayerMakeradvanced("graduated", QColor(230, 35, 35), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                        vlayer = self.vlayerMakeradvanced("graduated", QColor(128, 197, 233), QColor(255,255,255), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
                     elif layer_name == "hyd_river_profile_instat_results_prm":
-                        vlayer = self.vlayerMakeradvanced("graduated", QColor(230, 35, 35), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                        vlayer = self.vlayerMakeradvanced("graduated", QColor(128, 197, 233), QColor(255,255,255), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
                     elif layer_name == "dam_ecn_elements_prm":
                         vlayer = self.vlayerMakeradvanced("categorized", QColor(230, 35, 35), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
                     elif layer_name == "dam_pop_element_prm":
@@ -689,13 +691,12 @@ class QuickVisualize(object):
                 renderer.updateColorRamp(color_ramp)
 
                 symbol = QgsFillSymbol.createSimple({'color': '200,200,43,255', 'outline_width': '0'})
-                symbol.symbolLayers()[0].setDataDefinedProperty(QgsSymbolLayer.PropertyStrokeColor,
-                                                                QgsProperty.fromExpression("@symbol_color", True))
+                symbol.symbolLayers()[0].setDataDefinedProperty(QgsSymbolLayer.PropertyStrokeColor,QgsProperty.fromExpression("@symbol_color", True))
+
                 renderer.updateSymbols(symbol)
 
                 vlayer.setRenderer(renderer)
                 vlayer.setCrs(self.dialog.CRS_Select.crs())
-                vlayer.setVisible(False)
                 vlayer.triggerRepaint()
 
                 # Add layer to current QGIS Instance
@@ -779,9 +780,10 @@ class QuickVisualize(object):
             unique_values = vlayer.uniqueValues(vlayer.fields().indexFromName(value_field))
             category_list = []
             for value in unique_values:
-                symbol = QgsSymbol.defaultSymbol(vlayer.geometryType())
-                category = QgsRendererCategory(value, symbol, str(value))
-                category_list.append(category)
+                if value != -9999:
+                    symbol = QgsSymbol.defaultSymbol(vlayer.geometryType())
+                    category = QgsRendererCategory(value, symbol, str(value))
+                    category_list.append(category)
             renderer = QgsCategorizedSymbolRenderer(value_field, category_list)
             renderer.updateColorRamp(QgsRandomColorRamp())
 
