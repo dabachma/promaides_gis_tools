@@ -1975,7 +1975,7 @@ class RainGenerator(object):
                     if self.dialog.SaveStormStatisticsBox2.isChecked():
                         self.StormStatisticsTexttobeWritten += str(stormcounter) + " " + str(timestep) + " " + str(
                             GeneratedStormDuration) + " " + str(GeneratedVolume) + " " + str(
-                            GeneratedStormPeakIntensity) + " " + str(GeneratedStormArea) + "\n"
+                            GeneratedStormPeakIntensity) + " " + str(int(GeneratedStormArea)) + "\n"
                     ########################################################################
 
                     ##########################################################################
@@ -2148,7 +2148,8 @@ class RainGenerator(object):
                             if self.dialog.SaveStormStatisticsBox2.isChecked():
                                 self.dialog.StatusIndicator.setText("Writing Storm Statistics...")
                                 QTimer.singleShot(50, self.WriteStormStatistics2)
-                            QTimer.singleShot(50, self.GenerationFinished)
+                            else:
+                                QTimer.singleShot(50, self.GenerationFinished)
                             break
 
                         if timestep % 500000 == 0 and timestep > 0:
@@ -2177,7 +2178,8 @@ class RainGenerator(object):
                         if self.dialog.SaveStormStatisticsBox2.isChecked():
                             self.dialog.StatusIndicator.setText("Writing Storm Statistics...")
                             QTimer.singleShot(50, self.WriteStormStatistics2)
-                        QTimer.singleShot(50, self.GenerationFinished)
+                        else:
+                            QTimer.singleShot(50, self.GenerationFinished)
                         break
                 # print("end of whole while loop")
 
@@ -2201,6 +2203,7 @@ class RainGenerator(object):
         QTimer.singleShot(50, self.ReturnPeriodCalculation)
 
     def ReturnPeriodCalculation(self):
+        self.dialog.StatusIndicator.setText("Calculating return periods...")
         filepath2 = os.path.join(self.dialog.folderEdit.text(), "GeneratedRainfall_Statistics" + '.txt')
         df = pd.read_csv(filepath2.strip("\u202a"), delimiter=" ")
         Durations = df["Storm_Duration"].tolist()
@@ -2228,6 +2231,7 @@ class RainGenerator(object):
         df['Return_Period_Area'] = areas_returnperiods
 
         df.to_csv(filepath2.strip("\u202a"), sep=' ', index=False)
+        QTimer.singleShot(50, self.GenerationFinished)
 
     def GenerationFinished(self):
         self.iface.messageBar().pushSuccess(
