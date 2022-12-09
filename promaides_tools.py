@@ -21,6 +21,7 @@ from .quick_visualize import QuickVisualize
 from .crosssectioncreator import CrossSectionCreator
 from .time_viewer import TimeViewer
 from .rain_generator import RainGenerator
+from .storm_export import StormExport
 from .dam_raster import DAMRasterExport
 from .cin_point import CINPointExport
 from .cin_connector import CINConnectorExport
@@ -53,6 +54,7 @@ class PromaidesToolbox(object):
         self.time = TimeViewer(self.iface)
         #HAZ
         self.rain = RainGenerator(self.iface)
+        self.storm_export = StormExport(self.iface)
         #DAM
         self.dam_raster = DAMRasterExport(self.iface)
         #CIN
@@ -102,6 +104,7 @@ class PromaidesToolbox(object):
 
         #HAZ
         self.rain.initGui(self.submenu_haz)
+        self.storm_export.initGui(self.submenu_haz)
 
         #DAM
         self.dam_raster.initGui(self.submenu_dam)
@@ -141,6 +144,7 @@ class PromaidesToolbox(object):
 
         #HAZ
         self.rain.unload(self.submenu_haz)
+        self.storm_export.unload(self.submenu_haz)
 
         #DAM
         self.dam_raster.unload(self.submenu_dam)
