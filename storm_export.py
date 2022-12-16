@@ -2,30 +2,24 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 # system modules
-import math
-import webbrowser
-import pandas as pd
 import time
-import threading
+import webbrowser
 
 
 # QGIS modules 
 from qgis.core import *
-from qgis.PyQt.QtCore import Qt, QAbstractTableModel, QModelIndex, pyqtSignal, QObject
+from qgis.PyQt.QtCore import Qt, QAbstractTableModel, QModelIndex, pyqtSignal, QObject, QSettings
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt import uic
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 
-from shapely.geometry import MultiLineString, mapping, shape
-
-# promaides modules
+#Promaides modules
 from .environment import get_ui_path
 
 #Connection to the UI-file (GUI); Edit the ui-file  via QTCreator
 UI_PATH = get_ui_path('ui_storm_export.ui')
 
-# This plugin serves as learning and test plugin
 class PluginDialog(QDialog):
 
     #set-up of the dialog
@@ -35,23 +29,38 @@ class PluginDialog(QDialog):
         self.iface = iface
         self.HelpButton.clicked.connect(self.Help)
 
-        #initialize:
+        #Initialize:
+        #As a part of the initialization phase of variables, the styling of the edit box for input of filter value is stored to later have it as default if value entered is numerical
+        #Current selected storm is initialized as well as units for the filter
         self.filter_1_valueStyle = self.filter_1_value.styleSheet()
-        self.button_box_ok.setEnabled(False)
         self.results_display_currentItem = None
-        self.results_display_currentItemIndex = -1
+        self.filter_1_unit.setCurrentText("m/s")
 
+        #Rectangle pulse option is set to the users preference
+        self.qsettings = QSettings('StormExport', 'StormExportSettings')
+        if self.qsettings.contains("recPulse_state"):
+            self.recPulse_state = self.qsettings.value("recPulse_state")
+        else:
+            self.recPulse_state = 0
+        self.cb_recPulse.setCheckState(self.recPulse_state)
 
+        #Set Size Policy as setRetainSizeWhenHidden(True) in allow hiding elements without changing the layout
         self.fixSizePolicy(self.button_clear)
         self.fixSizePolicy(self.clear_table_button)
         self.fixSizePolicy(self.loading_icon)
         self.fixSizePolicy(self.filter_stats)
+        self.fixSizePolicy(self.cb_recPulse)
 
+        #Set storm data and clear buttons to invisible
         self.button_clear.setVisible(False)
         self.clear_table_button.setVisible(False)
         self.loading_icon.setVisible(False)
         self.filter_stats.setVisible(False)
 
+        #By default the unit for filter is disabled
+        self.filter_1_unit.setEnabled(False)
+
+        #Prevent the below elements from taking tab or normal focus while edit texts are selected otherwise pressing enter while in 
         self.grs_browse.setAutoDefault(False)
         self.grc_browse.setAutoDefault(False)
         self.output_browse.setAutoDefault(False)
@@ -79,45 +88,59 @@ class PluginDialog(QDialog):
         self.grs_edit_path.textChanged.connect(self.grs_text_edited)
         self.grc_edit_path.textChanged.connect(self.grc_text_edited)
         self.output_edit_path.textChanged.connect(self.output_text_edited)
+        self.output_edit_path.textChanged.connect(self.output_text_edited)
 
-
+        #Allow user to open file dialog using the Enter Event inside the edit text
         self.grs_edit_path.returnPressed.connect(self.grs_browse_clicked)
         self.grc_edit_path.returnPressed.connect(self.grc_browse_clicked)
         self.output_edit_path.returnPressed.connect(self.output_browse_clicked)
         self.filter_1_value.returnPressed.connect(self.button_filter_further_clicked)
 
+        #Connect the buttons to their relative actions
         self.button_filter.clicked.connect(self.button_filter_clicked)
         self.button_filter_further.clicked.connect(self.button_filter_further_clicked)
-        self.button_clear.clicked.connect(self.button_clear_clicked)
+        self.button_clear.clicked.connect(self.button_clear_filter_clicked)
         self.clear_table_button.clicked.connect(self.clear_table_button_clicked)
         self.results_display.currentItemChanged.connect(self.results_display_currentItemChanged)
+        self.filter_1_combo.currentTextChanged.connect(self.filter_1_combo_currentTextChanged)
+        self.cb_recPulse.stateChanged.connect(self.cb_recPulse_stateChanged)
 
         #Set Table of storms:
         self.reset_storm_table()
 
+    #Allows for saving the preference of rectangular pulse checkbox state
+    def cb_recPulse_stateChanged(self,state):
+        self.qsettings.setValue("recPulse_state", state)
+
+    #Enables of disables the units of the filter (Ex: Storm Id has no unit...etc.)
+    def filter_1_combo_currentTextChanged(self, newtext):
+        if newtext == "Storm PeakIntensity":
+            self.filter_1_unit.setEnabled(True)
+        else:
+            self.filter_1_unit.setEnabled(False)
+
+    #Using signals with okay so that the dialog doesn't close in case of error as well as allowing for using custom ok and cancel button instead of default ones
     def button_box_ok_clicked(self):
         self.signalclass.button_box_ok_emittor.emit()
-
     def button_box_cancel_clicked(self):
         self.signalclass.button_box_cancel_emittor.emit()
         self.close()
 
+    #Monitoring if user choose a storm. If no storm choosen then OK should be disabled
     def results_display_currentItemChanged(self,current,pre):
         try:
             self.results_display_currentItem = current
-            self.results_display_currentItemIndex = current.row()
         except:
             self.results_display_currentItem = None
-            self.results_display_currentItemIndex = -1
         self.updateButtonBox()
-        
-
+    
+    #Function to force widgets on the left side to retain there size when hidden to make left side look consistent 
     def fixSizePolicy(self,widget):
         sizePolicy = widget.sizePolicy()
         sizePolicy.setRetainSizeWhenHidden(True)
         widget.setSizePolicy(sizePolicy)
 
-
+    #Puts the plugin in a loading state, and resets filter
     def plugin_loading_state(self):
         self.filter_stats.setVisible(False)
         self.loading_icon.setVisible(True)
@@ -125,11 +148,13 @@ class PluginDialog(QDialog):
         self.results_display.repaint()
         self.filter_stats.repaint()
         self.loading_icon.repaint()
-        
+    
+    #Set "loading" message off when plugin finished loading
     def plugin_finished_loading_state(self):
         self.filter_stats.setVisible(True)
         self.loading_icon.setVisible(False)
 
+    #Action when the user clears the table
     def clear_table_button_clicked(self):
         self.results_display.setRowCount(0)
         self.grs_edit_path.setText("")
@@ -137,36 +162,61 @@ class PluginDialog(QDialog):
         self.filter_stats.setVisible(False)
         self.button_clear.setVisible(False)
         self.results_display_currentItem = None
-        self.results_display_currentItemIndex = -1
 
-
-    def button_clear_clicked(self):
+    #Action when user clears the filter
+    def button_clear_filter_clicked(self):
         for i in range (self.results_display.rowCount()):
             self.results_display.setRowHidden(i,False);
         self.filter_1_value.setText("")
         self.filter_stats.setText("Displaying:\n" + str(self.len_storm_list) +" out of " + str(len(self.storm_list))+self.time_to_display)
         self.button_clear.setVisible(False)
 
+    #Check if user want to filter further or do a new filter
     def button_filter_further_clicked(self):
         self.filterfurther=True
         self.filter_table_results()
-
     def button_filter_clicked(self):
         self.filterfurther=False
         self.filter_table_results()
 
+    #Converts units of filter input and return the converted value 
+    def convertTompers(self, combobox ,value):
+        if combobox.currentText() == "mm/s":
+            return value/1000
+        elif combobox.currentText() == "mm/hr":
+            return value/1000/3600
+        elif combobox.currentText() == "m/s":
+            return value
+        elif combobox.currentText() == "m/hr":
+            return value/3600
+        elif combobox.currentText() == "in/s":
+            return value*0.0254
+        elif combobox.currentText() == "in/hr":
+            return value*0.0254/3600
+        elif combobox.currentText() == "ft/s":
+            return value*0.3048
+        elif combobox.currentText() == "ft/hr":
+            return value*0.3048/3600
+
+    #Function to filter results
     def filter_table_results(self):
+        #Check if value entered is a number value
         try:
             filter_1_value = float(self.filter_1_value.text())
         except ValueError:
             self.filter_1_value.setStyleSheet("border: 1px solid red;")
             return
 
+        #convert value to m/s
+        filter_1_value=self.convertTompers(self.filter_1_unit,filter_1_value)
+
+        #Set correct styling of edit text
         self.filter_1_value.setStyleSheet(self.filter_1_valueStyle)
         self.button_clear.setVisible(True)
         filter_1_combo_index = self.filter_1_combo.currentIndex()
         comparitor = self.filter_1_operator.currentText()
 
+        # Find the top x values
         if comparitor=="Top":
             column_data=[]
             for i in range (self.results_display.rowCount()):
@@ -176,6 +226,8 @@ class PluginDialog(QDialog):
                     column_data.append(float(self.results_display.item(i,filter_1_combo_index).text()))
             column_data.sort()
             self.results_display_top=column_data[-int(filter_1_value)]
+
+        #find the bottom x values
         if comparitor=="Bottom":
             column_data=[]
             for i in range (self.results_display.rowCount()):
@@ -186,6 +238,7 @@ class PluginDialog(QDialog):
             column_data.sort()
             self.results_display_bottom=column_data[int(filter_1_value)-1]
 
+        #Hide results based on filter (This is much faster than creating a table with the new values)
         counter=0
         for i in range (self.results_display.rowCount()):
             if self.filterfurther and self.results_display.isRowHidden(i):
@@ -218,6 +271,7 @@ class PluginDialog(QDialog):
         else:
             return False
 
+    #Function to populate the filter combo box
     def populate_filter_1_combo(self):
         #Or should we do manual population?
         self.filter_1_combo.clear()
@@ -225,17 +279,19 @@ class PluginDialog(QDialog):
             self.filter_1_combo.addItem(header.replace("_", " ").replace("\n", ""))
         self.signalclass.plugin_finished_loading_state_emittor.emit()
 
+    #Function to reset storm table = 
     def reset_storm_table(self):
         header = self.results_display.horizontalHeader()
         for i in range(10):
             header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeToContents)
         
-
     def on_grs_browse_given(self):
         self.signalclass.plugin_loading_state_emittor.emit()
         self.results_display.setSortingEnabled(False)
         #self.storm_list = self.readstormfile(self.grs_path)
         self.clear_table_button.setVisible(True)
+
+        #Blocking signals makes loading data faster
         self.results_display.blockSignals(True)
         
 
@@ -303,6 +359,7 @@ class PluginDialog(QDialog):
             self.storm_file_headers=grs[0]
             return grs[1:]
 
+    #Function to check file is valid
     def checkGRSFile(self,path):
         try:
             self.storm_list = self.readstormfile(path)
@@ -338,6 +395,7 @@ class PluginDialog(QDialog):
                 grc.append(line.split(" ")[:-1])
         return grc
 
+    #Function to check file is valid
     def checkGRCFile(self,path):
         try:
             self.csv_list = self.readCSVData(path)
@@ -382,7 +440,7 @@ class PluginDialog(QDialog):
 
     def updateButtonBox(self):
         if self.grs_edit_path.text() != '' and self.grc_edit_path.text()  != '' and self.output_edit_path.text() != '' and self.results_display_currentItem is not None:
-            if not self.results_display.isRowHidden(self.results_display_currentItemIndex) and self.results_display_currentItemIndex!=-1:
+            if not self.results_display.isRowHidden(self.results_display_currentItem.row()):
                 self.button_box_ok.setEnabled(True)
             else:
                 self.button_box_ok.setEnabled(False)
@@ -512,6 +570,7 @@ class StormExport(object):
             return
         if Found:
             try:
+                isRec = self.dialog.cb_recPulse.isChecked()
                 with open(output_path,"w+") as f:
                     x = """
 # comment
@@ -535,6 +594,9 @@ class StormExport(object):
 
                         for k in range(int(NumDataPointsForEachCell)):
                             writeString=writeString+ "\n" + str(k) + " " + str(float(grc[grc_index+k][i])/3600000) + "   #"+ grc[grc_index+k][i] +" mm/h"
+                            if isRec:
+                                writeString=writeString+ "\n" + str(k) + ".99 " + str(float(grc[grc_index+k][i])/3600000) + "   #"+ grc[grc_index+k][i] +" mm/h"
+
 
                         writeString=writeString+"\n!END\n\n"
 
