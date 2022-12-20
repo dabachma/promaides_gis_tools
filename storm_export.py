@@ -4,7 +4,7 @@ from __future__ import absolute_import
 # system modules
 import time
 import webbrowser
-
+import os
 
 # QGIS modules 
 from qgis.core import *
@@ -34,6 +34,9 @@ class PluginDialog(QDialog):
         #Current selected storm is initialized as well as units for the filter
         self.filter_1_valueStyle = self.filter_1_value.styleSheet()
         self.results_display_currentItem = None
+        self.holdedSelectedHiddenItems=[]
+        self.selectedItemsBeforeFilter=[]
+        self.SelectedRows=[]
         self.filter_1_unit.setCurrentText("m/s")
 
         #Rectangle pulse option is set to the users preference
@@ -57,9 +60,6 @@ class PluginDialog(QDialog):
         self.loading_icon.setVisible(False)
         self.filter_stats.setVisible(False)
 
-        #By default the unit for filter is disabled
-        self.filter_1_unit.setEnabled(False)
-
         #Prevent the below elements from taking tab or normal focus while edit texts are selected otherwise pressing enter while in 
         self.grs_browse.setAutoDefault(False)
         self.grc_browse.setAutoDefault(False)
@@ -70,6 +70,7 @@ class PluginDialog(QDialog):
         self.button_box_ok.setAutoDefault(False)
         self.button_box_cancel.setAutoDefault(False)
         self.clear_table_button.setAutoDefault(False)
+        self.button_clear_selectedStorms.setAutoDefault(False)
         self.HelpButton.setAutoDefault(False)
 
         #Connect Signals
@@ -102,22 +103,68 @@ class PluginDialog(QDialog):
         self.button_clear.clicked.connect(self.button_clear_filter_clicked)
         self.clear_table_button.clicked.connect(self.clear_table_button_clicked)
         self.results_display.currentItemChanged.connect(self.results_display_currentItemChanged)
-        self.filter_1_combo.currentTextChanged.connect(self.filter_1_combo_currentTextChanged)
+        self.results_display.itemSelectionChanged.connect(self.results_display_itemSelectionChanged)
         self.cb_recPulse.stateChanged.connect(self.cb_recPulse_stateChanged)
+        self.cb_selectedStorms.checkedItemsChanged.connect(self.cb_selectedStorms_checkedItemsChanged)
+        self.button_clear_selectedStorms.clicked.connect(self.button_clear_selectedStorms_clicked)
 
         #Set Table of storms:
         self.reset_storm_table()
 
+    def button_clear_selectedStorms_clicked(self):
+        self.cb_selectedStorms.clear()
+        self.holdedSelectedHiddenItems=[]
+        self.selectedItemsBeforeFilter=[]
+        self.results_display.clearSelection()
+        self.updateButtonBox()
+
+    def cb_selectedStorms_checkedItemsChanged(self):
+        checked = self.cb_selectedStorms.checkedItems()
+        checkeddata = self.cb_selectedStorms.checkedItemsData()
+        self.results_display.blockSignals(True)
+        self.cb_selectedStorms.clear()
+
+        self.results_display.clearSelection()
+        for i in range(len(checkeddata)):
+            self.results_display.selectRow(int(checkeddata[i]))
+
+        self.results_display.blockSignals(False)
+        for x in range(len(checked)):
+            self.cb_selectedStorms.addItemWithCheckState(checked[x],2,checkeddata[x])
+        self.updateButtonBox()
+
+    def populateSelectedRows(self,SelectedRows):
+        self.cb_selectedStorms.clear()
+        for row in SelectedRows:
+            self.cb_selectedStorms.addItemWithCheckState(self.results_display.item(row,0).text(), 2,str(row))
+            self.cb_selectedStorms.setCheckedItems([self.results_display.item(row,0).text()])
+
+    def holdSelectedHiddenItems(self):
+        self.holdedSelectedHiddenItems=[]
+        for item in self.selectedItemsBeforeFilter:
+            if self.results_display.isRowHidden(item.row()) and item.row() not in self.holdedSelectedHiddenItems:
+                self.holdedSelectedHiddenItems.append(item.row())
+            else:
+                try:
+                    self.selectedItemsBeforeFilter.remove(item.row())
+                except:
+                    continue
+
+    def results_display_itemSelectionChanged(self):
+        self.SelectedRows=[]
+        for item in self.results_display.selectedItems():
+            if item.row() not in self.SelectedRows:
+                if not self.results_display.isRowHidden(item.row()):
+                    self.SelectedRows.append(item.row())
+        for row in self.holdedSelectedHiddenItems:
+                self.SelectedRows.append(row)
+        self.SelectedRows.sort()
+        self.populateSelectedRows(self.SelectedRows)
+        self.updateButtonBox()
+
     #Allows for saving the preference of rectangular pulse checkbox state
     def cb_recPulse_stateChanged(self,state):
         self.qsettings.setValue("recPulse_state", state)
-
-    #Enables of disables the units of the filter (Ex: Storm Id has no unit...etc.)
-    def filter_1_combo_currentTextChanged(self, newtext):
-        if newtext == "Storm PeakIntensity":
-            self.filter_1_unit.setEnabled(True)
-        else:
-            self.filter_1_unit.setEnabled(False)
 
     #Using signals with okay so that the dialog doesn't close in case of error as well as allowing for using custom ok and cancel button instead of default ones
     def button_box_ok_clicked(self):
@@ -156,6 +203,8 @@ class PluginDialog(QDialog):
 
     #Action when the user clears the table
     def clear_table_button_clicked(self):
+        self.holdedSelectedHiddenItems=[]
+        self.selectedItemsBeforeFilter=[]
         self.results_display.setRowCount(0)
         self.grs_edit_path.setText("")
         self.clear_table_button.setVisible(False)
@@ -165,6 +214,8 @@ class PluginDialog(QDialog):
 
     #Action when user clears the filter
     def button_clear_filter_clicked(self):
+        self.results_display.scrollToItem(self.results_display.item(0,0))
+        self.holdedSelectedHiddenItems=[]
         for i in range (self.results_display.rowCount()):
             self.results_display.setRowHidden(i,False);
         self.filter_1_value.setText("")
@@ -175,40 +226,40 @@ class PluginDialog(QDialog):
     def button_filter_further_clicked(self):
         self.filterfurther=True
         self.filter_table_results()
+
     def button_filter_clicked(self):
         self.filterfurther=False
         self.filter_table_results()
 
     #Converts units of filter input and return the converted value 
-    def convertTompers(self, combobox ,value):
-        if combobox.currentText() == "mm/s":
+    def convertTompers(self ,value):
+        if self.filter_1_unit.currentText() == "mm/s":
             return value/1000
-        elif combobox.currentText() == "mm/hr":
+        elif self.filter_1_unit.currentText() == "mm/hr":
             return value/1000/3600
-        elif combobox.currentText() == "m/s":
+        elif self.filter_1_unit.currentText() == "m/s":
             return value
-        elif combobox.currentText() == "m/hr":
+        elif self.filter_1_unit.currentText() == "m/hr":
             return value/3600
-        elif combobox.currentText() == "in/s":
+        elif self.filter_1_unit.currentText() == "in/s":
             return value*0.0254
-        elif combobox.currentText() == "in/hr":
+        elif self.filter_1_unit.currentText() == "in/hr":
             return value*0.0254/3600
-        elif combobox.currentText() == "ft/s":
+        elif self.filter_1_unit.currentText() == "ft/s":
             return value*0.3048
-        elif combobox.currentText() == "ft/hr":
+        elif self.filter_1_unit.currentText() == "ft/hr":
             return value*0.3048/3600
 
     #Function to filter results
     def filter_table_results(self):
+        self.selectedItemsBeforeFilter=self.selectedItemsBeforeFilter + self.results_display.selectedItems()
+
         #Check if value entered is a number value
         try:
             filter_1_value = float(self.filter_1_value.text())
         except ValueError:
             self.filter_1_value.setStyleSheet("border: 1px solid red;")
             return
-
-        #convert value to m/s
-        filter_1_value=self.convertTompers(self.filter_1_unit,filter_1_value)
 
         #Set correct styling of edit text
         self.filter_1_value.setStyleSheet(self.filter_1_valueStyle)
@@ -240,16 +291,23 @@ class PluginDialog(QDialog):
 
         #Hide results based on filter (This is much faster than creating a table with the new values)
         counter=0
+        firstrowset=False
+        firstrowNotHidden=0
         for i in range (self.results_display.rowCount()):
             if self.filterfurther and self.results_display.isRowHidden(i):
                 continue
             elif self.operatorCompare(float(self.results_display.item(i,filter_1_combo_index).text()),filter_1_value,comparitor):
                 counter=counter+1
-                self.results_display.setRowHidden(i,False);
+                self.results_display.setRowHidden(i,False)
+                if not firstrowset:
+                    firstrowNotHidden=i
+                    firstrowset=True
             else:
                 self.results_display.setRowHidden(i,True);
         self.filter_stats.setText("Displaying:\n" + str(counter) +" out of " + str(len(self.storm_list))+self.time_to_display)
+        self.holdSelectedHiddenItems()
         self.updateButtonBox()
+        self.results_display.scrollToItem(self.results_display.item(firstrowNotHidden,0))
         
     def operatorCompare(self,item1,item2,comparitor):
         if comparitor==">":
@@ -376,6 +434,7 @@ class PluginDialog(QDialog):
         if self.grs_path != '':
             if self.checkGRSFile(self.grs_path):
                 self.grs_edit_path.setText(self.grs_path)
+                self.output_edit_path.setText("/".join(self.grs_path.split("/")[:-1])+"/output/RainfallSpatialInterpolation.txt")
                 self.on_grs_browse_given()
             else:
                 msgBox = QMessageBox()
@@ -385,6 +444,7 @@ class PluginDialog(QDialog):
                 returnValue = msgBox.exec()
                 if returnValue == QMessageBox.Yes:
                     self.grs_edit_path.setText(self.grs_path)
+                    self.output_edit_path.setText("/".join(self.grs_path.split("/")[:-1])+"/output/RainfallSpatialInterpolation.txt")
                     self.on_grs_browse_given()
 
     def readCSVData(self,path):
@@ -439,69 +499,20 @@ class PluginDialog(QDialog):
         self.updateButtonBox()
 
     def updateButtonBox(self):
-        if self.grs_edit_path.text() != '' and self.grc_edit_path.text()  != '' and self.output_edit_path.text() != '' and self.results_display_currentItem is not None:
-            if not self.results_display.isRowHidden(self.results_display_currentItem.row()):
-                self.button_box_ok.setEnabled(True)
-            else:
-                self.button_box_ok.setEnabled(False)
+        if self.grs_edit_path.text() != '' and self.grc_edit_path.text()  != '' and self.output_edit_path.text() != '' and len(self.SelectedRows)!=0:
+            self.button_box_ok.setEnabled(True)
         else:
             self.button_box_ok.setEnabled(False)
 
     def Help(self):
         #Please Change me soon
-        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-52/Hello-World")
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-85/Storm-Export")
 
 class SignalClass(QObject):
     plugin_loading_state_emittor = pyqtSignal()
     plugin_finished_loading_state_emittor = pyqtSignal()
     button_box_ok_emittor = pyqtSignal()
     button_box_cancel_emittor = pyqtSignal()
-
-
-'''
-class SortModel (QtCore.QSortFilterProxyModel): #Custom Proxy Model
-    def __init__(self, _type, parent=None):
-        super(SortModel,self).__init__(parent)
-        self._type = _type
-
-
-
-class TableModel(QtCore.QAbstractTableModel):
-    def __init__(self, data=None, header=None, parent=None):
-        super(TableModel, self).__init__(parent)
-        self._data = [] if data is None else data
-        self._headers = header
-
-    def rowCount(self, parent=None):
-        return len(self._data)
-
-    def columnCount(self, parent=None):
-        return len(self._data[0]) if self.rowCount() else 0
-
-    def data(self, index, role=QtCore.Qt.DisplayRole):
-        if role == QtCore.Qt.DisplayRole:
-            row = index.row()
-            if 0 <= row < self.rowCount():
-                column = index.column()
-                if 0 <= column < self.columnCount():
-                    return self._data[row][column]
-                    
-    def headerData(self, section, orientation, role):
-        if role == QtCore.Qt.DisplayRole:
-            if orientation == QtCore.Qt.Horizontal:
-                return self._headers[section]
-            else:
-                # set row names: color 0, color 1, ...
-                return "%s" % str(section+1)
-
-    def insertRows(self, position, rows, parent=QtCore.QModelIndex()):
-        self.beginInsertRows(parent, position, position + rows - 1)
-        row = ["a", "b", "c", "d"]
-        for i in range(rows):
-            self._data.insert(position, row)
-        self.endInsertRows()
-        return True
-'''
 
 class StormExport(object):
 
@@ -539,10 +550,13 @@ class StormExport(object):
         self.act.setEnabled(True)
         self.cancel = False
 
+    def formatRow(self,row,MAX_LENGHT=7):
+        return "".join(["0" for x in range(MAX_LENGHT-len(row))])+row
+
     def execTool(self):
         quit=False
         try:
-            sss_choice = self.dialog.results_display.item(self.dialog.results_display_currentItem.row(),1).text()
+            SelectedRows = self.dialog.SelectedRows
         except:
             QMessageBox.information(None, "Message:", "<center>Something went wrong while exporting. [ER:1]</center>")
             return
@@ -556,23 +570,47 @@ class StormExport(object):
         except:
             QMessageBox.information(None, "Message:", "<center>Your storms list file seems to have a wrong format. Can you check the path or content of the file?</center>")
             return
-        try:
-            output_path = self.dialog.output_path
-            Found=False
-            grc_index=0
-            for i in range(len(grc)):
-                if grc[i][0]==sss_choice:
-                    grc_index=i
-                    Found=True
-                    break
-        except:
-            QMessageBox.information(None, "Message:", "<center>Something went wrong while exporting.[ER:2]</center>")
-            return
-        if Found:
+
+        output_path_main = self.dialog.output_path
+        dotindex=-1
+        if "." in output_path_main.split("/")[-1]:
+            dotindex = output_path_main.rfind(".")
+
+
+        SelectedTimeSteps=[]
+        SelectedIds=[]
+        for row in SelectedRows:
+            SelectedIds.append(self.dialog.results_display.item(row,0).text())
+            SelectedTimeSteps.append(self.dialog.results_display.item(row,1).text())
+
+        for l in range(len(SelectedTimeSteps)):
+            sss_choice=SelectedTimeSteps[l]
+            sss_choice=str(sss_choice)
+            if dotindex!=-1:
+                output_path = output_path_main[:dotindex] + "_ID" + self.formatRow(SelectedIds[l],5) + "_TS" + self.formatRow(sss_choice) + output_path_main[dotindex:]
+            elif output_path_main[-1] == "/":
+                output_path = output_path_main + "ID" + self.formatRow(SelectedIds[l],5) + "_TS" + self.formatRow(sss_choice) + ".txt"
+            else:
+                output_path = output_path_main + "/RainfallSpatialInterpolation_ID" + self.formatRow(SelectedIds[l],5) + "TS" + self.formatRow(sss_choice) + ".txt"
+
             try:
-                isRec = self.dialog.cb_recPulse.isChecked()
-                with open(output_path,"w+") as f:
-                    x = """
+                Found=False
+                grc_index=0
+                for i in range(len(grc)):
+                    if grc[i][0]==sss_choice:
+                        grc_index=i
+                        Found=True
+                        break
+            except:
+                QMessageBox.information(None, "Message:", "<center>Something went wrong while exporting.[ER:2]</center>")
+                return
+            if Found:
+                try:
+
+                    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                    isRec = self.dialog.cb_recPulse.isChecked()
+                    with open(output_path,"w+") as f:
+                        x = """
 # comment
 # !BEGIN
 # number begining from 0 ++ number of points
@@ -581,33 +619,34 @@ class StormExport(object):
 
 
 """
-                    writeString=x[1:]
-                    grs_index=0
-                    for j in range(len(grs)):
-                        if grs[j][1]==sss_choice:
-                            grs_index=j
-                            NumDataPointsForEachCell=grs[grs_index][2]
-                            break
-                    for i in range(1,len(grc[grc_index])):
-                        writeString=writeString+"!BEGIN   #raingaugename\n"
-                        writeString=writeString+str(i-1) + " " + NumDataPointsForEachCell + "             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]"
+                        writeString=x[1:]
+                        grs_index=0
+                        for j in range(len(grs)):
+                            if grs[j][1]==sss_choice:
+                                grs_index=j
+                                NumDataPointsForEachCell=grs[grs_index][2]
+                                break
+                        for i in range(1,len(grc[grc_index])):
+                            writeString=writeString+"!BEGIN   #raingaugename\n"
+                            writeString=writeString+str(i-1) + " " + NumDataPointsForEachCell + "             area #Length [m²/s], Area [m/s], waterlevel [m], point [m³/s]"
 
-                        for k in range(int(NumDataPointsForEachCell)):
-                            writeString=writeString+ "\n" + str(k) + " " + str(float(grc[grc_index+k][i])/3600000) + "   #"+ grc[grc_index+k][i] +" mm/h"
-                            if isRec:
-                                writeString=writeString+ "\n" + str(k) + ".99 " + str(float(grc[grc_index+k][i])/3600000) + "   #"+ grc[grc_index+k][i] +" mm/h"
-
-
-                        writeString=writeString+"\n!END\n\n"
+                            for k in range(int(NumDataPointsForEachCell)):
+                                rainfall=float(grc[grc_index+k][i])
+                                writeString=writeString+ "\n" + str(k) + " " + str(self.dialog.convertTompers(rainfall)) + "   #"+ str(self.dialog.convertTompers(rainfall)*3600000) +" mm/h"
+                                if isRec:
+                                    writeString=writeString+ "\n" + str(k) + ".99 " + str(self.dialog.convertTompers(rainfall)) + "   #"+ str(self.dialog.convertTompers(rainfall)*3600000) +" mm/h"
 
 
-                    f.writelines(writeString)
-                    self.iface.messageBar().pushSuccess('Storm Export','File Exported Successfully!')
-                    quit=True
-            except:
-                QMessageBox.information(None, "Message:", "<center>Something went wrong while exporting.[ER:3]</center>")
-        else:
-            QMessageBox.information(None, "Message:", "<center>The choosen storm could not be found in the CSV file. Could you check your CSV file has the storm data choosen?</center>")
+                            writeString=writeString+"\n!END\n\n"
+
+
+                        f.writelines(writeString)
+                        self.iface.messageBar().pushSuccess('Storm Export','File Exported Successfully!')
+                        quit=True
+                except Exception as e:
+                    QMessageBox.information(None, "Message:", "<center>Something went wrong while exporting.[ER:3]<br>" + str(e) +"</center>")
+            else:
+                QMessageBox.information(None, "Message:", "<center>The choosen storm could not be found in the CSV file. Could you check your CSV file has the storm data choosen?</center>")
         if quit:
             self.dialog.close()
             self.quitDialog()
