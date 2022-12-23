@@ -37,7 +37,7 @@ class PluginDialog(QDialog):
         self.holdedSelectedHiddenItems=[]
         self.selectedItemsBeforeFilter=[]
         self.SelectedRows=[]
-        self.filter_1_unit.setCurrentText("m/s")
+        self.filter_1_unit.setCurrentText("mm/hr")
 
         #Rectangle pulse option is set to the users preference
         self.qsettings = QSettings('StormExport', 'StormExportSettings')
@@ -434,7 +434,7 @@ class PluginDialog(QDialog):
         if self.grs_path != '':
             if self.checkGRSFile(self.grs_path):
                 self.grs_edit_path.setText(self.grs_path)
-                self.output_edit_path.setText("/".join(self.grs_path.split("/")[:-1])+"/output/RainfallSpatialInterpolation.txt")
+                self.output_edit_path.setText("/".join(self.grs_path.split("/")[:-1])+"/output/StromID.txt")
                 self.on_grs_browse_given()
             else:
                 msgBox = QMessageBox()
@@ -444,7 +444,7 @@ class PluginDialog(QDialog):
                 returnValue = msgBox.exec()
                 if returnValue == QMessageBox.Yes:
                     self.grs_edit_path.setText(self.grs_path)
-                    self.output_edit_path.setText("/".join(self.grs_path.split("/")[:-1])+"/output/RainfallSpatialInterpolation.txt")
+                    self.output_edit_path.setText("/".join(self.grs_path.split("/")[:-1])+"/output/StromID.txt")
                     self.on_grs_browse_given()
 
     def readCSVData(self,path):
@@ -550,9 +550,6 @@ class StormExport(object):
         self.act.setEnabled(True)
         self.cancel = False
 
-    def formatRow(self,row,MAX_LENGHT=7):
-        return "".join(["0" for x in range(MAX_LENGHT-len(row))])+row
-
     def execTool(self):
         quit=False
         try:
@@ -587,11 +584,11 @@ class StormExport(object):
             sss_choice=SelectedTimeSteps[l]
             sss_choice=str(sss_choice)
             if dotindex!=-1:
-                output_path = output_path_main[:dotindex] + "_ID" + self.formatRow(SelectedIds[l],5) + "_TS" + self.formatRow(sss_choice) + output_path_main[dotindex:]
+                output_path = output_path_main[:dotindex] + "=" + SelectedIds[l] + output_path_main[dotindex:]
             elif output_path_main[-1] == "/":
-                output_path = output_path_main + "ID" + self.formatRow(SelectedIds[l],5) + "_TS" + self.formatRow(sss_choice) + ".txt"
+                output_path = output_path_main + "StromID=" + SelectedIds[l]  + ".txt"
             else:
-                output_path = output_path_main + "/RainfallSpatialInterpolation_ID" + self.formatRow(SelectedIds[l],5) + "TS" + self.formatRow(sss_choice) + ".txt"
+                output_path = output_path_main + "/StromID=" + SelectedIds[l] + ".txt"
 
             try:
                 Found=False
@@ -632,9 +629,9 @@ class StormExport(object):
 
                             for k in range(int(NumDataPointsForEachCell)):
                                 rainfall=float(grc[grc_index+k][i])
-                                writeString=writeString+ "\n" + str(k) + " " + str(self.dialog.convertTompers(rainfall)) + "   #"+ str(self.dialog.convertTompers(rainfall)*3600000) +" mm/h"
+                                writeString=writeString+ "\n" + str(k) + " " + str(self.dialog.convertTompers(rainfall)) + "   #"+ str(self.dialog.convertTompers(rainfall)*3600000) +" mm/hr"
                                 if isRec:
-                                    writeString=writeString+ "\n" + str(k) + ".99 " + str(self.dialog.convertTompers(rainfall)) + "   #"+ str(self.dialog.convertTompers(rainfall)*3600000) +" mm/h"
+                                    writeString=writeString+ "\n" + str(k) + ".99 " + str(self.dialog.convertTompers(rainfall)) + "   #"+ str(self.dialog.convertTompers(rainfall)*3600000) +" mm/hr"
 
 
                             writeString=writeString+"\n!END\n\n"
