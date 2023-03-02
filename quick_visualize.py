@@ -92,7 +92,63 @@ class PluginDialog(QDialog):
 
         To Update in the future please note that Added/Removed buttons should be Added/Removed to/from the checkboxtree and should reflect its hierarchy! 
         '''
-        self.checkboxtree = [self.HYD_Standard_Group, False, [[self.HYD_INPUT, False, [[self.HYD_IN_RV, False, [[self.hyd_in_rv_1, False],[self.hyd_in_rv_2, False]]], [self.HYD_IN_FD, False, [[self.hyd_in_fd_1, False],[self.hyd_in_fd_2, False]]]]], [self.HYD_RESULTS, False, [[self.HYD_RE_RV, False, [[self.hyd_re_rv_1, False],[self.hyd_re_rv_2, False],[self.hyd_re_rv_3, False]]],[self.HYD_RE_FD, False, [[self.hyd_re_fd_1, False],[self.hyd_re_fd_2, False]]]]]]], [self.DAM_Standard_Group, False, [[self.DAM_INPUT, False, [[self.cb_dam_ecn_imm, False],[self.cb_dam_in_pop, False],[self.cb_dam_scpoints, False]]],[self.Dam_RESULTS, False , [[self.cb_dam_ecn_total, False],[self.cb_dam_pop_affected, False],[self.cb_dam_pop_endangered, False],[self.cb_dam_sc_points_damages, False]]]]], [self.RISK_Standard_Group, False]
+        self.checkboxtree = [self.HYD_Standard_Group, False,
+            [
+                [self.HYD_INPUT, False, 
+                    [
+                        [self.HYD_IN_RV, False, 
+                            [
+                                [self.hyd_in_rv_1, False],
+                                [self.hyd_in_rv_2, False]
+                            ]
+                        ],
+                        [self.HYD_IN_FD, False,
+                            [
+                                [self.hyd_in_fd_1, False],
+                                [self.hyd_in_fd_2, False]
+                            ]
+                        ]
+                    ]
+                ],
+                [self.HYD_RESULTS, False,
+                    [
+                        [self.HYD_RE_RV, False,
+                            [
+                                [self.hyd_re_rv_1, False],
+                                [self.hyd_re_rv_2, False],
+                                [self.hyd_re_rv_3, False]
+                            ]
+                        ],
+                        [self.HYD_RE_FD, False,
+                            [
+                                [self.hyd_re_fd_1, False],
+                                [self.hyd_re_fd_2, False]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ],
+        [self.DAM_Standard_Group, False,
+            [
+                [self.DAM_INPUT, False,
+                    [
+                        [self.cb_dam_ecn_imm, False],
+                        [self.cb_dam_in_pop, False],
+                        [self.cb_dam_scpoints, False]
+                    ]
+                ],
+                [self.Dam_RESULTS, False ,
+                    [
+                        [self.cb_dam_ecn_total, False],
+                        [self.cb_dam_pop_affected, False],
+                        [self.cb_dam_pop_endangered, False],
+                        [self.cb_dam_sc_points_damages, False]
+                    ]
+                ]
+            ]
+        ],
+        [self.RISK_Standard_Group, False]
 
         self.allcheckboxes = []
         self.allGroupCheckboxeswithDepth = []
@@ -104,7 +160,7 @@ class PluginDialog(QDialog):
             [self.hyd_in_rv_1, "hyd_river_profile_prm", "", ["HYD","Input"], "RV cross-section type (line)"],
             [self.hyd_in_rv_2, "hyd_river_profile_points_prm", "distance", ["HYD","Input"], "RV cross-section point height [mNN]"],
             [self.hyd_in_fd_1, "hyd_floodplain_element_prm", "geodetic_height", ["HYD","Input"], "FP geodetic height [mNN]"],
-            [self.hyd_in_fd_2, "" "", ["HYD","Input"], "FP 1D-dikeline (line)"],
+            [self.hyd_in_fd_2, "hyd_floodplain_polysegment_prm" "", ["HYD","Input"], "FP 1D-dikeline (line)"],
             [self.hyd_re_rv_1, "hyd_river_profile_max_results_prm", "h_waterlevel", ["HYD","Results"], "RV max result depth [m]"],
             [self.hyd_re_rv_2, "hyd_river_profile_max_results_prm", "discharge", ["HYD","Results"], "RV max result discharge [m³/s]"],
             [self.hyd_re_rv_3, "hyd_river_profile_instat_results_prm", "h_waterlevel", ["HYD","Results"], "RV Instationary Depth [m]"],
@@ -408,7 +464,7 @@ class PluginDialog(QDialog):
             for layer in self.curlayer:
 
                 curlayer2 = self.conn.cursor()
-                curlayer2.execute("SELECT 1 FROM {} limit 1 offset 2".format(now.text() + "." +layer[0]))
+                curlayer2.execute("SELECT 1 FROM {} limit 1 offset 1".format(now.text() + "." +layer[0]))
                 results = curlayer2.fetchone()
                 num=1
                 if results is None:
@@ -575,6 +631,8 @@ class QuickVisualize(object):
                         vlayer = self.vlayerMakeradvanced("marker", QColor(230, 35, 35), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
                     elif layer_name == "hyd_floodplain_element_prm":
                         vlayer = self.vlayerMakeradvanced("graduated", QColor(230, 35, 35), QColor(250, 250, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
+                    elif layer_name == "hyd_floodplain_polysegment_prm":
+                        vlayer = self.vlayerMakeradvanced("single", QColor(250, 36, 36), QColor(250, 36, 36), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
                     elif layer_name == "hyd_floodplain_elem_max_result_prm":
                         vlayer = self.vlayerMakeradvanced("graduated", QColor(128, 197, 233), QColor(255,255,255), 5, project_name, layer_name, ColumnType[0], value_field, layer_toBeNamed)
                     elif layer_name == "hyd_river_profile_instat_results_prm":
