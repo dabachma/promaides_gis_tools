@@ -392,7 +392,7 @@ class PluginDialog(QDialog):
                 item.setTextAlignment(Qt.AlignVCenter)
                 self.results_display.setItem(x, y, item)
         self.results_display.setSortingEnabled(True)
-        self.time_to_display= "\n\n" + self.tr("PluginDialog","Displayed in:") + "\n" + str(round(time.time()-start,3)) + "ms"
+        self.time_to_display= "\n\n" + self.tr("PluginDialog","Displayed in:") + "\n" + str(round(time.time()-start,3)) + " s"
         self.filter_stats.setText(self.tr("PluginDialog","Displaying:") + "\n" + str(self.len_storm_list) +self.tr("PluginDialog"," out of ") + str(len(self.storm_list))+self.time_to_display)
         self.populate_filter_1_combo()
 

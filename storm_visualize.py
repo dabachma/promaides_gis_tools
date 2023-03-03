@@ -361,7 +361,7 @@ class PluginDialog(QDialog):
                 item.setTextAlignment(Qt.AlignVCenter)
                 self.results_display.setItem(x, y, item)
         self.results_display.setSortingEnabled(True)
-        self.time_to_display= "\n\n" + self.tr("PluginDialog","Displayed in:") + "\n" + str(round(time.time()-start,3)) + "ms"
+        self.time_to_display= "\n\n" + self.tr("PluginDialog","Displayed in:") + "\n" + str(round(time.time()-start,3)) + " s"
         self.filter_stats.setText(self.tr("PluginDialog","Displaying:") + "\n" + str(self.len_storm_list) +self.tr("PluginDialog"," out of ") + str(len(self.storm_list))+self.time_to_display)
         self.populate_filter_1_combo()
 
@@ -475,7 +475,7 @@ class PluginDialog(QDialog):
             self.button_box_ok.setEnabled(False)
 
     def Help(self):
-        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-85/Storm-Export")
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-86/Storm-Visualize")
 
     def UpdateExponentFactorField(self):
         if self.SpatialInterpolationMethodBox.currentText() == "Inversed Distance Weighting":
@@ -650,7 +650,7 @@ class PluginDialog(QDialog):
             self.tvl.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs().authid()))
 
             renderer = QgsGraduatedSymbolRenderer()
-            classification_method = QgsClassificationQuantile()
+            classification_method = QgsClassificationEqualInterval()
             format = QgsRendererRangeLabelFormat()
             format.setFormat("%1 - %2")
             format.setPrecision(2)
@@ -662,7 +662,7 @@ class PluginDialog(QDialog):
             renderer.setClassAttribute("Boundary Value")
             renderer.setClassificationMethod(classification_method)
             renderer.setLabelFormat(format)
-            renderer.updateClasses(self.tvl, 5)
+            renderer.updateClasses(self.tvl, 10)
             renderer.updateColorRamp(color_ramp)
             self.tvl.setRenderer(renderer)
             self.tvl.triggerRepaint()

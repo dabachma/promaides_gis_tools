@@ -799,6 +799,9 @@ Displayed in:
            <property name="text">
             <string>Generation Area</string>
            </property>
+           <property name="buddy">
+            <cstring>GenerationAreaLayer</cstring>
+           </property>
           </widget>
          </item>
          <item row="1" column="0" colspan="2">
@@ -876,12 +879,18 @@ Displayed in:
            <property name="text">
             <string>dy (m)</string>
            </property>
+           <property name="buddy">
+            <cstring>dyBox</cstring>
+           </property>
           </widget>
          </item>
          <item row="0" column="0">
           <widget class="QLabel" name="label_5">
            <property name="text">
             <string>Extent of Generation Area</string>
+           </property>
+           <property name="buddy">
+            <cstring>extentGenerationAreaLayer</cstring>
            </property>
           </widget>
          </item>
@@ -906,6 +915,9 @@ Displayed in:
           <widget class="QLabel" name="label_25">
            <property name="text">
             <string>dx (m)</string>
+           </property>
+           <property name="buddy">
+            <cstring>dxBox</cstring>
            </property>
           </widget>
          </item>
@@ -993,8 +1005,29 @@ Displayed in:
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>grs_edit_path</tabstop>
+  <tabstop>grs_browse</tabstop>
+  <tabstop>results_display</tabstop>
+  <tabstop>button_clear</tabstop>
+  <tabstop>clear_table_button</tabstop>
+  <tabstop>cb_selectedStorms</tabstop>
+  <tabstop>button_clear_selectedStorms</tabstop>
+  <tabstop>filter_1_combo</tabstop>
+  <tabstop>filter_1_operator</tabstop>
+  <tabstop>filter_1_value</tabstop>
+  <tabstop>button_filter</tabstop>
+  <tabstop>button_filter_further</tabstop>
+  <tabstop>grc_edit_path</tabstop>
+  <tabstop>grc_browse</tabstop>
+  <tabstop>GenerationAreaLayer</tabstop>
+  <tabstop>bake_groupbox</tabstop>
+  <tabstop>extentGenerationAreaLayer</tabstop>
+  <tabstop>dxBox</tabstop>
+  <tabstop>dyBox</tabstop>
+  <tabstop>ProcessAreaButton</tabstop>
   <tabstop>button_box_ok</tabstop>
   <tabstop>button_box_cancel</tabstop>
+  <tabstop>HelpButton</tabstop>
  </tabstops>
  <resources>
   <include location="resources.qrc"/>
