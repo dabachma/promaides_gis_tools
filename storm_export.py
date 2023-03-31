@@ -40,7 +40,7 @@ class PluginDialog(QDialog):
         self.SelectedRows=[]
         self.filter_1_unit.setCurrentText("mm/hr")
 
-        #Rectangle pulse option is set to the users preference
+        #Setting rectangle pulse option to the users preference
         self.qsettings = QSettings('StormExport', 'StormExportSettings')
         if self.qsettings.contains("recPulse_state"):
             self.recPulse_state = self.qsettings.value("recPulse_state")
@@ -112,6 +112,7 @@ class PluginDialog(QDialog):
         #Set Table of storms:
         self.reset_storm_table()
 
+    #Action for clearing all the currently selected storms
     def button_clear_selectedStorms_clicked(self):
         self.cb_selectedStorms.clear()
         self.holdedSelectedHiddenItems=[]
@@ -119,6 +120,7 @@ class PluginDialog(QDialog):
         self.results_display.clearSelection()
         self.updateButtonBox()
 
+    #Add/Remove newly un/selected storm to/from list of selected storms 
     def cb_selectedStorms_checkedItemsChanged(self):
         checked = self.cb_selectedStorms.checkedItems()
         checkeddata = self.cb_selectedStorms.checkedItemsData()
@@ -134,12 +136,14 @@ class PluginDialog(QDialog):
             self.cb_selectedStorms.addItemWithCheckState(checked[x],2,checkeddata[x])
         self.updateButtonBox()
 
+    #Select storms based on contents of the list of selected storms
     def populateSelectedRows(self,SelectedRows):
         self.cb_selectedStorms.clear()
         for row in SelectedRows:
             self.cb_selectedStorms.addItemWithCheckState(self.results_display.item(row,0).text(), 2,str(row))
             self.cb_selectedStorms.setCheckedItems([self.results_display.item(row,0).text()])
 
+    #Keep selected items selected even when filters are applied
     def holdSelectedHiddenItems(self):
         self.holdedSelectedHiddenItems=[]
         for item in self.selectedItemsBeforeFilter:
@@ -151,6 +155,7 @@ class PluginDialog(QDialog):
                 except:
                     continue
 
+    #Manager for selection of another item in the item display
     def results_display_itemSelectionChanged(self):
         self.SelectedRows=[]
         for item in self.results_display.selectedItems():
@@ -167,14 +172,14 @@ class PluginDialog(QDialog):
     def cb_recPulse_stateChanged(self,state):
         self.qsettings.setValue("recPulse_state", state)
 
-    #Using signals with okay so that the dialog doesn't close in case of error as well as allowing for using custom ok and cancel button instead of default ones
+    #Using signals with okay so that the dialog doesn't close in case of error as well as allowing for using custom OK and Cancel buttons instead of default ones
     def button_box_ok_clicked(self):
         self.signalclass.button_box_ok_emittor.emit()
     def button_box_cancel_clicked(self):
         self.signalclass.button_box_cancel_emittor.emit()
         self.close()
 
-    #Monitoring if user choose a storm. If no storm choosen then OK should be disabled
+    #Monitoring if user choose a storm. If no storm is chosen then OK should be disabled
     def results_display_currentItemChanged(self,current,pre):
         try:
             self.results_display_currentItem = current
@@ -309,10 +314,12 @@ class PluginDialog(QDialog):
         self.holdSelectedHiddenItems()
         self.updateButtonBox()
         self.results_display.scrollToItem(self.results_display.item(firstrowNotHidden,0))
-        
+    
+    #Translation function to translate strings based on contents
     def tr(self, className,message):
         return QCoreApplication.translate(className, message)
 
+    #Translation of the operators used by filter from text
     def operatorCompare(self,item1,item2,comparitor):
         if comparitor==">":
             return (item1 > item2)
@@ -355,16 +362,6 @@ class PluginDialog(QDialog):
 
         #Blocking signals makes loading data faster
         self.results_display.blockSignals(True)
-        
-
-        #self.storm_list = self.readstormfile2(self.grs_path)
-        #self.tableModel = TableModel(self.storm_list,self.storm_file_headers)
-        #self.results_display.setSortingEnabled(True)
-        #self.sortModel =  SortModel(self)
-        #self.sortModel.setSourceModel(self.tableModel)
-        #self.results_display.setModel(self.sortModel)
-        #self.results_display.show()
-        
 
         self.populateTable()
         self.results_display.blockSignals(False)

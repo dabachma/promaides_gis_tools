@@ -354,9 +354,6 @@
                <property name="currentText">
                 <string notr="true">&gt;</string>
                </property>
-               <property name="placeholderText">
-                <string notr="true"/>
-               </property>
                <item>
                 <property name="text">
                  <string notr="true">&gt;</string>

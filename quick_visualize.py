@@ -231,6 +231,7 @@ class PluginDialog(QDialog):
         self.checkParent()
         self.checkCheckboxTreeChanges(self.checkboxtree, False)
         self.enableAll()
+        self.checkUncalculatedLayers()
 
     def checkCheckboxTreeChanges(self, checkboxtreeToCheck, doIset):
         for checkbox in checkboxtreeToCheck:
@@ -605,8 +606,7 @@ class QuickVisualize(object):
 
 
         for layer in to_render:
-            if layer[0].isChecked() and layer[1] != "":
-
+            if layer[0].isChecked() and layer[1] != "" and layer[0].isEnabled():
                 project_name = self.dialog.chosen_project
                 layer_name = layer[1]
                 value_field = layer[2]
