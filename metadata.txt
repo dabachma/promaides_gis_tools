@@ -47,7 +47,13 @@ changelog=
   Version 0.6.8
   * Some minor changes and bug fixes
   * Further work on rainfall generator and CI-model builder
-  * new icon
+  * new icons
+  Version 0.6.9
+  * Some minor changes and bug fixes
+  * Further work on rainfall generator
+  * New tool: quick visualize
+
+
 icon=icon.png
 experimental=False
 homepage=https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-6/Plug-ins
