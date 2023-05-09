@@ -1,8 +1,6 @@
 <RCC>
   <qresource>
-    <file>../icons/storm_export.png</file>
     <file alias="remove_icon">../icons/remove_icon.png</file>
-    <file alias="clear_icon">../icons/clear.png</file>
     <file alias="hyd_icon">../icons/hyd.png</file>
     <file alias="database_icon">../icons/database.png</file>
   </qresource>

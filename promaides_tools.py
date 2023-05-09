@@ -21,8 +21,6 @@ from .quick_visualize import QuickVisualize
 from .crosssectioncreator import CrossSectionCreator
 from .time_viewer import TimeViewer
 from .rain_generator import RainGenerator
-from .storm_export import StormExport
-from .storm_visualize import StormVisualize
 from .dam_raster import DAMRasterExport
 from .cin_point import CINPointExport
 from .cin_connector import CINConnectorExport
@@ -31,10 +29,6 @@ from .cin_connector_automatic import CINConnectorExportAuto
 from .cin_osm_ci_point_import_v3 import CINPointImport
 from .sc_osm_point_import_v2 import SCPointImport
 
-
-from qgis.PyQt.QtCore import *
-from qgis.PyQt.QtGui import *
-from qgis.PyQt.QtWidgets import *
 import os
 
 
@@ -42,24 +36,6 @@ class PromaidesToolbox(object):
 
     def __init__(self, iface):
         self.iface = iface
-
-        """
-        if QSettings().value('locale/overrideFlag', type=bool):
-            locale = QSettings().value('locale/userLocale')
-        else:
-            locale = QLocale.system().name()
-
-        locale_path = os.path.join(
-            os.path.dirname(__file__),
-            'i18n',
-            'promaides_gis_tools_{}.qm'.format(locale[0:2]))
-
-        if os.path.exists(locale_path):
-            self.translator = QTranslator()
-            self.translator.load(locale_path)
-            QCoreApplication.installTranslator(self.translator)
-        """
-
         #init
         self.plugin_menu = None
         self.submenu_hyd = None
@@ -77,8 +53,6 @@ class PromaidesToolbox(object):
         self.time = TimeViewer(self.iface)
         #HAZ
         self.rain = RainGenerator(self.iface)
-        self.storm_export = StormExport(self.iface)
-        self.storm_visualize = StormVisualize(self.iface)
         #DAM
         self.dam_raster = DAMRasterExport(self.iface)
         #CIN
@@ -94,10 +68,8 @@ class PromaidesToolbox(object):
         self.quick_visualize = QuickVisualize(self.iface)
         self.db_exprt = DatabaseExport(self.iface)
 
-    """
-    def tr(self, message):
-        return QCoreApplication.translate('PromaidesToolbox', message)
-    """
+
+
     def initGui(self):
         """
         """
@@ -130,8 +102,6 @@ class PromaidesToolbox(object):
 
         #HAZ
         self.rain.initGui(self.submenu_haz)
-        self.storm_export.initGui(self.submenu_haz)
-        self.storm_visualize.initGui(self.submenu_haz)
 
         #DAM
         self.dam_raster.initGui(self.submenu_dam)
@@ -171,8 +141,6 @@ class PromaidesToolbox(object):
 
         #HAZ
         self.rain.unload(self.submenu_haz)
-        self.storm_export.unload(self.submenu_haz)
-        self.storm_visualize.unload(self.submenu_haz)
 
         #DAM
         self.dam_raster.unload(self.submenu_dam)

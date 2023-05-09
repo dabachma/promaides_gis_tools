@@ -29,7 +29,6 @@ class DatabaseListManagementDialog(QDialog):
         # trigger.connect(self.tempo)
         # trigger.emit()
 
-        self.qsettings = QSettings('QuickVisualize', 'QuickVisualizeSettings')
         self.databases_list = self.readDatabasesList(0)
 
         self.groupPriority = QButtonGroup(self.databases_view)
@@ -114,16 +113,13 @@ class DatabaseListManagementDialog(QDialog):
         self.databases_list[item.row()][item.column()] = item.text()
 
     def writelist(self, thelist):
-        to_write=""
+        file = open("promaides_databases.txt", "w")
         for x in range(len(thelist)):
             lineout = thelist[x][0]
             for y in range(1, len(thelist[x])):
                 lineout = lineout + "," + str(thelist[x][y])
-            if x==0:
-                to_write = lineout
-            else:
-                to_write = to_write + "|" + lineout 
-        self.qsettings.setValue("promaides_databases_temp", to_write)
+            file.write(lineout + "\n")
+        file.close()
 
     def checkCorrectDataRow(self, one):
         dataexists = False
@@ -160,10 +156,19 @@ class DatabaseListManagementDialog(QDialog):
     def readDatabasesList(self, tries):
         lines = []
         try:
-            datalines = self.qsettings.value("promaides_databases_temp").split("|")
-            lines = [line.rstrip().split(",") for line in datalines]
+            with open("promaides_databases.txt") as file:
+                lines = file.readlines()
+                lines = [line.rstrip().split(",") for line in lines]
         except:
-            self.qsettings.setValue("promaides_databases_temp", "localhost,5432,promaides,postgres,,1")
+            if tries > 3:
+                print(
+                    "Tried to read Database 3 times and failed. By default the database list in Documents Folder. Please Check that it exist otherwise please contact developers for support!")
+                return []
+            else:
+                tries += 1
+            file = open("promaides_databases.txt", "a")
+            file.write("localhost,5432,promaides,postgres,,1")
+            file.close()
             self.readDatabasesList(tries)
         return lines
 

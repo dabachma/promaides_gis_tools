@@ -86,12 +86,6 @@ class PluginDialog(QDialog):
         self.demLayerBox.setLayer(None)
 
 
-        locale = QLocale(QLocale.English, QLocale.UnitedStates)
-        spinboxes = [self.initBandBox, self.nrBox,self.ncBox,self.bandBox,self.roughnessNaNBox,self.roughnessBandBox,self.demNaNBox,self.initNaNBox,self.yllBox,self.xllBox,self.dcBox,self.drBox,self.angleBox]
-        for spinbox in spinboxes:
-            spinbox.setLocale(locale)
-
-
         self.removeButton.clicked.connect(self.removeRasterItems)
         self.removeButton.setAutoDefault(False)
         self.listWidget.currentRowChanged.connect(self.updateRasterPropertiesGroup)
