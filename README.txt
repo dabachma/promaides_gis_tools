@@ -1,4 +1,4 @@
-Detailed information are provided in: https://tinyurl.com/promaides77
+Detailed information are provided in: https://promaides.h2.de
 
 Information about the plugins: https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-6/Plug-ins
 
