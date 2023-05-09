@@ -12,19 +12,26 @@ from qgis.PyQt.QtWidgets import *
 
 # promaides modules
 from .environment import get_ui_path
+from .environment import get_json_path
 
 # system modules
 import webbrowser
 
 #general
-import math
 import time
 import requests
 import json
 import os
-from multiprocessing.pool import ThreadPool as Pool
+import itertools
 
-UI_PATH = get_ui_path('ui_cin_2promaides_osm_point_import.ui')
+UI_PATH = get_ui_path('ui_cin_2promaides_osm_point_import_v2.ui')
+JSON_PATH = get_json_path("CIN_sectors.json")
+
+OVERPASS_URL = "https://lz4.overpass-api.de/api/interpreter"
+
+#Load all sectors with corosponding OSM Key, Value as Dict
+with open(JSON_PATH, 'r') as f:
+        CIN_SECTORS: dict = json.load(f)
 
 class PluginDialog(QDialog):
 
@@ -54,6 +61,12 @@ class PluginDialog(QDialog):
 
         #self variables 
         self.areaName = "Search Area"
+        self.searchLayerExisting = len(QgsProject.instance().mapLayersByName(self.areaName)) != 0
+
+        self.Layer_ComboBox.setFilters(QgsMapLayerProxyModel.PolygonLayer)
+
+        self.groupBox_searchArea.toggled.connect(lambda checked: self.groupBox_selectLayer.setChecked(not checked))
+        self.groupBox_selectLayer.toggled.connect(lambda checked: self.groupBox_searchArea.setChecked(not checked))
 
     def closeEvent(self, event):
         self.ClosingSignal.emit()
@@ -71,7 +84,8 @@ class PluginDialog(QDialog):
     def searchWidget(self):
         self.sectorList = ['Electricity', 'Information technology', 'Water supply', 'Water treatment', 'Emergency service', 'Health and Care System', 'Transport and logistics goods', 
         'Transport and logistics person', 'Official and Governmental Institutions', 'Hazardous Materials', 'Industry and Production sites', 'Cultural or Religious sites', 'Education']
-
+        #Get the name of the sectors -> names are the keys of the dict
+        self.sectorList = list(CIN_SECTORS.keys())
         self.listWidget_sectors.addItems(self.sectorList)
     
     def addOne(self):
@@ -165,6 +179,7 @@ class PluginDialog(QDialog):
 
     def drawer(self, geom):
         self.geom = geom
+        self.searchLayerExisting = False
         self.deleteShapefile(self.areaName)
         project = QgsProject().instance()
         layerTree = self.iface.layerTreeCanvasBridge().rootGroup()
@@ -238,11 +253,13 @@ class CINPointImport(object):
         self.cancel = True
         
     def quitDialog(self):
-        self.dialog.deleteShapefile(self.dialog.areaName)
+        if not self.dialog.checkBox_safeArea.isChecked() and not self.dialog.searchLayerExisting:
+            self.dialog.deleteShapefile(self.dialog.areaName)
         self.iface.mapCanvas().unsetMapTool(self.dialog.picker)
         self.act.setEnabled(True)
         self.cancel = False
         self.dialog.close()
+        return
     
     def verification(self):
         if not self.dialog.filename_edit.text():
@@ -257,38 +274,75 @@ class CINPointImport(object):
                 'No Sector chosen!'
             )
             self.quitDialog()
-        elif not QgsProject.instance().mapLayersByName("Search Area"):
+
+        elif not QgsProject.instance().mapLayersByName("Search Area") and self.dialog.groupBox_searchArea.isChecked():
             self.iface.messageBar().pushCritical(
                 'OSM CI Point Import',
                 'No Search Area selected!'
             )
             self.quitDialog()
         else:
+            # task = QgsTask.fromFunction("Querry", self.execTool)
+            # print(task.isActive())
+            # QgsApplication.taskManager().addTask(task)
             self.execTool()
 
-    def direction(self):
-        boundingBox = self.dialog.geom.boundingBox()
+    def geometry(self):
+        if self.dialog.groupBox_searchArea.isChecked():
+            return self.dialog.geom
+        
+        if self.dialog.groupBox_selectLayer.isChecked():
+            layer = self.dialog.Layer_ComboBox.currentLayer()
+            features = layer.getFeatures()
+            for feature in features:
+                if feature.geometry():
+                    return feature.geometry()
 
-        pt = self.dialog.coordinateTransform(boundingBox.xMinimum(), boundingBox.yMinimum(), True)
-        west = pt.x()
-        south = pt.y()
-        
-        pt = self.dialog.coordinateTransform(boundingBox.xMaximum(), boundingBox.yMaximum(), True)
-        east = pt.x()
-        north = pt.y()
-        
-        return north, east, south, west
 
     def execTool(self):
         start_time = time.time()
-        searchList = []
+        search = []
         rows = self.dialog.listWidget_search.count()
         for row in range(rows):
             item = self.dialog.listWidget_search.item(row)
-            searchList.append(item.text())
+            search.append(item.text())
+        
+        data = self.query(self.geometry(), search)
+
+        #if data is a nDim list n > 1 merge data to a single list 
+        if isinstance(data[0], list):
+            data = itertools.chain(*data)
+
+        points = {}
+
+        for element in data:
+            point = OSMPoint(element, search)
+
+            # add Point to coresponding sec id in dict (unsorted)
+            if point.secId in points:
+                points[point.secId].append(point)
+            else:
+                points[point.secId] = [point]
+
+        #Sort Points Dict after Sec Id -> 1:[],2:[],3:[]...
+        dictKeys = list(points.keys())
+        dictKeys.sort()
+        sortedPoints = {i: points[i] for i in dictKeys}
+        
+        #Sort the elements in the list for every sector after the name
+        for idx, value in sortedPoints.items():
+            sortedElemnts = sorted(value, key=lambda x: x.name, reverse=True)
+            sortedPoints[idx] = sortedElemnts
+
+        # get the len of the results of every sector. get the longest result of a sector
+        maxLength = max(map(len, sortedPoints.values()))
+
+        # e.g. zeropoins 2 -> sec 1: 101 ... 199, sec 10: 1001 ... 1099 
+        # zeropoints 3 -> sec 1: 1001 ... 1999, sec 11: 11001 ... 11999
+        zeropoint = len(str(maxLength))
+
 
         fn = self.dialog.filename_edit.text()
-
         layerFields = QgsFields()
         layerFields.append(QgsField('point_id', QVariant.Int))            
         layerFields.append(QgsField('point_name', QVariant.String))       
@@ -302,311 +356,167 @@ class CINPointImport(object):
         layerFields.append(QgsField('osm_id', QVariant.String))     
         
         writer = QgsVectorFileWriter(fn, 'UTF-8', layerFields, QgsWkbTypes.Point, QgsCoordinateReferenceSystem(self.dialog.crs), 'ESRI Shapefile')
-        feat = QgsFeature()
-        
-        inputValues = {"name":[], "sec_id":[], "valueList":[], "lon":[], "lat":[], "osm_id":[]}
-        
-        #Multiprocessing 
-        with Pool(10) as p:
-            all_sectors = p.map(self.query, searchList)
+        feat = QgsFeature()      
 
-        max_lenght = 0
-        for sector in all_sectors:
-            sector_result, sec_id, valueList = sector
-            sector_lenght = 0
-            for result in sector_result:   #goes through all results of a sector
-                sector_lenght += len(result['elements'])
-
-                for element in result['elements']:    #goes through all elements in the value
-                    value_name = valueList.pop(0)
-                    
-                    if 'center' in element:
-                        lon = element['center']['lon']
-                        lat = element['center']['lat']
-                    else:
-                        lon = element['lon']
-                        lat = element['lat']
-
-                    if 'tags' in element:
-                        if 'name' in element['tags']:
-                            name = element['tags']['name'] 
-                            name = name.replace(" ", "_")      
-                        else:
-                            name = value_name
-                    
-                    typ = str(element['type'])
-                    id = str(element['id'])
-                    osm_id = typ +"/"+ id
-
-                    pt = self.dialog.coordinateTransform(lon,lat,False)
-
-                    if self.dialog.geom.contains(pt):
-                        inputValues['name'].append(name)
-                        inputValues['sec_id'].append(sec_id)
-                        inputValues['valueList'].append(value_name)
-                        inputValues['lon'].append(lon)
-                        inputValues['lat'].append(lat)
-                        inputValues['osm_id'].append(osm_id)
-            if sector_lenght >= max_lenght:
-                max_lenght = sector_lenght
-        
-        num = 1
-        new_tag_name = ""
-        old_sec_id = ""
-        outputValues = self.checkValues(inputValues)
-        multiplier = len(str(max_lenght))
         feature_count = 0
-        for name, sec_id ,value, lon, lat, osm_id in zip(outputValues['name'], 
-                                                        outputValues['sec_id'], 
-                                                        outputValues['valueList'], 
-                                                        outputValues['lon'], 
-                                                        outputValues['lat'],
-                                                        outputValues['osm_id']):   
-            if sec_id != old_sec_id:
-                old_sec_id = sec_id
-                idx = 1
-            idx_sec = sec_id * (10**multiplier)
-            idx_num = idx_sec + idx
-            idx += 1
-            
-            if value != new_tag_name:
-                new_tag_name = value
-                num = 1
-            if name == new_tag_name:
-                name = f"{name}_{num}"
-                num += 1    
+        for secId, points in sortedPoints.items():
+            for count, point in enumerate(points, start=1):
+                idx = secId * (10**zeropoint) + count
+                pt = self.dialog.coordinateTransform(point.lon,point.lat,False)
+                if self.geometry().contains(pt):
+                    feat = QgsFeature()
+                    feat.setGeometry(QgsGeometry.fromPointXY(pt))
+                    attr = [idx, point.name, secId, point.value, 5, 0.2, "true", 14, 0, point.osmId]
+                    feat.setAttributes(attr)
+                    writer.addFeature(feat)
+                    feature_count += 1
 
-            pt = self.dialog.coordinateTransform(lon,lat,False)
-            feat.setGeometry(QgsGeometry.fromPointXY(pt))
-            feat.setAttributes([idx_num, name, sec_id, value, 5, 0.2, "true", 14, 0, osm_id]) 
-            writer.addFeature(feat)
-            feature_count += 1
         layer = self.iface.addVectorLayer(fn, '', 'ogr')
-
         del(writer)
         end_time = time.time()
         length = round(end_time-start_time,2)
-
         self.iface.messageBar().pushInfo(
             'OSM CI Point Import',
             f'Inport finished successfully! {feature_count} Points in {length} sec. found.')
            
         self.quitDialog()
-   
-    def query(self, search):
-        north, east, south, west = self.direction()
-        overpass_url = "https://lz4.overpass-api.de/api/interpreter"
-        osm_dict = {'key':[], 'value':[]}
-        dataList = []
-        valueList = []     
-
-        if search == 'Electricity':
-            osm_dict['key'].append('power')
-            osm_dict['value'].append('plant')
-
-            osm_dict['key'].append('power')
-            osm_dict['value'].append('substation')
-
-            osm_dict['key'].append('power')
-            osm_dict['value'].append('transformer')
-            
-            sec_id = 1
-        if search == 'Information technology':
-            osm_dict['key'].append('man_made')
-            osm_dict['value'].append('antenna')
-
-            osm_dict['key'].append('tower:type')
-            osm_dict['value'].append('communication')
-
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('telephone')
-
-            osm_dict['key'].append('studio')
-            osm_dict['value'].append('radio')
-
-            osm_dict['key'].append('studio')
-            osm_dict['value'].append('televison')
-            
-            sec_id = 2
-        if search == 'Water supply':
-            osm_dict['key'].append('man_made')
-            osm_dict['value'].append('water_works')
-
-            osm_dict['key'].append('man_made')
-            osm_dict['value'].append('water_tower')
-
-            osm_dict['key'].append('man_made')
-            osm_dict['value'].append('water_well')
-
-            osm_dict['key'].append('man_made')
-            osm_dict['value'].append('reservoir_covered')
-            
-            sec_id = 3  
-        if search == 'Water treatment':
-            osm_dict['key'].append('man_made')
-            osm_dict['value'].append('wastewater_plant')
-            
-            sec_id = 4
-
-        if search == 'Emergency service':
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('police')
-
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('fire_station')
-
-            osm_dict['key'].append('emergency')
-            osm_dict['value'].append('ambulance_station')
-
-            #different approches for disaster response 
-            osm_dict['key'].append('emergency_service')
-            osm_dict['value'].append('technical')
-
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('emergency_service')
-
-            osm_dict['key'].append('emergency')
-            osm_dict['value'].append('disaster_response')
-
-            sec_id = 10
-        if search == 'Health and Care System':
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('hospital')
-
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('clinic')
-
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('pharmacy')
-
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('doctors')
-
-            osm_dict['key'].append('social_facility')
-            osm_dict['value'].append('nursing_home')
-
-            sec_id = 11
-        if search == 'Transport and logistics goods':
-            osm_dict['key'].append('industrial')
-            osm_dict['value'].append('port')
-
-            sec_id = 12
-        if search == 'Transport and logistics person':
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('bus_station')
-
-            osm_dict['key'].append('railway')
-            osm_dict['value'].append('station')
-            
-            osm_dict['key'].append('aeroway')
-            osm_dict['value'].append('aerodrome')
-            
-            osm_dict['key'].append('aeroway')
-            osm_dict['value'].append('helipad')
-
-            osm_dict['key'].append('leisure')
-            osm_dict['value'].append('marina')
-            
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('ferry_terminal')
-            
-            sec_id = 13
-        if search == 'Official and Governmental Institutions':
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('prison')
-
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('courthouse')
-            
-            osm_dict['key'].append('government') 
-            osm_dict['value'].append('ministry')
-
-            osm_dict['key'].append('office')
-            osm_dict['value'].append('government')
-
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('townhall')
-            
-            sec_id = 14          
-        if search == 'Hazardous Materials':
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('fuel')
-            
-            sec_id = 15
-        if search == 'Industry and Production sites':
-            osm_dict['key'].append('industrial')
-            osm_dict['value'].append('oil')
-            
-            osm_dict['key'].append('industrial')
-            osm_dict['value'].append('factory')
-
-            osm_dict['key'].append('industrial')
-            osm_dict['value'].append('warehouse')
-
-            osm_dict['key'].append('industrial')
-            osm_dict['value'].append('mine')
-
-            osm_dict['key'].append('landuse')
-            osm_dict['value'].append('quarry')
-
-            sec_id = 16
-        if search == 'Cultural or Religious sites':
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('place_of_worship')
-            
-            sec_id = 17
-        if search == 'Education':
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('school')
-
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('kindergarten')
-
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('college')
-
-            osm_dict['key'].append('amenity')
-            osm_dict['value'].append('university')
-
-            sec_id = 18
+         
+    def query(self, geom, search: list, recursion = 0):
+        north, east, south, west = self.direction(geom)
+        nodes = ""
+        ways = ""
+        realations = ""
+        for sector in search:
+            keys, values = CIN_SECTORS[sector]["key"], CIN_SECTORS[sector]["value"]
         
-        for key, value in zip(osm_dict['key'], osm_dict['value']):
-            n = 0
-            while n <= 100:
-                overpass_query = """
-                [out:json];
-                (
-                node["{key}"="{value}"]({south},{west},{north},{east});
-                way["{key}"="{value}"]({south},{west},{north},{east});
-                relation["{key}"="{value}"]({south},{west},{north},{east});
-                );
-                out center;
-                """.format(key=key, value=value, south=south, west=west, north=north, east=east)
+            for key, value in zip(keys, values):
+                nodes += f"""node["{key}"="{value}"]({south},{west},{north},{east});\n"""
+                ways += f""" way["{key}"="{value}"]({south},{west},{north},{east});\n"""
+                realations += f"""relation["{key}"="{value}"]({south},{west},{north},{east});\n"""
+        overpass_query = f"""
+                    [out:json];
+                    (
+                    {nodes}
+                    {ways}
+                    {realations}
+                    );
+                    out center;
+                    """
+        trys = 0
+        while trys < 100:
+            response = requests.post(OVERPASS_URL, data={"data": overpass_query})
+            if response.status_code == 200:
+                result = response.json()
+               
+                #'remark': runtime error
+                if "remark" not in result:
+                    return list(result["elements"])
+                else:
+                    print(f"Begin Recoursion {recursion}")
+                    """
+                    If the area of the request is to large there is no return 
+                    """
+                    #begin reqursion
+                    #QgsGeometry(geom) creat a copy of geom object
+                    data = [
+                        self.query(self.split(QgsGeometry(geom), left=True), search, recursion+1),
+                        self.query(self.split(QgsGeometry(geom), left=False), search, recursion+1)
+                    ]
+                    return data
+            else:
+                trys += 1
+    
+    def direction(self, geom):
+        boundingBox = geom.boundingBox()
 
-                try:
-                    response = requests.get(overpass_url, params={'data': overpass_query})
-                    data = response.json()
-                    for _ in range(len(data['elements'])):
-                        valueList.append(value)                    
-                    dataList.append(data)
-                    break
-                except:
-                    n += 1
-                    if n == 100:
-                        print("abort")
+        pt = self.dialog.coordinateTransform(boundingBox.xMinimum(), boundingBox.yMinimum(), True)
+        west = pt.x()
+        south = pt.y()
         
-        return dataList, sec_id, valueList
-            
-    def checkValues(self, inputValues):
-        for osm_id in inputValues["osm_id"]:
-            location = [i for i,x in enumerate(inputValues["osm_id"]) if x==osm_id]
-            while len(location) > 1:
-                del inputValues["name"][location[1]]
-                del inputValues["sec_id"][location[1]]
-                del inputValues['valueList'][location[1]]
-                del inputValues['lon'][location[1]]
-                del inputValues['lat'][location[1]]
-                del inputValues['osm_id'][location[1]]
-                location = [i for i,x in enumerate(inputValues["osm_id"]) if x==osm_id]
-        outputValues = inputValues
-        return outputValues
+        pt = self.dialog.coordinateTransform(boundingBox.xMaximum(), boundingBox.yMaximum(), True)
+        east = pt.x()
+        north = pt.y()
+        
+        return north, east, south, west 
+    
+    #split the geometry in half (vertical)
+    def split(self, geom, left):
+        # from QgsGeometry -> QgsRectangle
+        rect = geom.boundingBox()
+        #get corners
+        xmin, xmax = rect.xMinimum(), rect.xMaximum()
+        ymin, ymax = rect.yMinimum(), rect.yMaximum()
+        #create corner points
+        lt = QgsPointXY(xmin, ymax)
+        ld = QgsPointXY(xmin, ymin)
+        rt = QgsPointXY(xmax, ymax)
+        rd = QgsPointXY(xmax, ymin)
+
+        #get center of top end bottom line
+        bottomLine = QgsGeometry.fromPolylineXY([ld, rd])
+        length = bottomLine.length()
+        bottomPoint = bottomLine.interpolate(length/2.0).asPoint()
+
+        topLine = QgsGeometry.fromPolylineXY([lt, rt])
+        length = topLine.length()
+        topPoint = topLine.interpolate(length/2.0).asPoint()
+
+        """
+        if left -> down to up
+        else up to down
+        """
+        if left:
+            #split to left
+            splitLine = [bottomPoint, topPoint]
+        else:
+            #split to right
+            splitLine = [topPoint, bottomPoint]
+
+        #-> Tuple[QgsGeometry.OperationResult, List[QgsGeometry] = 1Dim, List[QgsPointXY]] = empty
+        res, geom, topolist = geom.splitGeometry(splitLine, False)
+        return geom[0]
+
+class OSMPoint:
+    def __init__(self, data, searchFor):
+        data = data      
+        
+        self.get_infos(data, searchFor)
+        self.set_coord(data)
+        self.set_name(data)
+
+    def get_infos(self, data, searchFor):
+        self.key = ""
+        self.value = ""
+        self.secId = ""
+        self.osmId = ""
+
+        if 'tags' not in data:
+            return None
+        
+        for itemKey, itemValue in data["tags"].items():
+            for sector in searchFor:
+                values = CIN_SECTORS[sector]["value"]
+                if itemValue in values:
+                    self.key = itemKey
+                    self.value = itemValue
+                    self.secId = CIN_SECTORS[sector]["sec_id"]
+        
+        typ = str(data['type'])
+        id = str(data['id'])
+        self.osmId = typ +"/"+ id
+    
+    def set_coord(self, data):
+        if 'center' in data:
+            self.lon = data['center']['lon']
+            self.lat = data['center']['lat']
+        else:
+            self.lon = data['lon']
+            self.lat = data['lat']
+    
+    def set_name(self, data):
+        if 'tags' in data:
+            if 'name' in data['tags']:
+                self.name = data['tags']['name'] 
+                self.name = self.name.replace("\n","_").replace(" ", "_")      
+            else:
+                self.name = self.value
