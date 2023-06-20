@@ -377,7 +377,7 @@ class CINPointImport(object):
         length = round(end_time-start_time,2)
         self.iface.messageBar().pushInfo(
             'OSM CI Point Import',
-            f'Inport finished successfully! {feature_count} Points in {length} sec. found.')
+            f'Import finished successfully! {feature_count} Points in {length} sec. found.')
            
         self.quitDialog()
          
