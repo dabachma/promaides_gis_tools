@@ -29,7 +29,7 @@ from .cin_connector import CINConnectorExport
 from .cin_polygon import CINPolygonExport
 from .cin_connector_automatic import CINConnectorExportAuto
 from .cin_osm_ci_point_import import CINPointImport
-from .sc_osm_point_import_v2 import SCPointImport
+from .sc_osm_point_export import SCOSMPointExport
 
 
 from qgis.PyQt.QtCore import *
@@ -88,7 +88,7 @@ class PromaidesToolbox(object):
         self.cin_connector_automatic = CINConnectorExportAuto(self.iface)
         self.cin_osm_ci_point_import = CINPointImport(self.iface)
         #SC
-        self.sc_osm_point_import = SCPointImport(self.iface)
+        self.sc_osm_point_export = SCOSMPointExport(self.iface)
         #General
         self.hello_world = HelloWorld(self.iface)
         self.quick_visualize = QuickVisualize(self.iface)
@@ -142,7 +142,7 @@ class PromaidesToolbox(object):
         self.cin_connector_automatic.initGui(self.submenu_dam)
         self.cin_osm_ci_point_import.initGui(self.submenu_dam) 
         self.submenu_dam.addSeparator()
-        self.sc_osm_point_import.initGui(self.submenu_dam)
+        self.sc_osm_point_export.initGui(self.submenu_dam)
 
         #General
         self.hello_world.initGui(self.submenu_general)
@@ -185,7 +185,7 @@ class PromaidesToolbox(object):
         self.cin_osm_ci_point_import.unload(self.submenu_dam)
 
         #SC
-        self.sc_osm_point_import.unload(self.submenu_dam)
+        self.sc_osm_point_export.unload(self.submenu_dam)
 
         #General
         self.db_exprt.unload(self.submenu_general)
