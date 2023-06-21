@@ -435,7 +435,7 @@ class SCOSMPointExport(object):
 
         self.iface.messageBar().pushInfo(
             'SC OSM Point Export',
-            f'Inport finished successfully! {feature_count} Points in {length} sec. found.')
+            f'Import finished successfully! {feature_count} Points in {length} sec. found.')
 
         self.quitDialog()
 
