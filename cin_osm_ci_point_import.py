@@ -274,17 +274,13 @@ class CINPointImport(object):
                 'No Sector chosen!'
             )
             self.quitDialog()
-
-        elif not QgsProject.instance().mapLayersByName("Search Area") and self.dialog.groupBox_searchArea.isChecked():
+        elif not hasattr(self.dialog, "geom") and not self.dialog.groupBox_selectLayer.isChecked():
             self.iface.messageBar().pushCritical(
                 'OSM CI Point Import',
                 'No Search Area selected!'
             )
             self.quitDialog()
         else:
-            # task = QgsTask.fromFunction("Querry", self.execTool)
-            # print(task.isActive())
-            # QgsApplication.taskManager().addTask(task)
             self.execTool()
 
     def geometry(self):
