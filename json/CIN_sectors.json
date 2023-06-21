@@ -18,14 +18,18 @@
             "tower:type",
             "amenity",
             "studio",
-            "studio"
+            "studio",
+            "telecom",
+            "telecom"
         ],
         "value": [
             "antenna",
             "communication",
             "telephone",
             "radio",
-            "televison"
+            "televison",
+            "exchange",
+            "data_center"
         ],
         "sec_id": 2
     },
@@ -52,6 +56,19 @@
             "wastewater_plant"
         ],
         "sec_id": 4
+    },
+    "Energy": {
+        "key": [
+            "utility",
+            "utility",
+            "utility"
+        ],
+        "value": [
+            "gas",
+            "oil",
+            "heating"
+        ],
+        "sec_id": 5
     },
     "Emergency service": {
         "key": [
