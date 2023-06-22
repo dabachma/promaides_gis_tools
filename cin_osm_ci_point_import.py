@@ -309,7 +309,7 @@ class CINPointImport(object):
         if isinstance(data[0], list):
             data = itertools.chain(*data)
 
-        points = {}
+        points = dict()
 
         for element in data:
             point = OSMPoint(element, search)
@@ -356,10 +356,24 @@ class CINPointImport(object):
 
         feature_count = 0
         for secId, points in sortedPoints.items():
+            lookupDoubleName = set()
+            lookupCounter = dict()
+            lookupCounterPos = 0
+
             for count, point in enumerate(points, start=1):
                 idx = secId * (10**zeropoint) + count
                 pt = self.dialog.coordinateTransform(point.lon,point.lat,False)
                 if self.geometry().contains(pt):
+                    #create unique name of points with a value name
+                    if not point.unique:
+                        if point.name not in lookupDoubleName:
+                            lookupCounterPos += 1
+                            lookupCounter[lookupCounterPos] = 1
+                            lookupDoubleName.add(point.name)
+                        replace = f"{point.name}_{lookupCounter[lookupCounterPos]}"
+                        lookupCounter[lookupCounterPos] += 1
+                        point.name = replace
+
                     feat = QgsFeature()
                     feat.setGeometry(QgsGeometry.fromPointXY(pt))
                     attr = [idx, point.name, secId, point.value, 5, 0.2, "true", 14, 0, point.osmId]
@@ -473,9 +487,7 @@ class CINPointImport(object):
         return geom[0]
 
 class OSMPoint:
-    def __init__(self, data, searchFor):
-        data = data      
-        
+    def __init__(self, data, searchFor):       
         self.get_infos(data, searchFor)
         self.set_coord(data)
         self.set_name(data)
@@ -510,9 +522,11 @@ class OSMPoint:
             self.lat = data['lat']
     
     def set_name(self, data):
+        self.unique = True
         if 'tags' in data:
             if 'name' in data['tags']:
                 self.name = data['tags']['name'] 
                 self.name = self.name.replace("\n","_").replace(" ", "_")      
             else:
                 self.name = self.value
+                self.unique = False
