@@ -79,6 +79,7 @@ class PluginDialog(QDialog):
         self.ilmBox.setEnabled(False)
         self.groupBox.setEnabled(False)
         self.ImportButton.setEnabled(False)
+        self.initAbsoluteBox.setEnabled(True)
         self.roughnessLayerBox.setLayer(None)
         self.initLayerBox.setLayer(None)
         self.BCLayerBox.setLayer(None)
@@ -819,7 +820,7 @@ class DEMExport(object):
                 cellproperties = defaultcellproperties
 
             values = {data_name: interpol[data_name](trans[data_name](point)) for data_name in list(input_layers.keys())}
-            out_raster.write_cell(values,cellproperties)
+            out_raster.write_cell(values,cellproperties,self.dialog.initAbsoluteBox.isChecked())
             if progress:
                 progress.setValue(progress.value() + 1)
         out_raster.close()

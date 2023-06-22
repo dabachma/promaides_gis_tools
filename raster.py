@@ -134,7 +134,7 @@ class RasterWriter(object):
         self.prm.write('\n')
         self.prm.write('!BEGIN\n')
 
-    def write_cell(self, data, cellproperties):
+    def write_cell(self, data, cellproperties, initAbsolut):
         # fill empty slots with NaN values
         for key, value in list(self.nodata.items()):
             if key not in data:
@@ -144,7 +144,12 @@ class RasterWriter(object):
         bc_stat = data['bc_stat']
         data['bc_stat'] = str(bc_stat).lower()
         data['roughn'] = int(data['roughn'])
-
+        if initAbsolut:
+            absoluteValue = data["init"] - data["elev"]
+            if absoluteValue > 0:
+                data["init"] = absoluteValue
+            else:
+                data["init"] = 0
         boundaryenabled = cellproperties[0]
         boundarystationary = cellproperties[1]
         boundaryvalue = cellproperties[2]
