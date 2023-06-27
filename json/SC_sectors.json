@@ -1,0 +1,151 @@
+{
+    "SC 1":
+    {
+        "Fire Station":
+        {
+            "key":
+            [
+                "amenity"
+            ],
+            "value":
+            [
+                "fire_station"
+            ],
+            "id_sub": [1]
+        },
+
+        "Government":
+        {
+            "key":
+            [
+                "office",
+                "amenity"
+            ],
+            "value":
+            [
+                "government",
+                "townhall"
+            ],
+            "id_sub": [2, 3]
+        },
+        "Police":
+        {
+            "key":
+            [
+                "amenity"
+            ],
+            "value":
+            [
+                "police"
+            ],
+            "id_sub": [4]
+        }
+    },
+    "SC 2":
+    {
+        "Wastewater plant":
+        {
+            "key":
+            [
+                "man_made"
+            ],
+            "value":
+            [
+                "wastewater_plant"
+            ],
+            "id_sub": [5]
+        },
+        "Chemical":
+        {
+            "key":
+            [
+                "industrial"
+            ],
+            "value":[
+                "chemical"
+            ],
+            "id_sub": [6]
+        },
+        "Biogas":
+        {
+            "key":[
+                "plant:source"
+            ],
+            "value":[
+                "biomass"
+            ],
+            "id_sub": [7]
+        }
+    },
+    "SC 3":
+    {   
+        "Monuments":
+        {
+            "key":[
+                "historical",
+                "historical"
+            ],
+            "value":[
+                "memorial",
+                "monument"
+            ],
+            "id_sub":[8, 9]
+        },
+        "Museum":
+        {
+            "key":[
+                "tourism"
+            ],
+            "value":[
+                "museum"
+            ],
+            "id_sub":[10]
+        }
+    },
+    "SC 4":
+    {
+        "Eldery":
+        {
+            "key":[
+                "social_facility"
+            ],
+            "value":[
+                "nursing_home"
+            ],
+            "id_sub":[12]
+        },
+        "Hospital":
+        {
+            "key":[
+                "amenity",
+                "amenity"
+            ],
+            "value":[
+                "hospital",
+                "clinic"
+            ],
+            "id_sub":[12, 13]
+        },
+        "Kindergarten":
+        {
+            "key":[
+                "amenity"
+            ],
+            "value":[
+                "kindergarten"
+            ],
+            "id_sub":[14]
+        },
+        "Schools":
+        {
+            "key":[
+                "amenity"
+            ],
+            "value":[
+                "school"
+            ],
+            "id_sub":[15]
+        }
+    }
+    
+}
