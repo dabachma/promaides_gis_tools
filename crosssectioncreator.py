@@ -176,7 +176,10 @@ class CrossSectionCreator(object):
         params = {'DEM': self.dialog.ElevationBox.currentLayer().dataProvider().dataSourceUri(), 'DIST_LINE': self.dialog.DistanceBox.value(), 'DIST_PROFILE': ProfileLengths,
          'LINES': self.dialog.RiverShapeBox.currentLayer().dataProvider().dataSourceUri(),
          'NUM_PROFILE': 3, 'PROFILES': outputlocation}
-        result =processing.run('saga:crossprofiles', params)
+        try:
+            result =processing.run('saga:crossprofiles', params)
+        except:
+            result =processing.run('sagang:crossprofiles', params)
 
         try:
             self.resultlayer = QgsVectorLayer(outputlocation, "Cross Sections", "ogr")
@@ -229,7 +232,10 @@ class CrossSectionCreator(object):
                           'DIST_LINE': self.dialog.DistanceBox.value(), 'DIST_PROFILE': 1,
                           'LINES': self.dialog.RiverShapeBox.currentLayer().dataProvider().dataSourceUri(),
                           'NUM_PROFILE': 3, 'PROFILES': outputlocationtemp}
-            resulttemp = processing.run('saga:crossprofiles', paramstemp)
+            try:
+                resulttemp = processing.run('saga:crossprofiles', paramstemp)
+            except:
+                resulttemp = processing.run('sagang:crossprofiles', paramstemp)
             resultlayertemp = QgsVectorLayer(outputlocationtemp, "Cross Sections temp", "ogr")
             resultlayertemp.updateFields()
 
