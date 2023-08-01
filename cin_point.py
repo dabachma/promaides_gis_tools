@@ -281,7 +281,7 @@ class CINPointExport(object):
                     'Sector input "{}" of "{}" is not a valid input (Required typ: Integer)'.format(attrs[sector_pos],attrs[name_pos]))              
                 return False
             
-            if 1 <= attrs[sector_pos] <= 4 or 10 <= attrs[sector_pos] <= 18:
+            if 1 <= attrs[sector_pos] <= 5 or 10 <= attrs[sector_pos] <= 18:
                 pass
             else:
                 self.iface.messageBar().pushCritical(
