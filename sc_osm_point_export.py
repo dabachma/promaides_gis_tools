@@ -23,7 +23,7 @@ import time
 import requests
 import json
 import os
-from multiprocessing.pool import ThreadPool as Pool
+import unicodedata
 
 
 UI_PATH = get_ui_path('ui_sc_promaides_osm_point_export.ui')
@@ -77,7 +77,7 @@ class PluginDialog(QDialog):
         self.ClosingSignal.emit()
     
     def Help(self):
-        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-83/DAM-SC-OSM-Point-Import")
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-83/DAM-SC-OSM-Point-Export")
 
     def onBrowseButtonClicked(self):
         current_filename = self.filename_edit.text()
@@ -377,6 +377,20 @@ class SCOSMPointExport(object):
         
         return north, east, south, west
 
+    def check_name_ascii(self, name: str):
+        """Function to check if name has only ascii characters.
+
+        If not this functions trys to creat an ascii string. If this does not work the function returns False
+        """
+        new_name = unicodedata.normalize("NFD", name).encode("ascii", "ignore").decode("ascii")
+        threshold = 0.5 
+        #if the new name shorter than the old name * threshold retrun False. 
+        #Prevent the convert of non latin characters (e.g Cyrillic) with numbers to only numbers
+        if len(new_name) < len(name) * threshold:
+            return False
+        else:
+            return new_name.replace("\n","_").replace(" ", "_")
+
     def execTool(self):
         start_time = time.time()
 
@@ -401,9 +415,9 @@ class SCOSMPointExport(object):
                 if 'tags' in element:
                     if 'name' in element['tags']:
                         placeholder_name = element['tags']['name']
-                        if placeholder_name.isascii():
-                            name = placeholder_name.replace("\n","_").replace(" ", "_")                             
-
+                        check_name = self.check_name_ascii(placeholder_name)
+                        if check_name:
+                            name = check_name
                 osm_id = str(element['type']) +"/"+ str(element['id'])
 
                 pt = self.dialog.coordinateTransform(lon,lat,False)
