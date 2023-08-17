@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>OSM CI Point Import for ProMaIDes CIN-Module</string>
+   <string>OSM CI Point Export for ProMaIDes CIN-Module</string>
   </property>
   <property name="windowIcon">
    <iconset>

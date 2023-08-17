@@ -28,7 +28,7 @@ from .cin_point import CINPointExport
 from .cin_connector import CINConnectorExport
 from .cin_polygon import CINPolygonExport
 from .cin_connector_automatic import CINConnectorExportAuto
-from .cin_osm_ci_point_import import CINPointImport
+from .cin_osm_ci_point_export import CINPointExport
 from .sc_osm_point_export import SCOSMPointExport
 
 
@@ -86,7 +86,7 @@ class PromaidesToolbox(object):
         self.cin_polygon = CINPolygonExport(self.iface)
         self.cin_connector = CINConnectorExport(self.iface)
         self.cin_connector_automatic = CINConnectorExportAuto(self.iface)
-        self.cin_osm_ci_point_import = CINPointImport(self.iface)
+        self.cin_osm_ci_point_import = CINPointExport(self.iface)
         #SC
         self.sc_osm_point_export = SCOSMPointExport(self.iface)
         #General

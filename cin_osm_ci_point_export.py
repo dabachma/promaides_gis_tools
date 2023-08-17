@@ -24,7 +24,7 @@ import json
 import os
 import itertools
 
-UI_PATH = get_ui_path('ui_cin_2promaides_osm_point_import_v2.ui')
+UI_PATH = get_ui_path('ui_cin_2promaides_osm_point_export.ui')
 JSON_PATH = get_json_path("CIN_sectors.json")
 
 OVERPASS_URL = "https://lz4.overpass-api.de/api/interpreter"
@@ -72,11 +72,11 @@ class PluginDialog(QDialog):
         self.ClosingSignal.emit()
     
     def Help(self):
-        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-81/DAM-CIN---OSM-CI-Point-Import")
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-81/DAM-CIN---OSM-CI-Point-Export")
 
     def onBrowseButtonClicked(self):
         current_filename = self.filename_edit.text()
-        new_filename, __ = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'OSM CI Point Import', current_filename, "*.shp *.SHP")
+        new_filename, __ = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'OSM CI Point Export', current_filename, "*.shp *.SHP")
         if new_filename != '':
             self.filename_edit.setText(new_filename)
             self.filename_edit.editingFinished.emit()
@@ -219,13 +219,13 @@ class PluginDialog(QDialog):
                 QgsProject.instance().removeMapLayers([layer.id()]) 
                 self.iface.mapCanvas().refresh()
 
-class CINPointImport(object):
+class CINPointExport(object):
 
     def __init__(self, iface):
         self.iface = iface
         self.dialog = None
         self.cancel = False
-        self.act = QAction('CIN OSM CI Point Import', iface.mainWindow())
+        self.act = QAction('CIN OSM CI Point Export', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
 
     def initGui(self, menu=None):
@@ -264,19 +264,19 @@ class CINPointImport(object):
     def verification(self):
         if not self.dialog.filename_edit.text():
             self.iface.messageBar().pushCritical(
-                'OSM CI Point Import',
+                'OSM CI Point Export',
                 'No output filename given!'
             )
             self.quitDialog()
         elif self.dialog.listWidget_search.count() == 0:
             self.iface.messageBar().pushCritical(
-                'OSM CI Point Import',
+                'OSM CI Point Export',
                 'No Sector chosen!'
             )
             self.quitDialog()
         elif not hasattr(self.dialog, "geom") and not self.dialog.groupBox_selectLayer.isChecked():
             self.iface.messageBar().pushCritical(
-                'OSM CI Point Import',
+                'OSM CI Point Export',
                 'No Search Area selected!'
             )
             self.quitDialog()
@@ -386,8 +386,8 @@ class CINPointImport(object):
         end_time = time.time()
         length = round(end_time-start_time,2)
         self.iface.messageBar().pushInfo(
-            'OSM CI Point Import',
-            f'Import finished successfully! {feature_count} Points in {length} sec. found.')
+            'OSM CI Point Export',
+            f'Export finished successfully! {feature_count} Points in {length} sec. found.')
            
         self.quitDialog()
          
