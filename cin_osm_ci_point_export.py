@@ -219,7 +219,7 @@ class PluginDialog(QDialog):
                 QgsProject.instance().removeMapLayers([layer.id()]) 
                 self.iface.mapCanvas().refresh()
 
-class CINPointExport(object):
+class OSMCINPointExport(object):
 
     def __init__(self, iface):
         self.iface = iface
