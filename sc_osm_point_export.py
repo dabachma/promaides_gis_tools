@@ -13,10 +13,8 @@ from qgis.PyQt.QtWidgets import *
 
 # promaides modules
 from .environment import get_ui_path, get_json_path
-
 # system modules
 import webbrowser
-
 #general
 import math
 import time
@@ -264,7 +262,7 @@ class PluginDialog(QDialog):
         project.addMapLayer(lyr, False)
         layerTree.insertChildNode(0, QgsLayerTreeLayer(lyr))
 
-    def coordinateTransform(self, x, y, toWGS=bool):
+    def coordinateTransform(self, x, y, toWGS:bool):
         crsSrc = QgsCoordinateReferenceSystem(self.crs)
         crsDest = QgsCoordinateReferenceSystem("EPSG:4326") #WGS 84: Decimal system
         transformContext = QgsProject.instance().transformContext()
@@ -377,7 +375,7 @@ class SCOSMPointExport(object):
         
         return north, east, south, west
 
-    def check_name_ascii(self, name: str):
+    def checkNameAscii(self, name: str):
         """Function to check if name has only ascii characters.
 
         If not this functions trys to creat an ascii string. If this does not work the function returns False
@@ -389,7 +387,16 @@ class SCOSMPointExport(object):
         if len(new_name) < len(name) * threshold:
             return False
         else:
-            return new_name.replace("\n","_").replace(" ", "_")
+            return self.checkNameSpezialChar(new_name.replace("\n","_").replace(" ", "_"))
+    
+    def checkNameSpezialChar(self, name: str):
+        new_name: str = ""
+        for char in name:
+            if char == "_" or char.isalpha() or char.isnumeric():
+                new_name += char
+            else:
+                new_name += ""
+        return new_name
 
     def execTool(self):
         start_time = time.time()
@@ -415,7 +422,7 @@ class SCOSMPointExport(object):
                 if 'tags' in element:
                     if 'name' in element['tags']:
                         placeholder_name = element['tags']['name']
-                        check_name = self.check_name_ascii(placeholder_name)
+                        check_name = self.checkNameAscii(placeholder_name)
                         if check_name:
                             name = check_name
                 osm_id = str(element['type']) +"/"+ str(element['id'])
@@ -461,7 +468,7 @@ class SCOSMPointExport(object):
         layerFields.append(QgsField('name', QVariant.String))   
         layerFields.append(QgsField('value', QVariant.Int))  
         layerFields.append(QgsField('boundary', QVariant.Double))  
-        layerFields.append(QgsField('id_subcat', QVariant.Int))     
+        layerFields.append(QgsField('id_subcat', QVariant.Int)) 
         
         writer = QgsVectorFileWriter(filename, 'UTF-8', layerFields, QgsWkbTypes.Point, QgsCoordinateReferenceSystem(self.dialog.crs), 'ESRI Shapefile')
         feat = QgsFeature()
