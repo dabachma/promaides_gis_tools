@@ -30,7 +30,7 @@ from .cin_polygon import CINPolygonExport
 from .cin_connector_automatic import CINConnectorExportAuto
 from .cin_osm_ci_point_export import OSMCINPointExport
 from .sc_osm_point_export import SCOSMPointExport
-
+from .weather_tansfer import WeatherTransfer
 
 from qgis.PyQt.QtCore import *
 from qgis.PyQt.QtGui import *
@@ -75,6 +75,8 @@ class PromaidesToolbox(object):
         self.river_profile_exprt = RiverProfileExport(self.iface)
         self.dem_export = DEMExport(self.iface)
         self.time = TimeViewer(self.iface)
+        self.weather_transfer = WeatherTransfer(self.iface)
+
         #HAZ
         self.rain = RainGenerator(self.iface)
         self.storm_export = StormExport(self.iface)
@@ -101,14 +103,30 @@ class PromaidesToolbox(object):
     def initGui(self):
         """
         """
-        self.plugin_menu = QMenu('ProMaIDes Toolbox', self.iface.mainWindow())
-        #Add a sub-menu
-        self.submenu_general = self.plugin_menu.addMenu('General')
-        self.submenu_haz = self.plugin_menu.addMenu('HAZ')
-        self.submenu_hyd = self.plugin_menu.addMenu('HYD')
-        self.submenu_dam = self.plugin_menu.addMenu('DAM')
+        #self.plugin_menu = QMenu('ProMaIDes Toolbox', self.iface.mainWindow())
+        #add a menu in QGIS at the last position
+        self.menu = QMenu("h2_Tools", self.iface.mainWindow().menuBar())
+        actions = self.iface.mainWindow().menuBar().actions()
+        lastAction = actions[-1]
+        self.iface.mainWindow().menuBar().insertMenu(lastAction, self.menu)
 
+        # Add a submenu to choose promaides or loflodes
+        self.submenu_pro = self.menu.addMenu('ProMaIDes')
+        self.submenu_lof = self.menu.addMenu('LoFloDes')
 
+        #Add a sub-menu for ProMaIDes
+        self.submenu_general = self.submenu_pro.addMenu('General')
+        self.submenu_haz = self.submenu_pro.addMenu('HAZ')
+        self.submenu_hyd = self.submenu_pro.addMenu('HYD')
+        self.submenu_dam = self.submenu_pro.addMenu('DAM')
+
+        #Add a sub-menu for LoFloDes
+        self.submenu_general_lof = self.submenu_lof.addMenu('General')
+        self.submenu_haz_lof = self.submenu_lof.addMenu('HAZ')
+        self.submenu_hyd_lof = self.submenu_lof.addMenu('HYD')
+        self.submenu_dam_lof = self.submenu_lof.addMenu('DAM')
+
+        #for ProMaIDes Submenu
         #Add and connect to functions in other .py-files
         #HYD
 
@@ -152,12 +170,49 @@ class PromaidesToolbox(object):
 
 
         #Add about
-        self.plugin_menu.addAction('About', self.showAbout)
-        self.iface.pluginMenu().addMenu(self.plugin_menu)
+        self.submenu_pro.addAction('About', self.showAbout)
+        #self.iface.pluginMenu().addMenu(self.plugin_menu)
+
+        # for LoFloDes Submenu
+        # Add and connect to functions in other .py-files
+        # HYD
+
+        self.observationpoint_exprt.initGui(self.submenu_hyd_lof)
+        self.submenu_hyd_lof.addSeparator()
+
+        self.crosssection.initGui(self.submenu_hyd_lof)
+        self.densify.initGui(self.submenu_hyd_lof)
+
+        self.river_profile_exprt.initGui(self.submenu_hyd_lof)
+        self.submenu_hyd_lof.addSeparator()
+        self.dem_export.initGui(self.submenu_hyd_lof)
+        self.polygon_exprt.initGui(self.submenu_hyd_lof)
+        self.submenu_hyd_lof.addSeparator()
+        self.coastline_exprt.initGui(self.submenu_hyd_lof)
+        self.submenu_hyd_lof.addSeparator()
+        self.time.initGui(self.submenu_hyd_lof)
+
+        # HAZ
+
+
+        # DAM
+
+
+        # General
+        self.hello_world.initGui(self.submenu_general_lof)
+        self.quick_visualize.initGui(self.submenu_general_lof)
+        self.db_exprt.initGui(self.submenu_general_lof)
+
+        # Add about
+        self.submenu_lof.addAction('About', self.showAbout)
+        # self.iface.pluginMenu().addMenu(self.plugin_menu)
+
+
 
     def unload(self):
         """
         """
+        #ProMaIDes
         #HYD
         self.dikeline_exprt.unload(self.submenu_hyd)
         self.observationpoint_exprt.unload(self.submenu_hyd)
@@ -191,8 +246,32 @@ class PromaidesToolbox(object):
         self.db_exprt.unload(self.submenu_general)
         self.hello_world.unload(self.submenu_general)
         self.quick_visualize.unload(self.submenu_general)
-        
-        self.iface.pluginMenu().removeAction(self.plugin_menu.menuAction())
+
+        #LoFloDes
+        #HYD
+        self.observationpoint_exprt.unload(self.submenu_hyd_lof)
+        self.crosssection.unload(self.submenu_hyd_lof)
+        self.densify.unload(self.submenu_hyd_lof)
+
+        self.river_profile_exprt.unload(self.submenu_hyd_lof)
+        self.dem_export.unload(self.submenu_hyd_lof)
+        self.polygon_exprt.unload(self.submenu_hyd_lof)
+        self.coastline_exprt.unload(self.submenu_hyd_lof)
+        self.time.unload(self.submenu_hyd_lof)
+
+        # HAZ
+
+
+        # DAM
+
+
+        # General
+        self.hello_world.unload(self.submenu_general)
+        self.quick_visualize.unload(self.submenu_general)
+        self.db_exprt.unload(self.submenu_general)
+
+
+        #self.iface.pluginMenu().removeAction(self.plugin_menu.menuAction())
 
     def showAbout(self):
         about = open(os.path.join(BASE_DIR, 'ABOUT.html')).read().format(version='.'.join(map(str, VERSION)))
