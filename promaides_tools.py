@@ -182,8 +182,8 @@ class PromaidesToolbox(object):
 
         self.crosssection.initGui(self.submenu_hyd_lof)
         self.densify.initGui(self.submenu_hyd_lof)
-
         self.river_profile_exprt.initGui(self.submenu_hyd_lof)
+        self.weather_transfer.initGui(self.submenu_hyd_lof)
         self.submenu_hyd_lof.addSeparator()
         self.dem_export.initGui(self.submenu_hyd_lof)
         self.polygon_exprt.initGui(self.submenu_hyd_lof)
