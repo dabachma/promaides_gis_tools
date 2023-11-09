@@ -185,10 +185,6 @@ class PromaidesToolbox(object):
         self.river_profile_exprt.initGui(self.submenu_hyd_lof)
         self.weather_transfer.initGui(self.submenu_hyd_lof)
         self.submenu_hyd_lof.addSeparator()
-        self.dem_export.initGui(self.submenu_hyd_lof)
-        self.polygon_exprt.initGui(self.submenu_hyd_lof)
-        self.submenu_hyd_lof.addSeparator()
-        self.coastline_exprt.initGui(self.submenu_hyd_lof)
         self.submenu_hyd_lof.addSeparator()
         self.time.initGui(self.submenu_hyd_lof)
 
@@ -252,11 +248,8 @@ class PromaidesToolbox(object):
         self.observationpoint_exprt.unload(self.submenu_hyd_lof)
         self.crosssection.unload(self.submenu_hyd_lof)
         self.densify.unload(self.submenu_hyd_lof)
-
         self.river_profile_exprt.unload(self.submenu_hyd_lof)
-        self.dem_export.unload(self.submenu_hyd_lof)
-        self.polygon_exprt.unload(self.submenu_hyd_lof)
-        self.coastline_exprt.unload(self.submenu_hyd_lof)
+        self.weather_transfer.unload(self.submenu_hyd_lof)
         self.time.unload(self.submenu_hyd_lof)
 
         # HAZ
