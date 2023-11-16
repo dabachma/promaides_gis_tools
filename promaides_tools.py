@@ -107,9 +107,17 @@ class PromaidesToolbox(object):
         """
         #self.plugin_menu = QMenu('ProMaIDes Toolbox', self.iface.mainWindow())
         #add a menu in QGIS at the last position
-        self.menu = QMenu("h2_Tools", self.iface.mainWindow().menuBar())
+
+        self.menu = QMenu("h2_Tools", self.iface.mainWindow().menuBar()) 
+        
         actions = self.iface.mainWindow().menuBar().actions()
-        lastAction = actions[-1]
+
+        #Cleanup
+        residual_menus = [a for a in actions if a.text() == "h2_Tools"]
+        for menu in residual_menus:
+            self.iface.mainWindow().menuBar().removeAction(menu)
+            
+        lastAction = actions[-1]                       
         self.iface.mainWindow().menuBar().insertMenu(lastAction, self.menu)
 
         # Add a submenu to choose promaides or loflodes
@@ -188,10 +196,6 @@ class PromaidesToolbox(object):
         self.river_profile_exprt.initGui(self.submenu_hyd_lof)
         self.weather_transfer.initGui(self.submenu_hyd_lof)
         self.submenu_hyd_lof.addSeparator()
-        self.dem_export.initGui(self.submenu_hyd_lof)
-        self.polygon_exprt.initGui(self.submenu_hyd_lof)
-        self.submenu_hyd_lof.addSeparator()
-        self.coastline_exprt.initGui(self.submenu_hyd_lof)
         self.submenu_hyd_lof.addSeparator()
         self.time.initGui(self.submenu_hyd_lof)
         self.regular_industry_actors.initGui(self.submenu_hyd_lof)
@@ -257,9 +261,6 @@ class PromaidesToolbox(object):
         self.densify.unload(self.submenu_hyd_lof)
 
         self.river_profile_exprt.unload(self.submenu_hyd_lof)
-        self.dem_export.unload(self.submenu_hyd_lof)
-        self.polygon_exprt.unload(self.submenu_hyd_lof)
-        self.coastline_exprt.unload(self.submenu_hyd_lof)
         self.time.unload(self.submenu_hyd_lof)
         self.regular_industry_actors.unload(self.submenu_hyd_lof)
         # HAZ

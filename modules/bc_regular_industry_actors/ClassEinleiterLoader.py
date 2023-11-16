@@ -18,7 +18,7 @@ except:
 
 
 HEADERS = Enum("Header",["id","lat","long","ew_120L","abflussjahr_m3","constantabfluss_Ls","filepath_patterndaily","filepath_patternweekly","boundarycondition"])
-HEADERS_pretty = Enum("Header",["Id","Latitude","Longitude","EW(120L)","Jahresabfluss m3","Constantabfluss L/s","Filepath daily pattern","Filepath weekly pattern","Boundary condition index"])
+HEADERS_pretty = Enum("Header",["Id","Latitude","Longitude","Population Equivalent(120L)","Yearly discharge m3","Constant discharge L/s","Filepath daily pattern","Filepath weekly pattern","Boundary condition index"])
 
 
 @dataclass
