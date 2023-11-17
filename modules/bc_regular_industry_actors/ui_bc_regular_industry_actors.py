@@ -130,8 +130,8 @@ class RegularIndustryActors(object):
         iv = input_vals = InputValues(
             fp_import_industry = self.dialog.import_filename_industry.text().strip(),
             fp_import_inflows = self.dialog.import_filename_inflows.text().strip(),
-            date_begin = datetime.datetime.strptime(self.dialog.datebegin.text(), date_format),
-            date_end = datetime.datetime.strptime(self.dialog.dateend.text(), date_format),
+            date_begin = self.dialog.datebegin.dateTime().toPyDateTime(),
+            date_end = self.dialog.dateend.dateTime().toPyDateTime(),
             fp_output_bc = self.dialog.export_filename.text().strip()
         )
         #Check
