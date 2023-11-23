@@ -53,6 +53,24 @@ def bc_to_text(hours : list[int], abflüsse : list[float], bc : int, comment : s
     return text
 
 
+def get_zufluss_file_lines(path : str) -> list[str]:
+    """
+    Reads the manually created boundary condition file for inflows
+    """
+    data : list[str] = []
+    ls : list[str]
+
+    for encoding in ["utf-8","cp1252"]: #Try different encodings...
+        with open(path, "r", encoding = encoding) as f:
+            try:
+                ls = f.readlines()
+                break
+            except:
+                f.seek(0)
+                continue
+    data = [l.rstrip().replace('\t'," ").replace("\\t", " ") for l in ls]
+    return data
+
 
 def read_zufluss_file(lines : list[str], datum_time : datetime.datetime) -> dict[int, list[pandas.Series]]:
     """
@@ -101,16 +119,13 @@ def generate_boundary_conditions_text(inflows : dict[int, list[pandas.Series]], 
     """
     Generates the boundary condition file for each bc:int, summing up the timestamped series of flow values.
     The units must agree (L/s)
+    Returns an iterator to save memory.
     """
-    text = ""
-
     for bc, series_list in inflows.items():
         combined_series = tools.sum_timestamped_series(series = series_list)
         hours, values = tools.timestamp_to_hourlists(combined_series, datum = datum)
         sub_text = bc_to_text(hours = hours, abflüsse = values, bc = bc, comment = f"BC {bc}. Sum of {len(series_list)} different inflows.")
-        text += sub_text
-
-    return text
+        yield sub_text
 
 def generate_boundary_conditions(path_einleiter_data : str,
                                 path_zuflusse_Ls : str,
@@ -153,10 +168,7 @@ def generate_boundary_conditions(path_einleiter_data : str,
     
 
     #Get Zufluss boundary conditions
-    data : list[str] = []
-    with open(path_zuflusse_Ls, "r") as f:
-        ls = f.readlines()
-        data = [l.rstrip() for l in ls]
+    data = get_zufluss_file_lines(path = path_zuflusse_Ls)
     bc_zuflusse : dict[int, list[pandas.Series]] = read_zufluss_file(lines = data, datum_time = date_begin)
 
 
@@ -190,11 +202,12 @@ def generate_boundary_conditions(path_einleiter_data : str,
         el_series = bc_einleiter.get(bc, [])
         bc_inflows[bc] = zf_series + el_series
 
-
-    text = generate_boundary_conditions_text(inflows = bc_inflows, datum = date_begin)
-
     with open(path_save_to, "w") as f:
-        f.write(text)
+        f.write("\n")
+    
+    with open(path_save_to, "a") as fa:
+        for text in generate_boundary_conditions_text(inflows = bc_inflows, datum = date_begin):
+            fa.write(text)
 
     return True, errors
 

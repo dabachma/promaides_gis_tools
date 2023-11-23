@@ -217,6 +217,16 @@ def test_read_zufluss():
             ]
     result = BCE.read_zufluss_file(lines = file, datum_time = datetime.datetime(2022,5,5,1,0))
 
+def test_get_zufluss_lines():
+    """
+    Read a file that should be utf-8 with ' ' space as separator. But has \t as a separator instead
+    """
+    bad_utf8_tabs = pathlib.Path(BASEDIR).joinpath("tests_data/badly_formatted_inflows.txt").absolute().resolve().as_posix()
+    data = BCE.get_zufluss_file_lines(path = bad_utf8_tabs)
+    assert not "\t" in data
+
+    lines = BCE.read_zufluss_file(lines = data, datum_time = datetime.datetime(2022,5,5,1,0))
+
 def tests_tools():
     """
     Tests the closest crosssection available to an einleiter
@@ -251,11 +261,29 @@ def tests_tools():
     hours, values = tools.timestamp_to_hourlists(series = result, datum = datetime.datetime(2022,2,2,8))
     assert hours == [2, 5, 7, 9, 12, 15]
 
+
+    #Verify that big timestamps work
+    future = datetime.datetime(6544, 2, 2, 13, 45)
+    future_series = pandas.Series({future:1})
+    future_hourlist, values = tools.timestamp_to_hourlists(series = future_series, datum = datetime.datetime(2000,1,1))
+    assert  future_hourlist[0] > (6544-2000)*365*24
+
+def test_generate_boundary_conditions_text():
+    datum_base = datetime.datetime(2000,1,1,12,45)
+    future = datetime.datetime(6544, 2, 2, 13, 45)
+    future_series = pandas.Series({future:100})
+    empty_series = pandas.Series()
+
+    inflows = {}
+    inflows[5] = [future_series, empty_series]
+    result = BCE.generate_boundary_conditions_text(inflows = inflows, datum = datum_base)
+
 def tests():
     tests_ClassWaterPatterns()
     tests_ClassEinleiter()
     tests_ClassEinleiterLoader()
     tests_tools()
+    test_get_zufluss_lines()
     test_read_zufluss()
     tests_BoundaryConditionEinleiter()
 

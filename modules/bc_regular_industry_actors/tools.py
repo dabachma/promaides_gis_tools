@@ -1,4 +1,6 @@
 import datetime
+from typing import Union
+import numpy
 import pandas
 from qgis.core import QgsVectorLayer
 
@@ -16,6 +18,14 @@ def find_closest_river_profiles_id(einleiter : QgsVectorLayer, xsections : QgsVe
     """
     return {}
 
+def index_to_datetime(index : pandas.Index) -> Union[numpy.ndarray, list[datetime.datetime]]:
+    if numpy.issubdtype(index.dtype, numpy.datetime64) :
+        datetimes = index.to_pydatetime()
+    elif isinstance(index, pandas.DatetimeIndex):
+        datetimes = index.to_pydatetime()
+    else:
+        datetimes = index.values
+    return datetimes
 
 #TODO
 def sum_timestamped_series(series : list[pandas.Series]) -> pandas.Series:
@@ -44,7 +54,9 @@ def sum_timestamped_series(series : list[pandas.Series]) -> pandas.Series:
     #Finding all the indexes
     indices : set[datetime.datetime] = set()
     for s in series:
-        indices.update(s.index.to_list())
+        mod_index = index_to_datetime(index = s.index)
+        indices.update(mod_index)
+
     indices = sorted(list(indices))
     values = [0 for n in range(len(indices))]
     
@@ -68,14 +80,17 @@ def sum_timestamped_series(series : list[pandas.Series]) -> pandas.Series:
 def timestamp_to_hourlists(series : pandas.Series, datum : datetime.datetime) -> tuple[list[int], list[float]]:
     """
     Turns a Series with timestamp index into a list of hours and list of values.
+    pandas Timestamps cant go farther than 2200y so we try to convert them to python datetime objects
     """
-    diff : datetime.timedelta = series.index - datum
-    days, seconds = diff.days, diff.seconds,
+    datetimes = index_to_datetime(series.index)
+        
+    diffs : list[datetime.timedelta] = datetimes - datum
+    days, seconds = numpy.array(list(zip(*[[d.days, d.seconds] for d in diffs])))
     hours = days * 24 + seconds // 3600  
     
     values = series.values.tolist()
 
-    return hours.to_list(), values
+    return hours.tolist(), values
 
 if __name__ == "__main__":
 
