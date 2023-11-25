@@ -526,7 +526,7 @@ class PluginDialog(QDockWidget):
         canvas = iface.mapCanvas()
         canvas.waitWhileRendering()
         self.iface.mapCanvas().renderComplete.connect(self.renderLabel)
-        QTimer.singleShot(FPS, self.play2)
+        QTimer.singleShot(int(FPS), self.play2)
 
     def play2(self):
         global count
