@@ -8,7 +8,7 @@ import webbrowser
 
 # QGIS modules 
 import PyQt5
-from attr import dataclass
+from dataclasses import dataclass
 from qgis.core import *
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import *
