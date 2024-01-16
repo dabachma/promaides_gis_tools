@@ -3,7 +3,7 @@
 
 from dataclasses import dataclass, field
 import datetime
-
+from typing import List
 import numpy
 
 @dataclass()
@@ -72,7 +72,7 @@ class PatternHolder:
                  * self.weekly.get_value(fraction=weekday/7)
                  )
     
-    def get_factors (self, dates : list[datetime.datetime])-> numpy.ndarray:
+    def get_factors (self, dates : List[datetime.datetime])-> numpy.ndarray:
         """
         Takes a list of dates and returns a list of factors related to that dates
         """

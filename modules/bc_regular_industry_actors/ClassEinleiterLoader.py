@@ -6,6 +6,7 @@ import pathlib
 import numpy
 import csv
 from enum import Enum
+from typing import List, Tuple, Dict
 
 import pandas
 
@@ -30,18 +31,18 @@ class EinleiterLoader:
     path_csv : str    
     
     #Saving the loaded paths
-    _pattern_paths : dict[str, Pattern] = field(init=False, default_factory=dict)
+    _pattern_paths : Dict[str, Pattern] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
         self._csv_basefolder = pathlib.Path(self.path_csv).parent.absolute().resolve().as_posix()
 
 
-    def get_contents(self)-> list[str]:
+    def get_contents(self)-> List[str]:
         """
         Gets the contents of the Einleiter file
         """
 
-        line_split : list[list[str]]
+        line_split : List[List[str]]
 
         #CSV
         with open(self.path_csv, 'r') as f:
@@ -72,7 +73,8 @@ class EinleiterLoader:
         Reads a pattern from a csv in the form of 1\n4.2\n0.2\n.1 ...
         Checks against length
         """
-        r : list[float]
+        r : List[float]
+        
         with open(pattern_path, "r") as f:
             r = f.readlines()
 
@@ -80,8 +82,7 @@ class EinleiterLoader:
         p = Pattern(factor = numpy.array([float(v) for v in r]), length = length)
         return p
 
-
-    def import_einleiter(self) -> list[Einleiter]:
+    def import_einleiter(self) -> List[Einleiter]:
         """
         Imports the einleiter from the csv.        
         """

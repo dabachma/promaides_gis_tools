@@ -5,6 +5,7 @@ import datetime
 import pathlib
 from matplotlib.backend_tools import ToolSetCursor
 import pandas
+from typing import List, Tuple, Dict
 
 from qgis.core import QgsVectorLayer
 
@@ -35,7 +36,7 @@ def get_database_table(connection_params)->pandas.DataFrame:
 
 
 
-def bc_to_text(hours : list[int], abflüsse : list[float], bc : int, comment : str = "", precision : int = 6)->str:
+def bc_to_text(hours : List[int], abflüsse : List[float], bc : int, comment : str = "", precision : int = 6)->str:
     """
     Abflüsse and Stunden into the boundary condition format
     bc: boundary condition number, has to be continuous
@@ -53,12 +54,12 @@ def bc_to_text(hours : list[int], abflüsse : list[float], bc : int, comment : s
     return text
 
 
-def get_zufluss_file_lines(path : str) -> list[str]:
+def get_zufluss_file_lines(path : str) -> List[str]:
     """
     Reads the manually created boundary condition file for inflows
     """
-    data : list[str] = []
-    ls : list[str]
+    data : List[str] = []
+    ls : List[str]
 
     for encoding in ["utf-8","cp1252"]: #Try different encodings...
         with open(path, "r", encoding = encoding) as f:
@@ -72,16 +73,16 @@ def get_zufluss_file_lines(path : str) -> list[str]:
     return data
 
 
-def read_zufluss_file(lines : list[str], datum_time : datetime.datetime) -> dict[int, list[pandas.Series]]:
+def read_zufluss_file(lines : List[str], datum_time : datetime.datetime) -> Dict[int, List[pandas.Series]]:
     """
     Reads the txt file with the !BEGIN and !END values for the hours and turns it into a time series
     datum_time: datetime object with hour precision. The hours from the beginning will be summed up to this one
     """
     data = lines    
-    bc_series : dict[int, list[pandas.Series]] = {}
+    bc_series : Dict[int, List[pandas.Series]] = {}
 
     #find the pairs of !BEGIN and !END
-    pairs : list[tuple[int,int]] = []
+    pairs : List[Tuple[int,int]] = []
     i,j = 0,0
     for n, line in enumerate(data):
         if line.startswith("!BEGIN"):   i = n
@@ -106,7 +107,7 @@ def read_zufluss_file(lines : list[str], datum_time : datetime.datetime) -> dict
     return bc_series
     
 
-def einleiter_to_qgsvectorlayer(einleiter : list[Einleiter]) -> QgsVectorLayer:
+def einleiter_to_qgsvectorlayer(einleiter : List[Einleiter]) -> QgsVectorLayer:
     """
     #TODO
     Takes a list of Einleiter and returns a QgsVectorLayer
@@ -115,7 +116,7 @@ def einleiter_to_qgsvectorlayer(einleiter : list[Einleiter]) -> QgsVectorLayer:
 
 
 
-def generate_boundary_conditions_text(inflows : dict[int, list[pandas.Series]], datum : datetime.datetime) -> str:
+def generate_boundary_conditions_text(inflows : Dict[int, List[pandas.Series]], datum : datetime.datetime) -> str:
     """
     Generates the boundary condition file for each bc:int, summing up the timestamped series of flow values.
     The units must agree (L/s)
@@ -134,7 +135,7 @@ def generate_boundary_conditions(path_einleiter_data : str,
                                 einleiter_col : str = "EL_id",  #TODO Not implemented
                                 xsections : QgsVectorLayer = None,
                                 xsections_col : str = "profile_glob_id"
-                                ) -> tuple[bool, list[str]]:
+                                ) -> Tuple[bool, List[str]]:
     """
     Takes the necessary data to generate the boundary condition file for the Einleiter/Entnehmer and generates it.
     path_einleiter_data : csv file with a specific order. Check documentation.
@@ -169,7 +170,7 @@ def generate_boundary_conditions(path_einleiter_data : str,
 
     #Get Zufluss boundary conditions
     data = get_zufluss_file_lines(path = path_zuflusse_Ls)
-    bc_zuflusse : dict[int, list[pandas.Series]] = read_zufluss_file(lines = data, datum_time = date_begin)
+    bc_zuflusse : Dict[int, List[pandas.Series]] = read_zufluss_file(lines = data, datum_time = date_begin)
 
 
     #Get Einleiter boundary conditions
@@ -179,9 +180,9 @@ def generate_boundary_conditions(path_einleiter_data : str,
     #Get the profile index associated to each Einleiter. Get the Boundary condition index associated with each profile
     einleiter_qgis = einleiter_to_qgsvectorlayer(einleiter = einleiters)
     profile_index = tools.find_closest_river_profiles_id(einleiter = einleiter_qgis, xsections = xsections, einleiter_col = einleiter_col, xsections_col = xsections_col)
-    boundary_index_profile : dict[PROFILE_INDEX, BC_INDEX] = {}
+    boundary_index_profile : Dict[PROFILE_INDEX, BC_INDEX] = {}
 
-    bc_einleiter : dict[int, list[pandas.Series]] = {}
+    bc_einleiter : Dict[int, List[pandas.Series]] = {}
     for num, einleiter in enumerate(einleiters):
         #Get Abflüße
         abf = einleiter.estimate_abfluss(dates = dates)
@@ -194,7 +195,7 @@ def generate_boundary_conditions(path_einleiter_data : str,
         
     
     #Boundary conditions and time series
-    bc_inflows : dict[int, list[pandas.Series]] = {}
+    bc_inflows : Dict[int, List[pandas.Series]] = {}
 
     #Sum the timeseries
     for bc in set.union(set(bc_zuflusse.keys()), (bc_einleiter.keys())):

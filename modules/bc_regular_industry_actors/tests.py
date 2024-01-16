@@ -4,7 +4,7 @@
 
 import datetime
 import pathlib
-from typing import Callable
+from typing import Callable, List, Tuple, Dict
 
 import numpy
 import pandas
@@ -58,7 +58,7 @@ def tests_ClassWaterPatterns():
 
 
 def tests_ClassEinleiter():
-    data = dict(id = "HSMD", lat_long = (54.004, 11.4422), )
+    data = Dict(id = "HSMD", lat_long = (54.004, 11.4422), )
     obj1 = Einleiter(**data, abf_constant_L_s= 100, patterns = PatternHolder()) #default pttern
     obj2 = Einleiter(**data, abf_constant_L_s= 100, patterns = PatternHolder(weekly=PatternWeekly(factor = [1,1,1,1,1,0,0]))) #default pttern
 
@@ -135,7 +135,7 @@ def tests_BoundaryConditionEinleiter():
     
     
     #Check that the generated file is correct
-    lines : list[str]
+    lines : List[str]
     with open(path_save_to, "r") as f:
         ls = f.readlines()
         lines = [l.rstrip() for l in ls]
@@ -147,7 +147,7 @@ def tests_BoundaryConditionEinleiter():
 
 
 
-def create_xsections_einleiter() -> tuple[QgsVectorLayer, QgsVectorLayer]:
+def create_xsections_einleiter() -> Tuple[QgsVectorLayer, QgsVectorLayer]:
     """
     Example QgsVectorLayers for testing. Returns XSections, Einleiter.
     Einleiter with EL_id 3 is closer to xsection with profile_glob_id 1
