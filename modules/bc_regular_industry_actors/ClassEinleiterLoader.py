@@ -93,10 +93,16 @@ class EinleiterLoader:
             """
             Returns the calculated constant abfluss in L/s
             """
-            if bool(constantls := einleiter[HEADERS.constantabfluss_Ls.name]): return float(constantls)
-            elif bool(jahrm3 := einleiter[HEADERS.abflussjahr_m3.name]): return float(jahrm3)*1000/365.25/24/3600
-            elif bool(ew120 := einleiter[HEADERS.ew_120L.name]): return float(ew120)/24/3600
-            else: return 0.0
+            constantls = einleiter[HEADERS.constantabfluss_Ls.name]
+            if bool(constantls): return float(constantls)
+            
+            jahrm3 = einleiter[HEADERS.abflussjahr_m3.name]
+            if bool(jahrm3): return float(jahrm3)*1000/365.25/24/3600
+            
+            ew120 = einleiter[HEADERS.ew_120L.name]
+            if bool(ew120): return float(ew120)/24/3600
+            
+            return 0.0
 
         created_einleiters = []
         for r, row in df.iterrows():
