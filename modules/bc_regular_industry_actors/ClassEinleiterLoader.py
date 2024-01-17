@@ -100,7 +100,7 @@ class EinleiterLoader:
             if bool(jahrm3): return float(jahrm3)*1000/365.25/24/3600
             
             ew120 = einleiter[HEADERS.ew_120L.name]
-            if bool(ew120): return float(ew120)/24/3600
+            if bool(ew120): return float(ew120)*120/24/3600
             
             return 0.0
 
