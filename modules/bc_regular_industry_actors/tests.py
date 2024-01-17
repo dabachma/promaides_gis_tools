@@ -58,7 +58,7 @@ def tests_ClassWaterPatterns():
 
 
 def tests_ClassEinleiter():
-    data = Dict(id = "HSMD", lat_long = (54.004, 11.4422), )
+    data = dict(id = "HSMD", lat_long = (54.004, 11.4422), )
     obj1 = Einleiter(**data, abf_constant_L_s= 100, patterns = PatternHolder()) #default pttern
     obj2 = Einleiter(**data, abf_constant_L_s= 100, patterns = PatternHolder(weekly=PatternWeekly(factor = [1,1,1,1,1,0,0]))) #default pttern
 
