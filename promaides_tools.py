@@ -32,6 +32,7 @@ from .cin_osm_ci_point_export import OSMCINPointExport
 from .sc_osm_point_export import SCOSMPointExport
 from .weather_tansfer import WeatherTransfer
 from .modules.bc_regular_industry_actors.ui_bc_regular_industry_actors import RegularIndustryActors
+from .river_temp_export import RiverTempExport
 
 from qgis.PyQt.QtCore import *
 from qgis.PyQt.QtGui import *
@@ -78,6 +79,7 @@ class PromaidesToolbox(object):
         self.time = TimeViewer(self.iface)
         self.weather_transfer = WeatherTransfer(self.iface)
         self.regular_industry_actors = RegularIndustryActors(self.iface)
+        self.river_temp_export = RiverTempExport(self.iface)
 
         #HAZ
         self.rain = RainGenerator(self.iface)
@@ -194,6 +196,7 @@ class PromaidesToolbox(object):
         self.crosssection.initGui(self.submenu_hyd_lof)
         self.densify.initGui(self.submenu_hyd_lof)
         self.river_profile_exprt.initGui(self.submenu_hyd_lof)
+        self.river_temp_export.initGui(self.submenu_hyd_lof)
         self.weather_transfer.initGui(self.submenu_hyd_lof)
         self.submenu_hyd_lof.addSeparator()
         self.submenu_hyd_lof.addSeparator()
@@ -261,6 +264,7 @@ class PromaidesToolbox(object):
         self.densify.unload(self.submenu_hyd_lof)
 
         self.river_profile_exprt.unload(self.submenu_hyd_lof)
+        self.river_temp_export.unload(self.submenu_hyd_lof)
         self.time.unload(self.submenu_hyd_lof)
         self.regular_industry_actors.unload(self.submenu_hyd_lof)
         # HAZ
