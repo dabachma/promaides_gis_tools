@@ -32,6 +32,7 @@ from .cin_osm_ci_point_export import OSMCINPointExport
 from .sc_osm_point_export import SCOSMPointExport
 from .weather_tansfer import WeatherTransfer
 from .modules.bc_regular_industry_actors.ui_bc_regular_industry_actors import RegularIndustryActors
+from .land_classification import LandClassificationTool
 from .river_temp_export import RiverTempExport
 
 from qgis.PyQt.QtCore import *
@@ -79,6 +80,7 @@ class PromaidesToolbox(object):
         self.time = TimeViewer(self.iface)
         self.weather_transfer = WeatherTransfer(self.iface)
         self.regular_industry_actors = RegularIndustryActors(self.iface)
+        self.land_classification = LandClassificationTool(self.iface)
         self.river_temp_export = RiverTempExport(self.iface)
 
         #HAZ
@@ -202,6 +204,7 @@ class PromaidesToolbox(object):
         self.submenu_hyd_lof.addSeparator()
         self.time.initGui(self.submenu_hyd_lof)
         self.regular_industry_actors.initGui(self.submenu_hyd_lof)
+        self.land_classification.initGui(self.submenu_hyd_lof)
         # HAZ
 
 
@@ -267,6 +270,8 @@ class PromaidesToolbox(object):
         self.river_temp_export.unload(self.submenu_hyd_lof)
         self.time.unload(self.submenu_hyd_lof)
         self.regular_industry_actors.unload(self.submenu_hyd_lof)
+        self.land_classification.unload(self.submenu_hyd_lof)
+        
         # HAZ
 
 
