@@ -58,7 +58,7 @@ def pseudodelete_raster(path :str) -> None:
                                             width = 1,
                                             height = 1,
                                             extent = QgsRectangle(0,0,1,1),
-                                            crs = QgsCoordinateReferenceSystem(25832),
+                                            crs = QgsCoordinateReferenceSystem.fromEpsgId(25832),
                                             )
     provider.setNoDataValue(1, -1)
     provider.setEditable(True)
@@ -89,10 +89,10 @@ def free_memory_vlayer(vlayer : QgsVectorLayer, context : QgsProcessingContext =
     """
     vlayer_path = vlayer.publicSource()
     try:
-        print("Deleting cache file at {}".format(vlayer_path))
+        # print("Deleting cache file at {}".format(vlayer_path))
         with open(vlayer_path, "w"):
             pass
-        print("--Successfully deleted {}".format(vlayer_path))
+        # print("--Successfully deleted {}".format(vlayer_path))
         return True
     except Exception as e:
         warnings.warn("Tried to delete layer {} but couldnt...{}".format(vlayer_path, e))
@@ -121,7 +121,7 @@ def save_layer_gpkg(input : QgsVectorLayer, output : str, crs : QgsCoordinateRef
     save_result = QgsVectorFileWriter.writeAsVectorFormatV2(layer = input,
                                                     fileName = output, #simple path
                                                     transformContext = context,
-                                                    options = options
+                                                    options = options                                                    
                                                     )
     if save_result[0] != 0 : print("Error while saving:", layername, save_result)
     return input
@@ -181,16 +181,18 @@ def intersect_classification_naive (dem : QgsRasterLayer,
                                                         'OUTPUT' : QgsProcessingUtils.generateTempFilename('Contour.gpkg') },
                                                         context = context)["OUTPUT"]
     result_contour = QgsVectorLayer(result_contouro)
-    
+    result_contour.setCrs(dem.crs())
+
     #Intersection contours with subcatchments
-    vContourPolySc : QgsVectorLayer = processing.run("native:intersection", {'INPUT': result_contour,
-                                            'OVERLAY': subcatchments,
-                                            'INPUT_FIELDS':[],
-                                            'OVERLAY_FIELDS':subcatchments_columns,
-                                            'OVERLAY_FIELDS_PREFIX':PREFIX_SUBCATCHMENTS,
-                                            'OUTPUT': QgsProcessingUtils.generateTempFilename('ContourSc.gpkg')},
-                                            context = context
-                                            )["OUTPUT"]
+    vContourPolySc : str = processing.run("native:intersection", {'INPUT': result_contour,
+                                                                            'OVERLAY': subcatchments,
+                                                                            'INPUT_FIELDS':[],
+                                                                            'OVERLAY_FIELDS':subcatchments_columns,
+                                                                            'OVERLAY_FIELDS_PREFIX':PREFIX_SUBCATCHMENTS,
+                                                                            'OUTPUT': QgsProcessingUtils.generateTempFilename('ContourSc.gpkg')},
+                                                                            context = context
+                                                                            )["OUTPUT"]
+    crs = QgsVectorLayer(vContourPolySc, "ContourSc", "ogr").crs()#hack
     free_memory_vlayer(vlayer = result_contour, context = context)
     del result_contour
 
@@ -204,6 +206,7 @@ def intersect_classification_naive (dem : QgsRasterLayer,
                                                             context = context
                                                             )["OUTPUT"]
     vContourPolyScLU = QgsVectorLayer(vContourPolyScLUo)
+    vContourPolyScLU.setCrs(crs)
     
     free_memory_vlayer(vlayer = QgsVectorLayer(vContourPolySc), context = context)
     del vContourPolySc
@@ -215,15 +218,16 @@ def intersect_classification_naive (dem : QgsRasterLayer,
         vContourPolyScLU.dataProvider().deleteAttributes([idx])
 
     vContourPolyScLUKeyo = processing.run("qgis:fieldcalculator", {'INPUT':vContourPolyScLU,
-                                            'FIELD_NAME':ELEVATION_KEY,
-                                            'FIELD_TYPE':2, #str
-                                            'FIELD_LENGTH':80,
-                                            'FIELD_PRECISION':3,
-                                            'NEW_FIELD':True,
-                                            'FORMULA':f'concat( \"ELEV_max\" - {height_interval}, \'_\', \"ELEV_max\"  )',
-                                            'OUTPUT': QgsProcessingUtils.generateTempFilename('ContourScLuElev.gpkg')}
-                                            )["OUTPUT"]
+                                                                    'FIELD_NAME':ELEVATION_KEY,
+                                                                    'FIELD_TYPE':2, #str
+                                                                    'FIELD_LENGTH':80,
+                                                                    'FIELD_PRECISION':3,
+                                                                    'NEW_FIELD':True,
+                                                                    'FORMULA':f'concat( \"ELEV_max\" - {height_interval}, \'_\', \"ELEV_max\"  )',
+                                                                    'OUTPUT': QgsProcessingUtils.generateTempFilename('ContourScLuElev.gpkg')}
+                                                                    )["OUTPUT"]
     vContourPolyScLUKey = QgsVectorLayer(vContourPolyScLUKeyo)
+    
     
     free_memory_vlayer(vlayer = vContourPolyScLU, context = context)
     del vContourPolyScLU
@@ -279,8 +283,8 @@ def iterate_region(dem : QgsRasterLayer, subcatchments : QgsVectorLayer, land_us
     sub_grid : QgsVectorLayer
     for i, sub_grid in enumerate(grids):        
         rsub_demp = processing.run("gdal:warpreproject", {'INPUT': dem.source(),
-                                                              'SOURCE_CRS':None,
-                                                              'TARGET_CRS':None,
+                                                            #   'SOURCE_CRS':None,
+                                                            #   'TARGET_CRS':None,
                                                               'RESAMPLING':0,
                                                               'NODATA': numpy.nan,
                                                               'TARGET_RESOLUTION':None,
@@ -293,6 +297,7 @@ def iterate_region(dem : QgsRasterLayer, subcatchments : QgsVectorLayer, land_us
                                                               'OUTPUT': QgsProcessingUtils.generateTempFilename('subdem.tif')},
                                                                 context = context)["OUTPUT"]     
         rsub_dem = QgsRasterLayer(rsub_demp)
+        rsub_dem.setCrs(dem.crs())
 
 
         vsub_subcatchmentp = processing.run("native:clip", {'INPUT': subcatchments,
@@ -308,7 +313,7 @@ def iterate_region(dem : QgsRasterLayer, subcatchments : QgsVectorLayer, land_us
         vsub_subcatchment = QgsVectorLayer(vsub_subcatchmentp)
         vsub_land_use = QgsVectorLayer(vsub_land_usep)
         group = (rsub_dem, vsub_subcatchment, vsub_land_use, number_of_grids)
-        print("Subdivision {}: passing group {}".format(i, group))
+        # print("Subdivision {}: passing group {}".format(i, group))
         yield group
         
         free_memory_vlayer(vlayer = vsub_subcatchment, context=context)
@@ -375,7 +380,6 @@ def intersect_classification(dem : QgsRasterLayer,
                                                             land_use_column = land_use_column,
                                                             subcatchments_column = subcatchments_column,
                                                             keep_fid = True)
-            
             sub_results.append(sub_result)
             if callback is not None: callback(int(i/number_of_grids))
 
@@ -518,7 +522,6 @@ class PluginDialog(QDialog):
             try: self.mFieldComboBoxLU.setField("fid")
             except: pass        
         def set_band_1(*args,**kwargs):
-            print("rb fid")
             self.mRasterBandComboBox_demband.setLayer(*args,**kwargs)
             try: self.mRasterBandComboBox_demband.setBand(1)         
             except: pass
@@ -583,7 +586,7 @@ class PluginDialog(QDialog):
         self.mRasterBandComboBox_demband.setBand(-1)
 
         #---CLASSIFICATION EXPORT
-        self.button_help.clicked.connect(self.Help)
+        self.button_help_2.clicked.connect(self.Help)
         self.button_ok_CE.clicked.connect(self.button_ok_CE_clicked)
         self.export_browse_CE.clicked.connect(self.onBrowseExportButtonClicked)    
 
@@ -600,7 +603,7 @@ class PluginDialog(QDialog):
         
 
     def Help(self):
-        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-52/Hello-World")
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-95/")
 
     def __del__(self):
         pass
@@ -632,7 +635,7 @@ class PluginDialog(QDialog):
         output_filepath = self.output_filename.text()
         if output_filepath != "":
             if pathlib.Path(output_filepath).is_dir() : raise ValueError("Output filepath not valid because it is a folder! Enter a valid filepath")
-        print("Save to", output_filepath)
+        # print("Save to", output_filepath)
 
         grid_res = self.mQgsDoubleSpinBox_cellwidth.valueFromText(self.mQgsDoubleSpinBox_cellwidth.text())
         ignore_res = self.checkBox_cellwidth.isChecked()
@@ -724,5 +727,4 @@ class LandClassificationTool(object):
 
 
 if __name__ == "__main__":
-    test()
     pass
