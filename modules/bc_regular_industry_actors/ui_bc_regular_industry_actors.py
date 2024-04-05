@@ -35,7 +35,7 @@ class InputValues:
     fp_import_inflows: str
     date_begin : datetime.datetime
     date_end : datetime.datetime
-    fp_output_bc : str
+    fp_output_bc : str  
 
 class PluginDialog(QDialog):
 
@@ -54,7 +54,7 @@ class PluginDialog(QDialog):
         self.label_import_industry_columns.setText("; ".join([h.name for h in HEADERS_pretty]))
 
     def Help(self):
-        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-52/Hello-World")
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-96/")
 
     def __del__(self):
         pass
