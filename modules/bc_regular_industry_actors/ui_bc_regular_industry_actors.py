@@ -54,7 +54,7 @@ class PluginDialog(QDialog):
         self.label_import_industry_columns.setText("; ".join([h.name for h in HEADERS_pretty]))
 
     def Help(self):
-        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-96/")
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/LFDH-A-9/Regular-Industry-Actors")
 
     def __del__(self):
         pass

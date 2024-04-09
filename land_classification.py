@@ -603,7 +603,7 @@ class PluginDialog(QDialog):
         
 
     def Help(self):
-        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-95/")
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/LFDH-A-10/Land-classification-tools")
 
     def __del__(self):
         pass
