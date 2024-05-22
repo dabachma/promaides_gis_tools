@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import math
 import webbrowser
 import pandas as pd
+from datetime import datetime, timedelta
 
 # QGIS modules 
 from qgis.core import *
@@ -100,7 +101,7 @@ class WeatherTransfer(object):
         self.cancel = False
 
     #function for
-    def transfer(self, import_path, resolution,type , starttime, endtime, outputpath):
+    def transfer_dwd(self, import_path, resolution, type, starttime, endtime, outputpath):
         if type == 'humidity':
             df_name = pd.read_csv(import_path, sep=';', header=0, index_col=1, na_values='-99.9')
         elif type == 'radiation':
@@ -149,6 +150,68 @@ class WeatherTransfer(object):
         df_output = df_output.interpolate()
         df_output.to_csv(outputpath, sep=' ')
 
+    def transfer_wg(self, importpath, resolution, type, outputpath):
+        df_name = pd.read_csv(importpath, sep=',', header=0, index_col=0)
+        if resolution == 'hourly':
+            df_name['date'] = df_name['date'].astype(str)
+            df_name['date'] = df_name['date'].apply(lambda x: datetime.strptime(x, '%Y%m%d'))
+            #this is the reference date which must be editable by the user in published version
+            ref_date = datetime(5000, 1, 1, 0, 0, 0)
+            def hours_since_date(t):
+                return (t - ref_date).total_seconds() // 3600
+            df_name['hour'] = df_name['date'].apply(hours_since_date)
+            #this list contains the values for calculation hourly radiation (should be editable by the user)
+            perc_list_radiation = [0, 0, 0, 0, 0, 0, 0, 0.02, 0.03, 0.06, 0.08, 0.12, 0.15, 0.14, 0.12, 0.11, 0.08, 0.06, 0.02, 0.01, 0, 0, 0, 0]
+            perc_list_airtemp =  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            def spread_hourly(sub_series: pd.Series) -> pd.DataFrame:
+                hour: int = sub_series["hour"]
+                hours = [hour + index for index in range(24)]
+                if type == 'radiation':
+                    value = sub_series["GLOST"]*2.78
+                    values = [value * p for p in perc_list_radiation]
+                elif type == 'air temperature':
+                    value = sub_series["TEMP"]
+                    values = [value * p for p in perc_list_airtemp]
+                sub_df = pd.DataFrame({"hours": hours, "sub_value": values})
+                return sub_df
+
+            dfs = []
+            df_result =pd.DataFrame()
+            for r, row in df_name.iterrows():
+                sub_df = spread_hourly(row)
+                dfs.append(sub_df)
+            df_name = pd.concat(dfs)
+            if type == 'air temperature' and resolution == 'hourly':
+                perc_temp = pd.read_csv('C:/Users/uhalbrit/DryRivers/07_Code/promaides_gis_tools/perc_air_temp.csv', sep=',', index_col=0)
+                iterations = len(df_name) // len(perc_temp)
+                for i in range(iterations):
+                    start_idx = i * len(perc_temp)
+                    end_idx = start_idx + len(perc_temp)
+                    df_name_block = df_name.iloc[start_idx:end_idx]
+                    df_result_block = df_name_block * perc_temp.values
+                    df_result = pd.concat([df_result,df_result_block])
+                if len(df_name) % len(perc_temp) !=0:
+                    start_idx = iterations * len(perc_temp)
+                    df_name_block = df_name.iloc[start_idx:]
+                    df_perc_block = perc_temp.iloc[:len(df_name_block)]
+                    df_result_block = df_name_block * df_perc_block.values
+                    df_result = pd.concat([df_result,df_result_block])
+                df_result += 273.15
+                df_name = df_result.reset_index(drop=True)
+            df_output = df_name['sub_value'].reset_index(drop=True)
+
+        elif resolution == 'daily':
+            df_output = df_name.index * 24
+            if type == 'wind':
+                df_output = df_name['WIND']
+            elif type == 'radiation':
+                df_output = df_name['GLOST'] * (2.78)
+            elif type == 'air temperature':
+                df_output = df_name['TEMP']+273.15
+            elif type == 'humidity':
+                df_output = df_name['LUFEU'] /100
+        df_output.to_csv(outputpath, sep=' ')
+        return df_output
     #Execution of the tool by "ok" button
     def execTool(self):
         #define the input data
@@ -172,7 +235,8 @@ class WeatherTransfer(object):
         start_value = value.toString("yyyy-MM-dd HH:mm:ss")
         value = self.dialog.end_date.dateTime()
         end_value = value.toString("yyyy-MM-dd HH:mm:ss")
-
-        self.transfer(importpath, resolution,type,start_value,end_value, outputpath)
-
+        if self.dialog.dwd_box.isChecked():
+            self.transfer_dwd(importpath, resolution, type, start_value, end_value, outputpath)
+        elif self.dialog.wg_box.isChecked():
+            self.transfer_wg(importpath,resolution,type,outputpath)
         self.quitDialog()
