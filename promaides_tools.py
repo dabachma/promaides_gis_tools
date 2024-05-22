@@ -33,6 +33,7 @@ from .sc_osm_point_export import SCOSMPointExport
 from .weather_tansfer import WeatherTransfer
 from .modules.bc_regular_industry_actors.ui_bc_regular_industry_actors import RegularIndustryActors
 from .land_classification import LandClassificationTool
+from .evapotranspiration_ptq import EvapotranspirationPTQTool
 from .river_temp_export import RiverTempExport
 
 from qgis.PyQt.QtCore import *
@@ -81,6 +82,7 @@ class PromaidesToolbox(object):
         self.weather_transfer = WeatherTransfer(self.iface)
         self.regular_industry_actors = RegularIndustryActors(self.iface)
         self.land_classification = LandClassificationTool(self.iface)
+        self.evapotranspiration_ptq = EvapotranspirationPTQTool(self.iface)
         self.river_temp_export = RiverTempExport(self.iface)
 
         #HAZ
@@ -205,6 +207,7 @@ class PromaidesToolbox(object):
         self.time.initGui(self.submenu_hyd_lof)
         self.regular_industry_actors.initGui(self.submenu_hyd_lof)
         self.land_classification.initGui(self.submenu_hyd_lof)
+        self.evapotranspiration_ptq.initGui(self.submenu_hyd_lof)
         # HAZ
 
 
@@ -271,6 +274,7 @@ class PromaidesToolbox(object):
         self.time.unload(self.submenu_hyd_lof)
         self.regular_industry_actors.unload(self.submenu_hyd_lof)
         self.land_classification.unload(self.submenu_hyd_lof)
+        self.evapotranspiration_ptq.unload(self.submenu_hyd_lof)
         
         # HAZ
 
