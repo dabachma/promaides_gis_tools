@@ -104,13 +104,50 @@ def generate_intersection(stations : QgsVectorLayer, stations_id : str, subcatch
                                     )["OUTPUT"]
     vstations = QgsVectorLayer(single_parts, "Stations_single_parts")
 
+    #Check number of stations:
+    #1 station -> extent is the subcatchments whole extent
+    #>1 stations -> normal voronoi pattern from GRASS, with extent as limit
+    num_features = sum(1 for f in vstations.getFeatures())
+    crs_stations = QgsCoordinateReferenceSystem(vstations.crs())
+    crs_subcatchments = QgsCoordinateReferenceSystem(subcatchments.crs())
+    transform = QgsCoordinateTransform(crs_subcatchments, crs_stations, QgsProject.instance())
+    bb = QgsGeometry.fromRect(subcatchments.extent())
+    bb.transform(transform)
 
-    #Voronoi stations
-    voronoi = processing.run("qgis:voronoipolygons", {'INPUT':vstations,
-                                                                'BUFFER':100,
-                                                                'OUTPUT': QgsProcessingUtils.generateTempFilename('Voronoi.gpkg')},
-                                                            )["OUTPUT"]
-    vVoronoi = QgsVectorLayer(voronoi, "voronoi")
+    if num_features == 1:
+        bounding_box = processing.run("native:extenttolayer", {'INPUT': bb.boundingBox(),
+                                                               'OUTPUT': QgsProcessingUtils.generateTempFilename('bbox.gpkg')}
+                                                               )["OUTPUT"]
+        vVoronoi = QgsVectorLayer(bounding_box)
+        
+        vVoronoi.dataProvider().addAttributes([field for field in vstations.fields() if field.name() not in ["fid"]])
+        vVoronoi.updateFields()
+
+        single_station : QgsFeature = list(vstations.getFeatures())[0]
+        attr_d = {i : v for i, v in enumerate(single_station.attributes())}
+        
+        single_bb : QgsFeature = list(vVoronoi.getFeatures())[0] #Only one
+        vVoronoi.dataProvider().changeAttributeValues({single_bb.id() : attr_d})
+    
+    else:
+        
+        #Voronoi stations
+        output = QgsProcessingUtils.generateTempFilename('Voronoi.gpkg')
+        _    = processing.run("grass7:v.voronoi", {'input': vstations,
+                                                      '-l':False,
+                                                      '-t':False,
+                                                      'output': output,
+                                                      'GRASS_REGION_PARAMETER': bb,
+                                                      'GRASS_SNAP_TOLERANCE_PARAMETER':-1,
+                                                      'GRASS_MIN_AREA_PARAMETER':0.0001,
+                                                      'GRASS_OUTPUT_TYPE_PARAMETER':0,
+                                                      'GRASS_VECTOR_DSCO':'',
+                                                      'GRASS_VECTOR_LCO':'',
+                                                      'GRASS_VECTOR_EXPORT_NOCAT':False}
+                                                      )
+        
+        vVoronoi = QgsVectorLayer(output, "voronoi")
+        
     #Intersection with subcatchment. Keep columns    
     intersection = processing.run("qgis:intersection", {'INPUT':vVoronoi,
                                                         'OVERLAY':subcatchments,
@@ -147,7 +184,9 @@ def calculate_fractions(voronoi_stations : pandas.DataFrame, stations_id : str, 
     weighted_values = {d:{s:0.0 for s in subcatchments} for d in data.index}
     #For each row, find which columns are not empty, and query them against the voronoi station areas
     for sc in subcatchments:
-        sub_df = voronoi_stations[voronoi_stations[subcatchment_id] == sc]
+        sub_df : pandas.DataFrame = voronoi_stations[voronoi_stations[subcatchment_id] == sc]
+        if not (subcatchment_id in sub_df.columns) or  not (stations_id in sub_df.columns):
+            raise ValueError(f"Missing columns for subcatchment_id or stations_id!! Current columns : {sub_df.columns}. Searched for columns: {subcatchment_id}, {stations_id}")
         lookup_table = sub_df.set_index([subcatchment_id, stations_id])[area_id].to_dict()
         for i, row in data.iterrows():
             datum = i
@@ -218,7 +257,7 @@ def merge_pt(layer_p : QgsVectorLayer, datump : str, idp : str, valuep : str,
     """Merges the datetime|subcatchmentid|value   files and pivots them
     datum, id, value are the columns of the datasets
     """
-    if output_filepath in ["", None] : output_filepath = QgsProcessingUtils.generateTempFilename('PivotedPTQ.csv')
+    
     #Harmonization
     datetime_col = "Date"
     sc_col = "Subcatchment"
@@ -242,6 +281,8 @@ def merge_pt(layer_p : QgsVectorLayer, datump : str, idp : str, valuep : str,
 
 
     pivot = pivot_ptq(df = merge, col = sc_col)
+
+    if output_filepath in ["", None] : output_filepath = QgsProcessingUtils.generateTempFilename('PivotedPTQ.csv')
     pivot.to_csv(output_filepath, sep = "\t")
 
     result = QgsVectorLayer(output_filepath, "PivotedPTQ")
@@ -257,6 +298,9 @@ def load_WG_file(filepath : str, col : str) -> pandas.DataFrame:
     """
     if not pathlib.Path(filepath).is_absolute():
         filepath = os.path.join(QgsProject.instance().absolutePath(), filepath)
+    
+    #CHECK THAT PATH EXISTS IN FOLDER
+    if not os.path.exists(filepath) : raise ValueError(f"Path doesnt exist! Relative paths are related to the project folder. Expected path: {filepath}")
 
     df = pandas.read_csv(filepath, usecols=["date", col], dtype = {"date":str})
     df["date"] = df["date"].apply(lambda x: datetime.datetime.strptime(x, '%Y%m%d').date()) #Done N times...
