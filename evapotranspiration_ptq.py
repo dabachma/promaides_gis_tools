@@ -438,7 +438,7 @@ def calculate_evap_timeseries(weather_generator_avgvalues : QgsVectorLayer,
     Latitude and height are related to a single subcatchment. They are an average of the subcatchment at its centroid.
     Returns an dataframe with date | EVAP
     """
-    sub_df_sc = df_from_vlayer(subcatchment_information).set_index([subcatchment_id])[[subcatchment_id, latitude, height]]
+    sub_df_sc = df_from_vlayer(subcatchment_information).set_index([subcatchment_id])[[latitude, height]]
 
     #Estimating min and max temperatures in case of missing column
     if temp_min == "": temp_min = temp_avg
