@@ -252,6 +252,17 @@ def pivot_ptq (df : pandas.DataFrame, col : str) -> pandas.DataFrame:
     return horizontal_df
 
 
+def pivot_evap(df : pandas.DataFrame, col_subcatchment : str, col_date : str, col_EVAP : str) -> pandas.DataFrame:
+    """Pivots a dataframe with subcatchment_id, date, EVAP values, so that
+    there are only N Columns of EVAP corresponding to the sorted (ascending) N ids in subcatchment_id,
+    in ascending order by date,
+    """
+    concat = [sub_df.reset_index(level = col_subcatchment)[col_EVAP] for key, sub_df in df.groupby([col_subcatchment])]
+    horizontal_df = pandas.concat(concat, axis = 1)
+
+    return horizontal_df
+
+
 def merge_pt(layer_p : QgsVectorLayer, datump : str, idp : str, valuep : str,
              layer_t : QgsVectorLayer, datumt : str, idt : str, valuet : str,
              output_filepath = None) -> QgsVectorLayer:
@@ -431,7 +442,8 @@ def calculate_evap_timeseries(weather_generator_avgvalues : QgsVectorLayer,
                               subcatchment_id : str,
                               latitude : str,
                               height : str,
-                              output_filepath : str) -> pandas.DataFrame:
+                              output_filepath : str,
+                              output_filepath_pivoted : str) -> List[QgsVectorLayer]:
     """
     Calculates the evapotranspiration from a weather_generator_avgvalues DataFrame:
     These parameters in the DF are related to a single subcatchment 
@@ -448,7 +460,7 @@ def calculate_evap_timeseries(weather_generator_avgvalues : QgsVectorLayer,
     Returns an dataframe with date | EVAP
     """
     sub_df_sc = df_from_vlayer(subcatchment_information)
-    sub_df_wg = df_from_vlayer(weather_generator_avgvalues)
+    sub_df_wg = df_from_vlayer(weather_generator_avgvalues).sort_values(by = [wg_datetime])
 
     #Cast to string
     sub_df_sc[subcatchment_id] = sub_df_sc[subcatchment_id].astype(str)
@@ -492,10 +504,18 @@ def calculate_evap_timeseries(weather_generator_avgvalues : QgsVectorLayer,
                         , axis = 1)
     
 
-    if output_filepath in ["", None] : output_filepath = QgsProcessingUtils.generateTempFilename('EVAP_Timeseries.csv')
+    df_pivoted : pandas.DataFrame = pivot_evap(df_join, col_subcatchment = wg_subcatchment_id, col_date = wg_datetime, col_EVAP = "EVAP")
 
+
+    if output_filepath in ["", None] : output_filepath = QgsProcessingUtils.generateTempFilename('EVAP_Timeseries.csv')
     df_join.to_csv(output_filepath, sep = "\t", index = [wg_datetime, wg_subcatchment_id])    
-    return QgsVectorLayer(output_filepath, "Evapotranspiration_Timeseries")
+
+    if output_filepath_pivoted in ["", None] : output_filepath_pivoted = QgsProcessingUtils.generateTempFilename('EVAP_Pivoted_Timeseries.csv')
+    df_pivoted.to_csv(output_filepath_pivoted, sep = "\t", index = None)    
+
+
+    return [QgsVectorLayer(output_filepath, "Evapotranspiration_Timeseries"),
+            QgsVectorLayer(output_filepath_pivoted, "Evapotranspiration_Pivoted_Timeseries")]
 
 
 
@@ -693,8 +713,12 @@ class PluginDialog(QDialog):
         self.mFieldComboBox_EVAP_SC_latitude : QgsFieldComboBox
         self.mFieldComboBox_EVAP_SC_height : QgsFieldComboBox
  
-        self.output_filename_EVAP : QLineEdit
+        #Unpivoted Subcatchments
         self.output_browse_EVAP : QPushButton
+        self.output_filename_EVAP : QLineEdit 
+        #Pivoted Subcatchments
+        self.output_filename_EVAP_2 : QLineEdit 
+        self.output_browse_EVAP_2 : QPushButton
         self.button_help_EVAP : QPushButton
         self.button_ok_EVAP : QPushButton
 
@@ -730,6 +754,7 @@ class PluginDialog(QDialog):
 
 
         self.output_browse_EVAP.clicked.connect(self.onBrowseOutputEVAP)       
+        self.output_browse_EVAP_2.clicked.connect(self.onBrowseOutputEVAP_Pivoted)       
         self.button_help_EVAP.clicked.connect(self.Help)
         self.button_ok_EVAP.clicked.connect(self.exec_calculate_evap)
 
@@ -771,6 +796,14 @@ class PluginDialog(QDialog):
         current_filename = line.text()
         if current_filename == "": current_filename = os.path.join(QgsProject.instance().absolutePath(),"EVAP_subcatchment_evapotranspiration_avg.tsv")
         new_filename, __ = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'Choose where to save the EVAP BY SUBCATCHMENT TIMESERIES file', current_filename, filter = "Tab Separated Values (*.tsv)")
+        if new_filename != '':
+            line.setText(new_filename) 
+    
+    def onBrowseOutputEVAP_Pivoted(self):
+        line = self.output_filename_EVAP_2
+        current_filename = line.text()
+        if current_filename == "": current_filename = os.path.join(QgsProject.instance().absolutePath(),"EVAP_subcatchment_evapotranspiration_avg_Pivoted.tsv")
+        new_filename, __ = QFileDialog.getSaveFileName(self.iface.mainWindow(), 'Choose where to save the EVAP BY PIVOTED SUBCATCHMENT TIMESERIES file', current_filename, filter = "Tab Separated Values (*.tsv)")
         if new_filename != '':
             line.setText(new_filename) 
 
@@ -857,10 +890,14 @@ class PluginDialog(QDialog):
         output_filepath = self.output_filename_EVAP.text()
         if output_filepath != "":
             if pathlib.Path(output_filepath).is_dir() : raise ValueError("Output filepath for Evapotranspiration calculation not valid because it is a folder! Enter a valid filepath")
+        
+        output_filepath_pivoted = self.output_filename_EVAP_2.text()
+        if output_filepath_pivoted != "":
+            if pathlib.Path(output_filepath_pivoted).is_dir() : raise ValueError("Output filepath for Pivoted Evapotranspiration calculation not valid because it is a folder! Enter a valid filepath")
 
 
 
-        result = calculate_evap_timeseries(weather_generator_avgvalues = self.mMapLayerComboBox_EVAP.currentLayer(),
+        results = calculate_evap_timeseries(weather_generator_avgvalues = self.mMapLayerComboBox_EVAP.currentLayer(),
                                             wg_datetime = self.mFieldComboBox_Datetime_EVAP.currentField(),
                                             wg_subcatchment_id = self.mFieldComboBox_subcatchment.currentField(),
                                             temp_min = self.mFieldComboBox_tempmin.currentField(),
@@ -874,9 +911,10 @@ class PluginDialog(QDialog):
                                             subcatchment_id = self.mFieldComboBox_EVAP_SC_id.currentField(),
                                             latitude = self.mFieldComboBox_EVAP_SC_latitude.currentField(),
                                             height = self.mFieldComboBox_EVAP_SC_height.currentField(),
-                                            output_filepath = output_filepath
+                                            output_filepath = output_filepath,
+                                            output_filepath_pivoted = output_filepath_pivoted,
                                             )
-        QgsProject.instance().addMapLayer(result)
+        for result in results: QgsProject.instance().addMapLayer(result)
         self.label_completed_4.setText("Success!")
         self.button_cancel_EVAP.setText("Exit")
 
