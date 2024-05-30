@@ -11,6 +11,7 @@ from __future__ import absolute_import
 
 # system modules
 import datetime
+import dateutil.parser as datetime_parser
 import os
 import pathlib
 import webbrowser
@@ -259,18 +260,22 @@ def merge_pt(layer_p : QgsVectorLayer, datump : str, idp : str, valuep : str,
     """
     
     #Harmonization
-    datetime_col = "Date"
+    datetime_col = "date"
     sc_col = "Subcatchment"
 
     dfp : pandas.DataFrame = (df_from_vlayer(layer_p)    
-                            .rename(columns={datump:datetime_col, valuep:"P", idp:sc_col})
-                            .set_index([datetime_col, sc_col])[["P"]]                            
+                            .rename(columns={datump:datetime_col, valuep:"P", idp:sc_col})     
                             )
+    dfp[datetime_col] = dfp[datetime_col].apply(lambda x: datetime_parser.parse(x).date())
+    dfp = dfp.set_index([datetime_col, sc_col])[["P"]]                       
     
+
     dft : pandas.DataFrame = (df_from_vlayer(layer_t)    
                             .rename(columns={datumt:datetime_col, valuet:"T", idt:sc_col})
-                            .set_index([datetime_col, sc_col])[["T"]]                            
                             )
+    dft[datetime_col] = dft[datetime_col].apply(lambda x: datetime_parser.parse(x).date())
+    dft = dft.set_index([datetime_col, sc_col])[["T"]]                            
+                            
 
 
     merge = dfp.join(dft, how = "outer")
@@ -282,8 +287,12 @@ def merge_pt(layer_p : QgsVectorLayer, datump : str, idp : str, valuep : str,
 
     pivot = pivot_ptq(df = merge, col = sc_col)
 
+    pivot.reset_index(inplace = True)
+    pivot = pivot.sort_values(by = [datetime_col])
+    pivot[datetime_col] = pivot[datetime_col].apply(lambda x: x.strftime("%Y%m%d"))
+
     if output_filepath in ["", None] : output_filepath = QgsProcessingUtils.generateTempFilename('PivotedPTQ.csv')
-    pivot.to_csv(output_filepath, sep = "\t")
+    pivot.to_csv(output_filepath, sep = "\t", index = None)
 
     result = QgsVectorLayer(output_filepath, "PivotedPTQ")
     return result
