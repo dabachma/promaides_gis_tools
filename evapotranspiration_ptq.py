@@ -262,14 +262,14 @@ def merge_pt(layer_p : QgsVectorLayer, datump : str, idp : str, valuep : str,
     datetime_col = "Date"
     sc_col = "Subcatchment"
 
-    dfp = (df_from_vlayer(layer_p)    
+    dfp : pandas.DataFrame = (df_from_vlayer(layer_p)    
                             .rename(columns={datump:datetime_col, valuep:"P", idp:sc_col})
-                            .set_index([datetime_col, sc_col])                            
+                            .set_index([datetime_col, sc_col])[["P"]]                            
                             )
     
-    dft = (df_from_vlayer(layer_t)    
+    dft : pandas.DataFrame = (df_from_vlayer(layer_t)    
                             .rename(columns={datumt:datetime_col, valuet:"T", idt:sc_col})
-                            .set_index([datetime_col, sc_col])                            
+                            .set_index([datetime_col, sc_col])[["T"]]                            
                             )
 
 
