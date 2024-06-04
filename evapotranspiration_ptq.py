@@ -372,7 +372,7 @@ def evapotranspiration(tmax : float, tmin : float, tavg : float,
     hum : fraction air humidity
     day: day of the year 0-365
     """
-    mean_solar_rad = (solar_rad/2.78) * 0.01 # GLOST
+    mean_solar_rad = (solar_rad) * 0.01 # GLOST
     i_vapor = 4098 * (0.6108 * numpy.exp((17.27 * tavg) / (tavg + 237.3))) / ((tavg + 237.3)**2) #slope saturation vapor pressure curve
     a_pressure = 101.3 * ((293 - 0.0065 * height) / 293)**5.26    #atmospheric pressure [kPa].
     psy = 0.000665 * a_pressure
@@ -382,7 +382,7 @@ def evapotranspiration(tmax : float, tmin : float, tavg : float,
     etmax = 0.6108 * numpy.exp((17.27 * tmax)/(tmax + 237.3))    #eTmax
     etmin = 0.6108 * numpy.exp((17.27 * tmin)/(tmin + 237.3))    #eTmin
     es = (etmax + etmin) * 0.5    #mean satuaration vapor from air temp
-    edew = (hum_fraction/100) * es
+    edew = (hum_fraction) * es
     dr = 1 + 0.033 * numpy.cos(2 * numpy.pi * day / 365 )    #inverse relative distance earth-sun
     solar_delta = 0.409 * numpy.sin((2 * numpy.pi * day/365) - 1.39)    #solar declination
     omega = numpy.arccos(-1 * (numpy.tan(latitude) * numpy.tan(solar_delta)))    #sunset hour angle
