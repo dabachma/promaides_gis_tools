@@ -35,6 +35,7 @@ from .modules.bc_regular_industry_actors.ui_bc_regular_industry_actors import Re
 from .land_classification import LandClassificationTool
 from .evapotranspiration_ptq import EvapotranspirationPTQTool
 from .river_temp_export import RiverTempExport
+from .navigation_analyzer import Navigation_Analyzer
 
 from qgis.PyQt.QtCore import *
 from qgis.PyQt.QtGui import *
@@ -91,6 +92,7 @@ class PromaidesToolbox(object):
         self.storm_visualize = StormVisualize(self.iface)
         #DAM
         self.dam_raster = DAMRasterExport(self.iface)
+        self.navigation_analyzer = Navigation_Analyzer(self.iface)
         #CIN
         self.cin_point = CINPointExport(self.iface)
         self.cin_polygon = CINPolygonExport(self.iface)
@@ -129,6 +131,8 @@ class PromaidesToolbox(object):
         # Add a submenu to choose promaides or loflodes
         self.submenu_pro = self.menu.addMenu('ProMaIDes')
         self.submenu_lof = self.menu.addMenu('LoFloDes')
+        self.submenu_about = self.menu.addAction('About',self.showAbout)
+        #self.submenu_about.addAction(self.showAbout())
 
         #Add a sub-menu for ProMaIDes
         self.submenu_general = self.submenu_pro.addMenu('General')
@@ -186,8 +190,6 @@ class PromaidesToolbox(object):
 
 
 
-        #Add about
-        self.submenu_pro.addAction('About', self.showAbout)
         #self.iface.pluginMenu().addMenu(self.plugin_menu)
 
         # for LoFloDes Submenu
@@ -212,6 +214,7 @@ class PromaidesToolbox(object):
 
 
         # DAM
+        self.navigation_analyzer.initGui(self.submenu_dam_lof)
 
 
         # General
@@ -219,9 +222,7 @@ class PromaidesToolbox(object):
         self.quick_visualize.initGui(self.submenu_general_lof)
         self.db_exprt.initGui(self.submenu_general_lof)
 
-        # Add about
-        self.submenu_lof.addAction('About', self.showAbout)
-        # self.iface.pluginMenu().addMenu(self.plugin_menu)
+
 
 
 
@@ -280,7 +281,7 @@ class PromaidesToolbox(object):
 
 
         # DAM
-
+        self.navigation_analyzer.unload(self.submenu_hyd_lof)
 
         # General
         self.hello_world.unload(self.submenu_general)

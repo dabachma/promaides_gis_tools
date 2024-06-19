@@ -196,7 +196,8 @@ class WeatherTransfer(object):
                     df_perc_block = perc_temp.iloc[:len(df_name_block)]
                     df_result_block = df_name_block * df_perc_block.values
                     df_result = pd.concat([df_result,df_result_block])
-                df_result += 273.15
+                df_result = df_result + 273.15
+                df_result = df_result.clip(upper=313)
                 df_name = df_result.reset_index(drop=True)
             df_output = df_name['sub_value'].reset_index(drop=True)
 
