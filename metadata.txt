@@ -48,6 +48,9 @@ changelog=
   * Some minor changes and bug fixes
   * Further work on rainfall generator and CI-model builder
   * new icon
+  Version 0.7.1
+  * Extra folder for the plugins in QGIS (h2_Toolbox/ProMaiDes; h2_Toolbox/LoFloDes)
+  * New functinalities for LowFloDes, a risk analysis for low flow are added
 icon=icon.png
 experimental=False
 homepage=https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-6/Plug-ins
