@@ -126,19 +126,56 @@ def save_layer_gpkg(input : QgsVectorLayer, output : str, crs : QgsCoordinateRef
     if save_result[0] != 0 : print("Error while saving:", layername, save_result)
     return input
 
-
-def intersect_classification_naive (dem : QgsRasterLayer,
+def classify_elevations(dem : QgsRasterLayer,
                         dem_band : int,
                         height_offset : float,
-                        height_interval : float,
+                        height_interval : float) -> QgsVectorLayer:
+    """
+    dem : QgsRasterLayer with elevations
+    dem_band : Band indicating the elevation
+    Returns polygons with gdal:contour. Key is defined in ELEVATION_KEY. Information in ELEV_min and ELEV_max
+    """
+    if not isinstance(dem, QgsRasterLayer) : raise ValueError("Invalid Raster, passed a {}".format(type(dem)))
+    if not QgsRasterLayer.isValidRasterFileName(dem.source()) : raise ValueError("Invalid Raster Filename")
+
+    context = QgsProcessingContext()
+    #GDAL command for polygon contours:
+    #gdal_contour -b 1 -a ELEV -i 100.0 -f "GPKG" -p -amin elevmin -amax elevmax 
+    result_contouro : str = processing.run("gdal:contour", { 'BAND' : dem_band,
+                                                        'CREATE_3D' : False,
+                                                        'EXTRA' : '-p -amin ELEV_min -amax ELEV_max', #ELEV as prefix
+                                                        'FIELD_NAME' : 'ELEV',
+                                                        'IGNORE_NODATA' : True,
+                                                        'INPUT' : dem.source(),
+                                                        'INTERVAL' : height_interval,
+                                                        'NODATA' : numpy.nan,
+                                                        'OFFSET' : height_offset,
+                                                        'OUTPUT' : QgsProcessingUtils.generateTempFilename('Contour.gpkg') },
+                                                        context = context)["OUTPUT"]
+    result_contour = QgsVectorLayer(result_contouro)
+    result_contour.setCrs(dem.crs())
+
+    vElevKeyo = processing.run("qgis:fieldcalculator", {'INPUT':result_contour,
+                                                                    'FIELD_NAME':ELEVATION_KEY,
+                                                                    'FIELD_TYPE':2, #str
+                                                                    'FIELD_LENGTH':80,
+                                                                    'FIELD_PRECISION':3,
+                                                                    'NEW_FIELD':True,
+                                                                    'FORMULA':f'concat( \"ELEV_max\" - {height_interval}, \'_\', \"ELEV_max\"  )',
+                                                                    'OUTPUT': QgsProcessingUtils.generateTempFilename('ContourScLuElev.gpkg')}
+                                                                    )["OUTPUT"]
+    vElevKey = QgsVectorLayer(vElevKeyo)
+
+    return vElevKey
+
+def intersect_classification_naive (elevation_polygons : QgsVectorLayer,
                         subcatchments : QgsVectorLayer,
                         land_use : QgsVectorLayer,
                         land_use_column : str,
                         subcatchments_column : str = "fid",
                         keep_fid = False) -> QgsVectorLayer:
     """
-    dem : QgsRasterLayer with elevations
-    dem_band : Band indicating the elevation
+
     subcatchments : QgsVectorLayer with the multipolygon subcatchments
     land_use : QgsVectorLayer with simplified land use multipolygons
     land_use_column : Name of the column indicating the land use, code.
@@ -146,8 +183,7 @@ def intersect_classification_naive (dem : QgsRasterLayer,
     """
 
     #Check for validity of parameters
-    if not isinstance(dem, QgsRasterLayer) : raise ValueError("Invalid Raster, passed a {}".format(type(dem)))
-    if not QgsRasterLayer.isValidRasterFileName(dem.source()) : raise ValueError("Invalid Raster Filename")
+
     if not isinstance(subcatchments, QgsVectorLayer) : raise ValueError("Invalid Subcatchments, passed a {}".format(type(subcatchments)))
     if not isinstance(land_use, QgsVectorLayer) : raise ValueError("Invalid Land use Layer, passed a {}".format(type(land_use)))
     
@@ -167,24 +203,8 @@ def intersect_classification_naive (dem : QgsRasterLayer,
     
 
     context = QgsProcessingContext()
-    #GDAL command for polygon contours:
-    #gdal_contour -b 1 -a ELEV -i 100.0 -f "GPKG" -p -amin elevmin -amax elevmax 
-    result_contouro : str = processing.run("gdal:contour", { 'BAND' : dem_band,
-                                                        'CREATE_3D' : False,
-                                                        'EXTRA' : '-p -amin ELEV_min -amax ELEV_max', #ELEV as prefix
-                                                        'FIELD_NAME' : 'ELEV',
-                                                        'IGNORE_NODATA' : True,
-                                                        'INPUT' : dem.source(),
-                                                        'INTERVAL' : height_interval,
-                                                        'NODATA' : numpy.nan,
-                                                        'OFFSET' : height_offset,
-                                                        'OUTPUT' : QgsProcessingUtils.generateTempFilename('Contour.gpkg') },
-                                                        context = context)["OUTPUT"]
-    result_contour = QgsVectorLayer(result_contouro)
-    result_contour.setCrs(dem.crs())
-
     #Intersection contours with subcatchments
-    vContourPolySc : str = processing.run("native:intersection", {'INPUT': result_contour,
+    vContourPolySc : str = processing.run("native:intersection", {'INPUT': elevation_polygons,
                                                                             'OVERLAY': subcatchments,
                                                                             'INPUT_FIELDS':[],
                                                                             'OVERLAY_FIELDS':subcatchments_columns,
@@ -193,8 +213,7 @@ def intersect_classification_naive (dem : QgsRasterLayer,
                                                                             context = context
                                                                             )["OUTPUT"]
     crs = QgsVectorLayer(vContourPolySc, "ContourSc", "ogr").crs()#hack
-    free_memory_vlayer(vlayer = result_contour, context = context)
-    del result_contour
+
 
     #Intersection contours|subcatchments with land use    
     vContourPolyScLUo = processing.run("native:intersection", {'INPUT':vContourPolySc,
@@ -217,22 +236,7 @@ def intersect_classification_naive (dem : QgsRasterLayer,
         idx = vContourPolyScLU.fields().indexFromName("ID")
         vContourPolyScLU.dataProvider().deleteAttributes([idx])
 
-    vContourPolyScLUKeyo = processing.run("qgis:fieldcalculator", {'INPUT':vContourPolyScLU,
-                                                                    'FIELD_NAME':ELEVATION_KEY,
-                                                                    'FIELD_TYPE':2, #str
-                                                                    'FIELD_LENGTH':80,
-                                                                    'FIELD_PRECISION':3,
-                                                                    'NEW_FIELD':True,
-                                                                    'FORMULA':f'concat( \"ELEV_max\" - {height_interval}, \'_\', \"ELEV_max\"  )',
-                                                                    'OUTPUT': QgsProcessingUtils.generateTempFilename('ContourScLuElev.gpkg')}
-                                                                    )["OUTPUT"]
-    vContourPolyScLUKey = QgsVectorLayer(vContourPolyScLUKeyo)
-    
-    
-    free_memory_vlayer(vlayer = vContourPolyScLU, context = context)
-    del vContourPolyScLU
-
-    return vContourPolyScLUKey
+    return vContourPolyScLU
 
 
 
@@ -313,7 +317,6 @@ def iterate_region(dem : QgsRasterLayer, subcatchments : QgsVectorLayer, land_us
         vsub_subcatchment = QgsVectorLayer(vsub_subcatchmentp)
         vsub_land_use = QgsVectorLayer(vsub_land_usep)
         group = (rsub_dem, vsub_subcatchment, vsub_land_use, number_of_grids)
-        # print("Subdivision {}: passing group {}".format(i, group))
         yield group
         
         free_memory_vlayer(vlayer = vsub_subcatchment, context=context)
@@ -321,6 +324,45 @@ def iterate_region(dem : QgsRasterLayer, subcatchments : QgsVectorLayer, land_us
         pseudodelete_raster(path = rsub_demp)
         del rsub_dem, vsub_land_use, vsub_subcatchment
 
+def iterate_dems(dem : QgsRasterLayer, subcatchments = QgsVectorLayer, hspacing = 20000, vspacing = 20000) -> Tuple[DEM, int]:
+    """
+    Creates a grid from the subcatchment layer extent;
+    cuts the DEM
+    hspacing, vspacing divide the subcatchment data in squares of this size.
+    Returns iteratively a sub-section of the DEM
+    """
+    context = QgsProcessingContext()
+    #Get grid and cut
+    grid = get_grid_from_extent(extent_layer = subcatchments, hspacing = hspacing, vspacing = vspacing)
+    grids = processing.run("qgis:splitvectorlayer", {'INPUT':grid,
+                                                               'FIELD':'id',
+                                                               'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT}
+                            ,context = context)["OUTPUT_LAYERS"] #Hack instead of using f.geometry().boundingBox()
+    
+    number_of_grids = len(grids)
+
+    #Get a smaller DEM
+    sub_grid : QgsVectorLayer
+    for i, sub_grid in enumerate(grids):        
+        rsub_demp = processing.run("gdal:warpreproject", {'INPUT': dem.source(),
+                                                            #   'SOURCE_CRS':None,
+                                                            #   'TARGET_CRS':None,
+                                                              'RESAMPLING':0,
+                                                              'NODATA': numpy.nan,
+                                                              'TARGET_RESOLUTION':None,
+                                                              'OPTIONS':'',
+                                                              'DATA_TYPE':0,
+                                                              'TARGET_EXTENT': sub_grid,
+                                                              'TARGET_EXTENT_CRS':None,
+                                                              'MULTITHREADING':False,
+                                                              'EXTRA':'-wo CUTLINE_ALL_TOUCHED=TRUE', #Needed not to miss any pixels
+                                                              'OUTPUT': QgsProcessingUtils.generateTempFilename('subdem.tif')},
+                                                                context = context)["OUTPUT"]     
+        rsub_dem = QgsRasterLayer(rsub_demp)
+        rsub_dem.setCrs(dem.crs())
+        yield rsub_dem, number_of_grids
+        pseudodelete_raster(path = rsub_demp)
+        del rsub_dem
 
 
 def intersect_classification(dem : QgsRasterLayer,
@@ -354,51 +396,59 @@ def intersect_classification(dem : QgsRasterLayer,
 
     result : QgsVectorLayer = None #Initializing
     context = QgsProcessingContext()
+
+    
+    
     if naive_approach:
-        result = intersect_classification_naive(dem = dem,
+        base_elevations = classify_elevations(dem = dem,
                                         dem_band = dem_band,
                                         height_offset = height_offset,
-                                        height_interval = height_interval,
-                                        subcatchments = subcatchments,
-                                        land_use = land_use,
-                                        land_use_column = land_use_column,
-                                        subcatchments_column = subcatchments_column)
+                                        height_interval = height_interval)
+        
+        result = intersect_classification_naive(elevation_polygons = base_elevations,
+                                                subcatchments = subcatchments,
+                                                land_use = land_use,
+                                                land_use_column = land_use_column,
+                                                subcatchments_column = subcatchments_column)
 
 
     else:
-        #intersect classification progressively
-        sub_results : List[QgsVectorLayer] = []
-        sub_regions = iterate_region(dem = dem, subcatchments=subcatchments,land_use = land_use, hspacing = grid_res, vspacing = grid_res)
-        for i, (sub_dem, sub_sc, sub_lu, number_of_grids) in enumerate(sub_regions):
-
-            sub_result = intersect_classification_naive(dem = sub_dem,
-                                                            dem_band = dem_band,
-                                                            height_offset = height_offset,
-                                                            height_interval = height_interval,
-                                                            subcatchments = sub_sc,
-                                                            land_use = sub_lu,
-                                                            land_use_column = land_use_column,
-                                                            subcatchments_column = subcatchments_column,
-                                                            keep_fid = True)
-            sub_results.append(sub_result)
+        #calculate contours progressively, then merge them, then intersect
+        sub_dems_results : List[QgsVectorLayer] = []
+        sub_dems = iterate_dems(dem = dem, subcatchments= subcatchments, hspacing = grid_res, vspacing = grid_res)
+        for i, (sub_dem, number_of_grids) in enumerate(sub_dems):
+            sub_base_elevations = classify_elevations(dem = sub_dem,
+                                        dem_band = dem_band,
+                                        height_offset = height_offset,
+                                        height_interval = height_interval)
+            
+            sub_dems_results.append(sub_base_elevations)
             if callback is not None: callback(int(i/number_of_grids))
 
 
-        #Combine the different layerss
-        merged_vectorso = processing.run("native:mergevectorlayers", {'LAYERS':sub_results,
+        merged_contour_vectorso = processing.run("native:mergevectorlayers", {'LAYERS':sub_dems_results,
                                                                     'CRS':None,
-                                                                    'OUTPUT': QgsProcessingUtils.generateTempFilename('mergedvectors.gpkg')},
+                                                                    'OUTPUT': QgsProcessingUtils.generateTempFilename('mergedcontourvectors.gpkg')},
                                     context = context
                                     )["OUTPUT"]
-        merged_vectors = QgsVectorLayer(merged_vectorso)
-
+        merged_contour_vectors = QgsVectorLayer(merged_contour_vectorso)
         #cleanup
-        for v in sub_results[:]:
+        for v in sub_dems_results[:]:
             free_memory_vlayer(vlayer = v, context = context)
-            del sub_results[sub_results.index(v)]
+            del sub_dems_results[sub_dems_results.index(v)]
+
+        intersectiono = intersect_classification_naive(elevation_polygons = merged_contour_vectors,
+                                                        subcatchments = subcatchments,
+                                                        land_use = land_use,
+                                                        land_use_column = land_use_column,
+                                                        subcatchments_column = subcatchments_column,
+                                                        keep_fid = True)
+                
+
+        
 
         result_dissolveo = processing.run("native:dissolve",
-                                      {'INPUT': merged_vectors,
+                                      {'INPUT': intersectiono,
                                        'FIELD':list(set([f"{PREFIX_SUBCATCHMENTS}{subcatchments_column}",
                                                          f"{PREFIX_SUBCATCHMENTS}fid",
                                                         ELEVATION_KEY,
@@ -408,8 +458,8 @@ def intersect_classification(dem : QgsRasterLayer,
                                        context = context)["OUTPUT"]
         result_dissolve = QgsVectorLayer(result_dissolveo)
 
-        free_memory_vlayer(vlayer = merged_vectors, context = context)
-        del merged_vectors
+        free_memory_vlayer(vlayer = intersectiono, context = context)
+        del intersectiono
 
         fields = [f.name() for f in result_dissolve.fields()]
         fields_to_retain = ['fid',
