@@ -166,6 +166,8 @@ def classify_elevations(dem : QgsRasterLayer,
                                                                     )["OUTPUT"]
     vElevKey = QgsVectorLayer(vElevKeyo)
 
+
+
     return vElevKey
 
 def intersect_classification_naive (elevation_polygons : QgsVectorLayer,
@@ -216,15 +218,16 @@ def intersect_classification_naive (elevation_polygons : QgsVectorLayer,
 
 
     #Intersection contours|subcatchments with land use    
-    vContourPolyScLUo = processing.run("native:intersection", {'INPUT':vContourPolySc,
+    vContourPolyScLU = processing.run("native:intersection", {'INPUT':vContourPolySc,
                                                             'OVERLAY': land_use,
                                                             'INPUT_FIELDS':[],
                                                             'OVERLAY_FIELDS': land_use_columns,
                                                             'OVERLAY_FIELDS_PREFIX':PREFIX_LANDUSE,
-                                                            'OUTPUT': QgsProcessingUtils.generateTempFilename('ContourScLu.gpkg')},
+                                                            # 'OUTPUT': QgsProcessingUtils.generateTempFilename('ContourScLu.gpkg')},
+                                                            'OUTPUT': "TEMPORARY_OUTPUT"},
                                                             context = context
                                                             )["OUTPUT"]
-    vContourPolyScLU = QgsVectorLayer(vContourPolyScLUo)
+    # vContourPolyScLU = QgsVectorLayer(vContourPolyScLUo)
     vContourPolyScLU.setCrs(crs)
     
     free_memory_vlayer(vlayer = QgsVectorLayer(vContourPolySc), context = context)
@@ -364,6 +367,64 @@ def iterate_dems(dem : QgsRasterLayer, subcatchments = QgsVectorLayer, hspacing 
         pseudodelete_raster(path = rsub_demp)
         del rsub_dem
 
+def calculate_contours(dem : QgsRasterLayer,
+                        dem_band : int,
+                        height_offset : float,
+                        height_interval : float,
+                        subcatchments_mask : QgsVectorLayer = None,
+                        grid_resolution : int = 20000,
+                        naive : bool = True,
+                        context = None,
+                        callback : Callable = None) -> QgsVectorLayer:
+    """
+    Calculates the contours from gdal by either doing it all at once or by subdividing the raster into smaller rasters.
+    """
+    if context is None: context = QgsProcessingContext()
+
+    if naive or subcatchments_mask is None:
+        result = classify_elevations(dem = dem,
+                                        dem_band = dem_band,
+                                        height_offset = height_offset,
+                                        height_interval = height_interval)
+        return result
+    elif not (subcatchments_mask is None):
+
+        #calculate contours progressively, then merge them, then intersect
+        sub_dems_results : List[QgsVectorLayer] = []
+        sub_dems = iterate_dems(dem = dem, subcatchments= subcatchments_mask, hspacing = grid_resolution, vspacing = grid_resolution)
+        for i, (sub_dem, number_of_grids) in enumerate(sub_dems):
+            sub_base_elevations = classify_elevations(dem = sub_dem,
+                                                    dem_band = dem_band,
+                                                    height_offset = height_offset,
+                                                    height_interval = height_interval)
+            
+            sub_dems_results.append(sub_base_elevations)
+            if callback is not None: callback(int(i/number_of_grids))
+
+
+        result = processing.run("native:mergevectorlayers", {'LAYERS':sub_dems_results,
+                                                            'CRS':None,
+                                                            'OUTPUT': QgsProcessingUtils.generateTempFilename('mergedcontourvectors.gpkg')},
+                                    context = context
+                                    )["OUTPUT"]
+        #cleanup
+        for v in sub_dems_results[:]:
+            free_memory_vlayer(vlayer = v, context = context)
+            del sub_dems_results[sub_dems_results.index(v)]
+
+        return QgsVectorLayer(result)
+    else:
+        raise ValueError("Missing subcatchments_mask parameter!!")
+
+def fid_reset_inplace(layer : QgsVectorLayer, col_name = "fid") -> None:
+    #Redo the fid
+    with edit(layer):
+        idx = layer.fields().indexFromName(col_name)
+        for f in layer.getFeatures():
+            # f[idx] = f.id()
+            f.setAttribute(idx,f.id())
+            layer.updateFeature(f)
+    return
 
 def intersect_classification(dem : QgsRasterLayer,
                             dem_band : int,
@@ -375,7 +436,7 @@ def intersect_classification(dem : QgsRasterLayer,
                             subcatchments_column : str = "fid",
                             output_filepath : str = None,
                             grid_res : float = 20000,
-                            callback : Callable = None) -> QgsVectorLayer:
+                            callback : Callable = None) -> Tuple[QgsVectorLayer,QgsVectorLayer]:
     
     """
     Intersects the digital elevation model (dem raster) with subcatchment areas (multipolygon) with land use areas (multipolygon)
@@ -384,6 +445,7 @@ def intersect_classification(dem : QgsRasterLayer,
     Saves it to output_filepath if a valid filepath is passed to it
     If grid_res has a value, then use the complex approach by dividing the dataset into squares of this size
     Passes a Callable function that takes an int with the percentage of completion
+    Returns Land Classification, Land Elevations
     """
     naive_approach = True
 
@@ -398,105 +460,108 @@ def intersect_classification(dem : QgsRasterLayer,
     context = QgsProcessingContext()
 
     
+    base_elevations : QgsVectorLayer
+    base_elevations_clipped : QgsVectorLayer
+
+    base_elevations = calculate_contours(dem = dem,
+                                        dem_band = dem_band,
+                                        height_offset = height_offset,
+                                        height_interval = height_interval,
+                                        subcatchments_mask = subcatchments,
+                                        grid_resolution = grid_res,
+                                        context = context,
+                                        callback = callback,
+                                        naive = naive_approach)
+    base_elevations_clippedo = processing.run("native:clip", {'INPUT':base_elevations,
+                                                                'OVERLAY':subcatchments,
+                                                                'OUTPUT':QgsProcessingUtils.generateTempFilename('ClippedElevations.gpkg')})["OUTPUT"]
+    base_elevations_clipped = QgsVectorLayer(base_elevations_clippedo)
     
-    if naive_approach:
-        base_elevations = classify_elevations(dem = dem,
-                                        dem_band = dem_band,
-                                        height_offset = height_offset,
-                                        height_interval = height_interval)
-        
-        result = intersect_classification_naive(elevation_polygons = base_elevations,
-                                                subcatchments = subcatchments,
-                                                land_use = land_use,
-                                                land_use_column = land_use_column,
-                                                subcatchments_column = subcatchments_column)
+    
 
-
-    else:
-        #calculate contours progressively, then merge them, then intersect
-        sub_dems_results : List[QgsVectorLayer] = []
-        sub_dems = iterate_dems(dem = dem, subcatchments= subcatchments, hspacing = grid_res, vspacing = grid_res)
-        for i, (sub_dem, number_of_grids) in enumerate(sub_dems):
-            sub_base_elevations = classify_elevations(dem = sub_dem,
-                                        dem_band = dem_band,
-                                        height_offset = height_offset,
-                                        height_interval = height_interval)
-            
-            sub_dems_results.append(sub_base_elevations)
-            if callback is not None: callback(int(i/number_of_grids))
-
-
-        merged_contour_vectorso = processing.run("native:mergevectorlayers", {'LAYERS':sub_dems_results,
-                                                                    'CRS':None,
-                                                                    'OUTPUT': QgsProcessingUtils.generateTempFilename('mergedcontourvectors.gpkg')},
-                                    context = context
-                                    )["OUTPUT"]
-        merged_contour_vectors = QgsVectorLayer(merged_contour_vectorso)
-        #cleanup
-        for v in sub_dems_results[:]:
-            free_memory_vlayer(vlayer = v, context = context)
-            del sub_dems_results[sub_dems_results.index(v)]
-
-        intersectiono = intersect_classification_naive(elevation_polygons = merged_contour_vectors,
-                                                        subcatchments = subcatchments,
-                                                        land_use = land_use,
-                                                        land_use_column = land_use_column,
-                                                        subcatchments_column = subcatchments_column,
-                                                        keep_fid = True)
-                
+    free_memory_vlayer(vlayer = base_elevations, context = context)
 
         
+    intersect = intersect_classification_naive(elevation_polygons = base_elevations_clipped,
+                                            subcatchments = subcatchments,
+                                            land_use = land_use,
+                                            land_use_column = land_use_column,
+                                            subcatchments_column = subcatchments_column,
+                                            keep_fid = not naive_approach)
 
-        result_dissolveo = processing.run("native:dissolve",
-                                      {'INPUT': intersectiono,
-                                       'FIELD':list(set([f"{PREFIX_SUBCATCHMENTS}{subcatchments_column}",
-                                                         f"{PREFIX_SUBCATCHMENTS}fid",
+    result_dissolve = processing.run("native:dissolve",
+                                        {'INPUT': intersect,
+                                        'FIELD':list(set([f"{PREFIX_SUBCATCHMENTS}{subcatchments_column}",
+                                                            # f"{PREFIX_SUBCATCHMENTS}fid",# fid to keep every single feature
                                                         ELEVATION_KEY,
                                                         f"{PREFIX_LANDUSE}{land_use_column}",
-                                                        f"{PREFIX_LANDUSE}fid"])),
-                                       'OUTPUT': QgsProcessingUtils.generateTempFilename('dissolve.gpkg')},
-                                       context = context)["OUTPUT"]
-        result_dissolve = QgsVectorLayer(result_dissolveo)
-
-        free_memory_vlayer(vlayer = intersectiono, context = context)
-        del intersectiono
-
-        fields = [f.name() for f in result_dissolve.fields()]
-        fields_to_retain = ['fid',
-                            f"{PREFIX_SUBCATCHMENTS}{subcatchments_column}",
-                            ELEVATION_KEY,
-                            f"{PREFIX_LANDUSE}{land_use_column}"]
-        fields_to_delete = [f for f in fields if f not in fields_to_retain]
-
-        result = processing.run("qgis:deletecolumn", {'INPUT': result_dissolve,
-                                                      'COLUMN':fields_to_delete,
-                                                      'OUTPUT': "TEMPORARY_OUTPUT"},
-                                                    context = context)["OUTPUT"]   
+                                                        # f"{PREFIX_LANDUSE}fid"# fid to keep every single feature
+                                                        ])),
+                                        'OUTPUT': "TEMPORARY_OUTPUT"},
+                                        context = context)["OUTPUT"]
         
-        result.setCrs(result_dissolve.crs())
-        free_memory_vlayer(vlayer = result_dissolve, context = context)
+    free_memory_vlayer(vlayer = intersect, context = context)
+
+    fields = [f.name() for f in result_dissolve.fields()]
+    fields_to_retain = ['fid',
+                        f"{PREFIX_SUBCATCHMENTS}{subcatchments_column}",
+                        ELEVATION_KEY,
+                        f"{PREFIX_LANDUSE}{land_use_column}"]
+    fields_to_delete = [f for f in fields if f not in fields_to_retain]
+
+    result = processing.run("qgis:deletecolumn", {'INPUT': result_dissolve,
+                                                    'COLUMN':fields_to_delete,
+                                                    'OUTPUT': "TEMPORARY_OUTPUT"},
+                                                context = context)["OUTPUT"]   
+    
+    result.setCrs(result_dissolve.crs())
+    free_memory_vlayer(vlayer = result_dissolve, context = context)
 
 
-    #Redo the fid
-    with edit(result):
-        idx = result.fields().indexFromName("fid")
-        for f in result.getFeatures():
-            f[idx] = f.id()
-
+    #Calculate elevation stats
+    dissolved_elevationso = processing.run("native:dissolve",
+                                                            {'INPUT': base_elevations_clipped,
+                                                            'FIELD': [ELEVATION_KEY],
+                                                            'OUTPUT': "TEMPORARY_OUTPUT"},
+                                                            context = context)["OUTPUT"]
+    
+    processing.run("qgis:zonalstatistics", {'INPUT_RASTER':dem,
+                                            'RASTER_BAND':dem_band,
+                                            'INPUT_VECTOR':dissolved_elevationso,
+                                            'COLUMN_PREFIX':'ELEV_',
+                                            'STATS':[2]}) #This one modifies the layer directly
+    
+    #Clean Names
+    fields = [f.name() for f in base_elevations_clipped.fields()]
+    result_elevation_simple = processing.run("qgis:deletecolumn", {'INPUT': dissolved_elevationso,
+                                                                    'COLUMN':[f for f in fields if f not in [ ELEVATION_KEY, "ELEV_mean"]],
+                                                                    'OUTPUT': "TEMPORARY_OUTPUT"},
+                                                                    context = context)["OUTPUT"]   
+    
+    
     result.setName("Land_classification")
+    fid_reset_inplace(layer = result, col_name="fid") #Dont preserve fids^
+ 
 
-    if output_filepath in ["", None]: return result
+    result_elevation_simple.setName("Elevation_Zones")
+
+    if output_filepath in ["", None]: return result, result_elevation_simple
     
     #Saving...
     drivername = "GPKG"
     if output_filepath.endswith("shp") : drivername = "ESRI Shapefile"
     save_layer_gpkg(input = result, output = output_filepath, layername = "Land_classification", drivername = drivername)
+    save_layer_gpkg(input = result_elevation_simple, output = output_filepath, layername = "Elevation_Zones", drivername = drivername)
 
     
     free_memory_vlayer(vlayer = result, context = context)
+    free_memory_vlayer(vlayer = result_elevation_simple, context = context)
     del result
 
-    return QgsVectorLayer(output_filepath, "Land classification")          
+    return (QgsVectorLayer(output_filepath+"|layername=" + "Land_classification", "Land classification"),
+            QgsVectorLayer(output_filepath+"|layername=" + "Elevation_Zones", "Elevation_Zones")
+            )
+    
 
 
 
@@ -686,29 +751,34 @@ class PluginDialog(QDialog):
         if output_filepath != "":
             if pathlib.Path(output_filepath).is_dir() : raise ValueError("Output filepath not valid because it is a folder! Enter a valid filepath")
         # print("Save to", output_filepath)
+ 
+
 
         grid_res = self.mQgsDoubleSpinBox_cellwidth.valueFromText(self.mQgsDoubleSpinBox_cellwidth.text())
         ignore_res = self.checkBox_cellwidth.isChecked()
         #Check
            
-        result = intersect_classification(dem = self.mMapLayerComboBox_DEM.currentLayer(),
-                                        dem_band = self.mRasterBandComboBox_demband.currentBand(),
-                                        height_offset = self.mQgsDoubleSpinBox_demoffset.valueFromText(self.mQgsDoubleSpinBox_demoffset.text()),
-                                        height_interval = self.mQgsDoubleSpinBox_deminterval.valueFromText(self.mQgsDoubleSpinBox_deminterval.text()),
-                                        subcatchments = self.mMapLayerComboBox_Subcatchments.currentLayer(),
-                                        land_use = self.mMapLayerComboBox_Landuse.currentLayer(),
-                                        land_use_column = self.mFieldComboBoxLU.currentField(),
-                                        subcatchments_column = self.mFieldComboBoxSC.currentField(),
-                                        grid_res= grid_res if not ignore_res else None,
-                                        output_filepath = output_filepath)
+        result_landclassification, result_elevations = intersect_classification(dem = self.mMapLayerComboBox_DEM.currentLayer(),
+                                                                                dem_band = self.mRasterBandComboBox_demband.currentBand(),
+                                                                                height_offset = self.mQgsDoubleSpinBox_demoffset.valueFromText(self.mQgsDoubleSpinBox_demoffset.text()),
+                                                                                height_interval = self.mQgsDoubleSpinBox_deminterval.valueFromText(self.mQgsDoubleSpinBox_deminterval.text()),
+                                                                                subcatchments = self.mMapLayerComboBox_Subcatchments.currentLayer(),
+                                                                                land_use = self.mMapLayerComboBox_Landuse.currentLayer(),
+                                                                                land_use_column = self.mFieldComboBoxLU.currentField(),
+                                                                                subcatchments_column = self.mFieldComboBoxSC.currentField(),
+                                                                                grid_res= grid_res if not ignore_res else None,
+                                                                                output_filepath = output_filepath,
+                                                                                )
                                                     
 
-        if not result: raise ValueError("No result! Something went wrong in land classification")         
+        if not result_landclassification: raise ValueError("No result! Something went wrong in land classification")         
+
+        QgsProject.instance().addMapLayer(result_elevations)
+        QgsProject.instance().addMapLayer(result_landclassification)
+        
+
         self.label_completed.setText("Success!")
         self.button_cancel.setText("Exit")
-        
-        QgsProject.instance().addMapLayer(result)
-        
 
         return True
 
