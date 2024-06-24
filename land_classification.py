@@ -13,11 +13,14 @@ from __future__ import absolute_import
 # system modules
 import os
 import pathlib
+import uuid
 import webbrowser
 
 # QGIS modules 
 import PyQt5
 from dataclasses import dataclass
+import xml.etree.ElementTree as ET
+import pandas
 
 from promaides_gis_tools.environment import get_ui_path
 from qgis.core import *
@@ -25,9 +28,8 @@ from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtWidgets import QDialog, QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog, QAction
 from qgis.PyQt import uic
-
+from qgis.gui import QgsFieldComboBox, QgsMapLayerComboBox
 #//----Interface
-
 
 
 #---QGIS
@@ -35,7 +37,7 @@ from qgis.core import (QgsVectorLayer, QgsRasterLayer)
 from qgis import processing
 #/---QGIS
 
-from typing import Callable, List, Set, Tuple, Union
+from typing import Callable, Dict, List, Set, Tuple, Union
 import numpy
 import warnings 
 
@@ -47,6 +49,19 @@ LAND_USE = QgsVectorLayer
 ELEVATION_KEY = "ELEV_KEY"
 PREFIX_LANDUSE = "LU_"
 PREFIX_SUBCATCHMENTS = "SC_"
+
+
+def prettify_xml(element : ET.Element, parent : ET.Element = None, index = -1, depth = 0):
+    """Prettify XML in pre-3.9 python since there is no indent"""
+    for i, node in enumerate(element):
+        prettify_xml(node, element, i, depth + 1)
+    if parent is not None:
+        if index == 0:
+            parent.text = '\n' + ('\t' * depth)
+        else:
+            parent[index - 1].tail = '\n' + ('\t' * depth)
+        if index == len(parent) - 1:
+            element.tail = '\n' + ('\t' * (depth - 1))
 
 
 def pseudodelete_raster(path :str) -> None:
@@ -97,6 +112,10 @@ def free_memory_vlayer(vlayer : QgsVectorLayer, context : QgsProcessingContext =
     except Exception as e:
         warnings.warn("Tried to delete layer {} but couldnt...{}".format(vlayer_path, e))
         return False
+
+def df_from_vlayer(input : QgsVectorLayer) -> pandas.DataFrame:
+    return pandas.DataFrame([feat.attributes() for feat in input.getFeatures()],
+                            columns = [field.name() for field in input.fields()])
 
 
 def save_layer_gpkg(input : QgsVectorLayer, output : str, crs : QgsCoordinateReferenceSystem = None, layername = None, drivername = "GPKG")-> QgsVectorLayer:
@@ -605,6 +624,187 @@ def dissolve_classification(vlayer : QgsVectorLayer, subcatchment_key : str, ele
 
     return True
 
+def generate_clarea(land_classification : QgsVectorLayer,
+                    key_LC_subcatchment : str,
+                    key_LC_landuse : str,
+                    key_LC_elevation : str,
+                    elevation_layer : QgsVectorLayer,
+                    key_ELEV_elevation : str,
+                    key_ELEV_mean : str,
+                    output_xml : str):
+    """
+    Takes a land classification multipolygon layer and an elevation layer.
+    The classification layer must have a subcatchment key, a land use key,
+    and an elevation key for the range of elevations.
+    The elevation layer must have an elevation key and a mean height for that key.
+    Elevation key values must coincide between layers.
+
+    The clarea.xml file from HBV-Light will be generated using these values.
+    Subcatchment ids, land use ids, and elevation ids will be sorted in ascending order.
+    """
+    elevations : Dict[str, float] = df_from_vlayer(input = elevation_layer)[[key_ELEV_elevation, key_ELEV_mean]].set_index([key_ELEV_elevation]).to_dict()[key_ELEV_mean]
+
+    area_col = "area"
+    while area_col in [key_LC_subcatchment, key_LC_landuse, key_LC_elevation]:
+        area_col = area_col + uuid.uuid4().hex
+
+
+    #Calculate polygon areas
+    result = processing.run("qgis:fieldcalculator", {'INPUT':land_classification,
+                                            'FIELD_NAME': area_col,
+                                            'FIELD_TYPE':0,
+                                            'FIELD_LENGTH':10,
+                                            'FIELD_PRECISION':3,
+                                            'NEW_FIELD':True,
+                                            'FORMULA':'$area',
+                                            'OUTPUT':'memory:'})["OUTPUT"]
+    
+    #Calculate aggregation by land use, subcatchment.
+    df = df_from_vlayer(input = result)
+
+    all_sc = sorted(df[key_LC_subcatchment]. unique().tolist())
+    all_lu = sorted(df[key_LC_landuse]. unique().tolist())
+    all_elev = sorted(df[key_LC_elevation]. unique().tolist())
+
+    if len(all_lu) > 3: raise ValueError("Maximum number of land use keys is 3!!! Please simplify your Land classification layer by combining multiple keys into one.")
+
+    #Fraction is calculated by total subcatchment area
+    sc_total_area : Dict[str, float] = df.groupby(by = [key_LC_subcatchment])[area_col].sum().to_dict()
+    sc_elev_vegtype_area = df.groupby(by = [key_LC_subcatchment, key_LC_landuse, key_LC_elevation ])[area_col].sum()
+    fractions : Dict[Tuple[str, str, str], float] = {}
+
+    for (sc, lu, elev), value in sc_elev_vegtype_area.items():
+        total_area = sc_total_area[sc]
+        fraction = value/total_area
+        fractions[(sc, lu, elev)] = fraction
+
+    #Building the XML file from the data    
+    catchment = ET.Element("Catchment")
+    catchment.set("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance" )
+    catchment.set("xmlns:xsd","http://www.w3.org/2001/XMLSchema" )
+    vegzonecount = ET.SubElement(catchment, "VegetationZoneCount").text = str(len(all_lu)) #HARDCODED
+    elevationzoneheight = ET.SubElement(catchment, "ElevationZoneHeight")
+    for elev in all_elev:
+        meanelev = elevations[elev]
+        ET.SubElement(elevationzoneheight, "double").text = str(meanelev)
+    
+    for subcatchment in all_sc:
+        sc = ET.SubElement(catchment, "SubCatchment")
+        for veg in all_lu:
+            veg_el = ET.SubElement(sc, "VegetationZone")
+            for elev in all_elev:
+                sub_fraction = 0.0
+                if  (subcatchment, veg, elev) in fractions: sub_fraction = fractions[(subcatchment, veg, elev)]
+                evu = ET.SubElement(veg_el, "EVU")
+                evu.set("xsi:type","Basic_EVU")
+                ET.SubElement(evu, "Area").text = str(sub_fraction)
+        ET.SubElement(sc, "AbsoluteArea").text = str(sc_total_area[subcatchment]/1000/1000) #Assuming m2 for areas
+
+    tree = ET.ElementTree(catchment)
+    #Prettify
+    prettify_xml(catchment)
+    tree.write(output_xml, encoding="utf-8", xml_declaration=True)
+
+    return True
+
+
+
+def config_clarea_tab(handler : QDialog, dialog : "PluginDialog"):
+    """Configs the tab for the clarea XML generator"""
+
+    lu_layer: QgsMapLayerComboBox = dialog.mMapLayerComboBox_clarea_LU
+    elev_layer : QgsMapLayerComboBox = dialog.mMapLayerComboBox_clarea_ELEV_layer
+
+
+    elev_elev : QgsFieldComboBox = dialog.mFieldComboBox_clarea_ELEV_key
+    elev_mean : QgsFieldComboBox = dialog.mFieldComboBox_clarea_ELEV_mean
+    
+    lu_sc : QgsFieldComboBox = dialog.mFieldComboBox_clarea_SC
+    lu_lu : QgsFieldComboBox = dialog.mFieldComboBox_clarea_LU
+    lu_elev : QgsFieldComboBox = dialog.mFieldComboBox_clarea_ELEV
+
+    export_browse : QPushButton = dialog.export_browse_clarea
+    export_input : QLineEdit = dialog.export_filename_clarea
+    cancel : QPushButton = dialog.button_cancel_clarea
+    help : QPushButton = dialog.button_help_3
+    ok: QPushButton = dialog.button_ok_clarea 
+    label_completed : QLabel = dialog.label_completed_clarea
+
+    def set_LU_layer(*args,**kwargs):
+        for o in [
+                    lu_sc,
+                    lu_lu,
+                    lu_elev,
+                ]:
+            o.setLayer(*args,**kwargs)
+
+    def set_ELEV_layer(*args,**kwargs):
+        for o in [
+                    elev_elev,
+                    elev_mean,
+                ]:
+            o.setLayer(*args,**kwargs)
+
+    #Update field
+    lu_layer.layerChanged.connect(set_LU_layer) #self.mFieldComboBoxSC.setLayer
+    elev_layer.layerChanged.connect(set_ELEV_layer) #self.mFieldComboBoxSC.setLayer
+
+    #---LAND CLASSIFICATION    
+    help.clicked.connect(dialog.Help)
+    cancel.clicked.connect(handler.button_cancel_clicked)
+
+
+    #Show crs
+    lu_layer.setShowCrs(True)
+    elev_layer.setShowCrs(True)
+
+    #Filter layer types
+    lu_layer.setFilters(QgsMapLayerProxyModel.PolygonLayer)
+
+    #Clean MaplayerComboBoxes
+    lu_layer.setLayer(None)
+    elev_layer.setLayer(None)
+
+    #Set subcatchment layer to selected layer
+    lu_layer.setLayer(dialog.iface.activeLayer())
+
+
+
+
+    def onBrowseButtonClicked(self):
+        current_filename = export_input.text()
+        if current_filename == "": current_filename = os.path.join(QgsProject.instance().absolutePath(),"Clarea.xml")
+        new_filename, __ = QFileDialog.getSaveFileName(dialog.iface.mainWindow(), 'Choose where to save the file', current_filename, filter = "XML (*.xml)")
+        if new_filename != '':
+            export_input.setText(new_filename)
+
+    export_browse.clicked.connect(onBrowseButtonClicked)   
+
+    def exec_clarea_xml_gen():
+        output_filepath = export_input.text()
+        if output_filepath == "": raise ValueError("Output filepath is empty! Enter a valid filepath!")
+        if output_filepath != "":
+            if pathlib.Path(output_filepath).is_dir() : raise ValueError("Output filepath not valid because it is a folder! Enter a valid filepath!")
+
+        result = generate_clarea(land_classification=lu_layer.currentLayer(),                                
+                                key_LC_elevation=lu_elev.currentField(),
+                                key_LC_landuse=lu_lu.currentField(),
+                                key_LC_subcatchment=lu_sc.currentField(),
+                                elevation_layer=elev_layer.currentLayer(),
+                                key_ELEV_elevation=elev_elev.currentField(),
+                                key_ELEV_mean=elev_mean.currentField(),
+                                output_xml = output_filepath
+                                )
+        if result:
+            label_completed.setText("Success!")
+            cancel.setText("Exit")
+
+    ok.clicked.connect(exec_clarea_xml_gen)
+
+
+    
+
+
 #------------INTERFACE
 
 
@@ -832,6 +1032,7 @@ class LandClassificationTool(object):
         self.dialog = PluginDialog(self.iface, self.iface.mainWindow())
         self.dialog.button_cancel.clicked.connect(self.button_cancel_clicked)
         self.dialog.button_cancel_CE.clicked.connect(self.button_cancel_clicked)
+        config_clarea_tab(handler = self, dialog = self.dialog)
         self.dialog.show()
 
     def scheduleAbort(self):
