@@ -118,6 +118,23 @@ def df_from_vlayer(input : QgsVectorLayer) -> pandas.DataFrame:
                             columns = [field.name() for field in input.fields()])
 
 
+def df_to_vlayer(df : pandas.DataFrame) -> QgsVectorLayer:
+    """Transforms a dataframe into a QgsVectorLayer. Everything gets converted to String"""
+    vl = QgsVectorLayer("None", "DataFrame", "memory")
+    pr = vl.dataProvider()
+    with edit(layer = vl):
+        field_names = [QgsField(fieldname, QVariant.String) for fieldname in df.columns]
+        pr.addAttributes(field_names)
+        vl.updateFields()
+
+        for i in df.index:
+            feat = QgsFeature()
+            row = [str(v) for v in df.iloc[i].tolist()]
+            feat.setAttributes(row)
+            pr.addFeatures([feat])
+    return vl
+
+
 def save_layer_gpkg(input : QgsVectorLayer, output : str, crs : QgsCoordinateReferenceSystem = None, layername = None, drivername = "GPKG")-> QgsVectorLayer:
     """
     Output has to be a normal filepath.
