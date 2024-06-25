@@ -657,7 +657,7 @@ def generate_clarea(land_classification : QgsVectorLayer,
                                             'FIELD_PRECISION':3,
                                             'NEW_FIELD':True,
                                             'FORMULA':'$area',
-                                            'OUTPUT':'memory:'})["OUTPUT"]
+                                            'OUTPUT':"TEMPORARY_OUTPUT"})["OUTPUT"]
     
     #Calculate aggregation by land use, subcatchment.
     df = df_from_vlayer(input = result)
