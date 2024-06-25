@@ -24,13 +24,12 @@ import pandas
 
 from promaides_gis_tools.environment import get_ui_path
 from qgis.core import *
-from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtCore import Qt, QVariant
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtWidgets import QDialog, QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog, QAction
 from qgis.PyQt import uic
-from qgis.gui import QgsFieldComboBox, QgsMapLayerComboBox
+from qgis.gui import QgsFieldComboBox, QgsMapLayerComboBox, QgsCheckableComboBox
 #//----Interface
-
 
 #---QGIS
 from qgis.core import (QgsVectorLayer, QgsRasterLayer)
@@ -49,6 +48,7 @@ LAND_USE = QgsVectorLayer
 ELEVATION_KEY = "ELEV_KEY"
 PREFIX_LANDUSE = "LU_"
 PREFIX_SUBCATCHMENTS = "SC_"
+
 
 
 def prettify_xml(element : ET.Element, parent : ET.Element = None, index = -1, depth = 0):
@@ -161,6 +161,25 @@ def save_layer_gpkg(input : QgsVectorLayer, output : str, crs : QgsCoordinateRef
                                                     )
     if save_result[0] != 0 : print("Error while saving:", layername, save_result)
     return input
+
+
+def dissolve_features(input : QgsVectorLayer, columns : List[str], context : QgsProcessingContext = None) -> QgsVectorLayer:
+        result_dissolve = processing.run("native:dissolve",
+                                            {'INPUT': input,
+                                            'FIELD': columns,
+                                            'OUTPUT': "TEMPORARY_OUTPUT"},
+                                            context = context)["OUTPUT"]
+            
+        fields = [f.name() for f in input.fields()]
+        fields_to_delete = [f for f in fields if f not in columns]
+
+        result = processing.run("qgis:deletecolumn", {'INPUT': result_dissolve,
+                                                        'COLUMN':fields_to_delete,
+                                                        'OUTPUT': "TEMPORARY_OUTPUT"},
+                                                    context = context)["OUTPUT"]   
+        
+        result.setCrs(input.crs())
+        return result
 
 def classify_elevations(dem : QgsRasterLayer,
                         dem_band : int,
@@ -726,6 +745,80 @@ def generate_clarea(land_classification : QgsVectorLayer,
 
 
 
+def simplify_land_classification(land_classification : QgsVectorLayer,
+                                    key_LC_subcatchment : str,
+                                    key_LC_landuse : str,
+                                    key_LC_elevation : str,
+                                    landuse_group_1 : List[str],
+                                    landuse_group_2 : List[str],
+                                    landuse_group_3 : List[str],
+                                    output_filepath : str) -> Tuple[QgsVectorLayer, QgsVectorLayer]:
+    """
+    Aggregates the features based on subcatchment, elevation, and three groups
+    of land use keys
+    """
+
+    result_simplification : QgsVectorLayer
+    result_grouping : QgsVectorLayer
+
+    context = QgsProcessingContext()
+
+    key_group = "GROUP_KEY"
+    while key_group in [key_LC_subcatchment, key_LC_landuse, key_LC_elevation]:
+        key_group = key_group + uuid.uuid4().hex
+
+    g1 = f"""({",".join([f"'{l}'" for l in landuse_group_1])})"""
+    g2 = f"""({",".join([f"'{l}'" for l in landuse_group_2])})"""
+    g3 = f"""({",".join([f"'{l}'" for l in landuse_group_3])})"""
+
+
+    grouping = processing.run("qgis:fieldcalculator", {'INPUT': land_classification,
+                                                        'FIELD_NAME':key_group,
+                                                        'FIELD_TYPE':2,
+                                                        'FIELD_LENGTH':80,
+                                                        'FIELD_PRECISION':3,
+                                                        'NEW_FIELD':True,
+                                                        'FORMULA':'CASE\r\n'\
+                                                                    f"""WHEN (\"{key_LC_landuse}\" IN  {g1}) THEN '1'\r\n"""\
+                                                                    f"""WHEN (\"{key_LC_landuse}\" in  {g2}) THEN '2'\r\n"""\
+                                                                    f"""WHEN (\"{key_LC_landuse}\" in  {g3}) THEN '3'\r\n"""\
+                                                                    'ELSE NULL\r\nEND',
+                                                        'OUTPUT':"TEMPORARY_OUTPUT"})["OUTPUT"]
+    grouping.setName("fieldcalculator") 
+    result_simplification = dissolve_features(input = grouping, columns = [key_LC_subcatchment, key_LC_elevation, key_group], context = context)
+
+
+    #Grouping pairs
+    pairs = []
+    for i, group in enumerate([landuse_group_1, landuse_group_2, landuse_group_3]):
+        pairs.extend([(code, i+1) for code in group])
+
+    #Create grouping table
+    df = pandas.DataFrame.from_records(pairs, columns=['LANDUSE', 'GROUP'])
+    result_grouping = df_to_vlayer(df)
+    
+    #SAVE
+    if output_filepath in ["", None]:
+        result_simplification.setName("Land_classification_simplified")
+        result_grouping.setName("Groupings")
+        return result_simplification, result_grouping
+    
+    #Saving...
+    drivername = "GPKG"
+    save_layer_gpkg(input = result_simplification, output = output_filepath, layername = "Land_classification_simplified", drivername = drivername)
+    save_layer_gpkg(input = result_grouping, output = output_filepath, layername = "Groupings", drivername = drivername)
+
+    
+    free_memory_vlayer(vlayer = result_simplification, context = context)
+    free_memory_vlayer(vlayer = result_grouping, context = context)
+
+    return (QgsVectorLayer(output_filepath+"|layername=" + "Land_classification_simplified", "Land_classification_simplified"),
+            QgsVectorLayer(output_filepath+"|layername=" + "Groupings", "Groupings")
+            )
+
+
+
+
 def config_clarea_tab(handler : QDialog, dialog : "PluginDialog"):
     """Configs the tab for the clarea XML generator"""
 
@@ -819,6 +912,129 @@ def config_clarea_tab(handler : QDialog, dialog : "PluginDialog"):
     ok.clicked.connect(exec_clarea_xml_gen)
 
 
+def config_simplify_tab(handler : QDialog, dialog : "PluginDialog"):
+    """Configs the tab for the Land classification HBV-light simplifier.
+    It takes three groups of land uses and dissolves them altogether.
+    """
+
+    lu_layer: QgsMapLayerComboBox = dialog.mMapLayerComboBox_LU_simplify
+    
+    lu_sc : QgsFieldComboBox = dialog.mFieldComboBox_SC_simplify
+    lu_lu : QgsFieldComboBox = dialog.mFieldComboBox_LU_simplify
+    lu_elev : QgsFieldComboBox = dialog.mFieldComboBox_ELEV_simplify
+
+    export_browse : QPushButton = dialog.export_browse_simplify
+    export_input : QLineEdit = dialog.export_filename_simplify
+    cancel : QPushButton = dialog.button_cancel_simplify
+    help : QPushButton = dialog.button_help_4
+    ok: QPushButton = dialog.button_ok_simplify
+    label_completed : QLabel = dialog.label_completed_simplify
+
+    group1 : QgsCheckableComboBox = dialog.mComboBox_1
+    group2 : QgsCheckableComboBox = dialog.mComboBox_2
+    group3 : QgsCheckableComboBox = dialog.mComboBox_3
+
+
+    def get_unique_landuse():
+        layer : QgsVectorLayer = lu_layer.currentLayer()
+        if layer is None: return
+        lu_field = lu_lu.currentField()
+        if lu_field is "" : return
+
+        idx = layer.fields().indexFromName(lu_field)
+        unique_lu = []
+        for feature in layer.getFeatures():
+            lu = feature[idx]
+            if lu in unique_lu : continue
+            else: unique_lu.append(lu)
+        unique_lu = sorted(unique_lu)
+
+
+        g : QgsCheckableComboBox
+        for g in (group1, group2, group3): g.clear()
+
+        for lu in unique_lu:
+            for g in (group1, group2, group3): g.addItem(str(lu))
+
+    def set_LU_layer(*args,**kwargs):
+        for o in [
+                    lu_sc,
+                    lu_lu,
+                    lu_elev,
+                ]:
+            o.setLayer(*args,**kwargs)
+        for g in (group1, group2, group3): g.deselectAllOptions() 
+
+    #Update field
+    lu_layer.layerChanged.connect(set_LU_layer) #self.mFieldComboBoxSC.setLayer
+    lu_lu.fieldChanged.connect(get_unique_landuse)
+
+    #---LAND CLASSIFICATION    
+    help.clicked.connect(dialog.Help)
+    cancel.clicked.connect(handler.button_cancel_clicked)
+
+
+    #Show crs
+    lu_layer.setShowCrs(True)
+    #Filter layer types
+    lu_layer.setFilters(QgsMapLayerProxyModel.PolygonLayer)
+
+    #Clean MaplayerComboBoxes
+    lu_layer.setLayer(None)
+    #Set subcatchment layer to selected layer
+    lu_layer.setLayer(dialog.iface.activeLayer())
+
+
+
+
+    def onBrowseButtonClicked(self):
+        current_filename = export_input.text()
+        if current_filename == "": current_filename = os.path.join(QgsProject.instance().absolutePath(),"Land_classification_simplified.gpkg")
+        new_filename, __ = QFileDialog.getSaveFileName(dialog.iface.mainWindow(), 'Choose where to save the simplified file', current_filename, filter = "Geopackage (*.gpkg)")
+        if new_filename != '':
+            export_input.setText(new_filename)
+
+    export_browse.clicked.connect(onBrowseButtonClicked)   
+
+    def get_group_items() -> Tuple[List[str]]:
+        items_1 = group1.checkedItems()
+        items_2 = group2.checkedItems()
+        items_3 = group3.checkedItems()
+
+        _generic = "Land use groups must not overlap!! Please check the selected categories!!"
+
+        if any([i1 in items_2 for i1 in items_1]) : raise ValueError(f"{_generic} Some items in the first group are also in the second group.")
+        if any([i1 in items_3 for i1 in items_1]) : raise ValueError(f"{_generic} Some items in the first group are also in the third group.")
+        if any([i2 in items_3 for i2 in items_2]) : raise ValueError(f"{_generic} Some items in the second group are also in the third group.")
+
+        return items_1, items_2, items_3
+
+
+    def exec_simplify(self):
+        output_filepath = export_input.text()
+        if output_filepath != "":
+            if pathlib.Path(output_filepath).is_dir() : raise ValueError("Output filepath not valid because it is a folder! Enter a valid filepath!")
+
+        l1, l2, l3 = get_group_items()
+
+        result, grouping = simplify_land_classification(land_classification=lu_layer.currentLayer(),                                
+                                                key_LC_elevation=lu_elev.currentField(),
+                                                key_LC_landuse=lu_lu.currentField(),
+                                                key_LC_subcatchment=lu_sc.currentField(),
+                                                landuse_group_1 = l1,
+                                                landuse_group_2 = l2,
+                                                landuse_group_3 = l3,
+                                                output_filepath = output_filepath
+                                                )
+        if result:
+            label_completed.setText("Success!")
+            cancel.setText("Exit")
+        
+        
+        QgsProject.instance().addMapLayer(result)
+        QgsProject.instance().addMapLayer(grouping)
+
+    ok.clicked.connect(exec_simplify)
     
 
 
@@ -1050,6 +1266,7 @@ class LandClassificationTool(object):
         self.dialog.button_cancel.clicked.connect(self.button_cancel_clicked)
         self.dialog.button_cancel_CE.clicked.connect(self.button_cancel_clicked)
         config_clarea_tab(handler = self, dialog = self.dialog)
+        config_simplify_tab(handler = self, dialog = self.dialog)
         self.dialog.show()
 
     def scheduleAbort(self):
