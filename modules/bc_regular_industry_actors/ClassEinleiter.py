@@ -18,7 +18,7 @@ class Einleiter:
     id : str
     lat_long : Tuple[float, float] #Unspecified 
     abf_constant_L_s : float = field(init = True)#l/s constant #TODO: eventually add support for measured flow rates with datetime-l/s
-    patterns : PatternHolder = field(init = True, default=PatternHolder())
+    patterns : PatternHolder = field(init = True, default_factory = PatternHolder)
     bc : int = field(init = True, default = None) #Boundary condition index
 
     def __post_init__(self):
