@@ -3,6 +3,7 @@
 
 from dataclasses import dataclass, field
 import datetime
+from functools import partial
 from typing import List
 import numpy
 
@@ -52,11 +53,11 @@ class PatternWeekly(Pattern):
 @dataclass
 class PatternHolder:
     """Holds the Daily and Weekly patterns. Calculates the combined factor."""
-    _daily : PatternDaily = field(init=False, default=PatternDaily(factor = numpy.ones(24)))
-    _weekly : PatternWeekly = field(init=False, default=PatternWeekly(factor = numpy.ones(7)))
+    _daily : PatternDaily = field(init=False, default_factory= partial(PatternDaily, factor = numpy.ones(24)))
+    _weekly : PatternWeekly = field(init=False, default_factory= partial(PatternWeekly, factor = numpy.ones(7)))
 
-    daily : PatternDaily = field(init=True, default=PatternDaily(factor = numpy.ones(24)))
-    weekly : PatternWeekly = field(init=True, default=PatternWeekly(factor = numpy.ones(7)))
+    daily : PatternDaily = field(init=True, default_factory= partial(PatternDaily, factor = numpy.ones(24)))
+    weekly : PatternWeekly = field(init=True, default_factory= partial(PatternWeekly, factor = numpy.ones(7)))
 
     def __post_init__(self):
         if self.daily is None: self.daily = self._daily
