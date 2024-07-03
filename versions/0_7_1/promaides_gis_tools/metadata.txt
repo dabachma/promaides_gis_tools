@@ -1,0 +1,58 @@
+[general]
+name=ProMaIDes GIS Tools
+email=daniel.bachmann@h2.de
+author=AG FRM Hochschule Magdeburg-Stendal and others
+qgisMinimumVersion=3.0
+qgisMaximumVersion=3.99
+description=Collection of helper tools for the free ProMaIDes software package; 
+about=This is a collection of tools, which support the models set-up and the result visualization of ProMaIDes, a free and integrative software package for flood risk analysis (https://promaides.myjetbrains.com/youtrack/articles/PMID-A-7/General).  
+version=version 0.7.1
+
+; optional stuff
+category=Vector
+changelog=
+  Version 0.1
+  * First release
+  Version 0.2
+  * Bug fixes
+  * New export tools (DEM, Profiles, Database)
+  Version 0.3
+  * Bug fixes
+  * Improved database export
+  * Improved DEM export
+  * Reduced memory footprint of DEM export
+  Version 0.3.1
+  * Bug fixes
+  * Added about dialog
+  Version 0.4.0
+  * QGIS 3 compatibility
+  Version 0.6.0
+  * Added several new export functions and timeviewer for the hydrodynamic results
+  Version 0.6.2
+  * Add the DAM raster export for economical damage and affected and endangered population caluclation in ProMaIdes
+  Version 0.6.3
+  * Solve bug in DEM-Export
+  Version 0.6.4
+  * Add the documentation page
+  * bug fixes
+  Version 0.6.5
+  * Add new aggregation method for 2d-floodplain export
+  * Started with first plugins for CI-modeling
+  * Some other minor changes 
+  Version 0.6.6
+  * Some minor changes and bug fixes
+  Version 0.6.7
+  * Some minor changes and bug fixes
+  * Further work on rainfall generator
+  Version 0.6.8
+  * Some minor changes and bug fixes
+  * Further work on rainfall generator and CI-model builder
+  * new icon
+  Version 0.7.1
+  * Extra folder for the plugins in QGIS (h2_Toolbox/ProMaiDes; h2_Toolbox/LoFloDes)
+  * New functinalities for LowFloDes, a risk analysis for low flow are added
+icon=icon.png
+experimental=False
+homepage=https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-6/Plug-ins
+tracker=https://github.com/dabachma/promaides_gis_tools/issues
+repository=https://github.com/dabachma/promaides_gis_tools

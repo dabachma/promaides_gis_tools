@@ -1,0 +1,204 @@
+{
+    "Electricity": {
+        "key": [
+            "power",
+            "power",
+            "power"
+        ],
+        "value": [
+            "plant",
+            "substation",
+            "transformer"
+        ],
+        "sec_id": 1
+    },
+    "Information technology": {
+        "key": [
+            "man_made",
+            "tower:type",
+            "amenity",
+            "studio",
+            "studio",
+            "telecom",
+            "telecom"
+        ],
+        "value": [
+            "antenna",
+            "communication",
+            "telephone",
+            "radio",
+            "televison",
+            "exchange",
+            "data_center"
+        ],
+        "sec_id": 2
+    },
+    "Water supply": {
+        "key": [
+            "man_made",
+            "man_made",
+            "man_made",
+            "man_made"
+        ],
+        "value": [
+            "water_works",
+            "water_tower",
+            "water_well",
+            "reservoir_covered"
+        ],
+        "sec_id": 3
+    },
+    "Water treatment": {
+        "key": [
+            "man_made"
+        ],
+        "value": [
+            "wastewater_plant"
+        ],
+        "sec_id": 4
+    },
+    "Energy": {
+        "key": [
+            "utility",
+            "utility",
+            "utility"
+        ],
+        "value": [
+            "gas",
+            "oil",
+            "heating"
+        ],
+        "sec_id": 5
+    },
+    "Emergency service": {
+        "key": [
+            "amenity",
+            "amenity",
+            "emergency",
+            "emergency_service",
+            "amenity",
+            "emergency"
+        ],
+        "value": [
+            "police",
+            "fire_station",
+            "ambulance_station",
+            "technical",
+            "emergency_service",
+            "disaster_response"
+        ],
+        "sec_id": 10
+    },
+    "Health and Care System": {
+        "key": [
+            "amenity",
+            "amenity",
+            "amenity",
+            "amenity",
+            "social_facility"
+        ],
+        "value": [
+            "hospital",
+            "clinic",
+            "pharmacy",
+            "doctors",
+            "nursing_home"
+        ],
+        "sec_id": 11
+    },
+    "Transport and logistics goods": {
+        "key": [
+            "industrial"
+        ],
+        "value": [
+            "port"
+        ],
+        "sec_id": 12
+    },
+    "Transport and logistics person": {
+        "key": [
+            "amenity",
+            "railway",
+            "aeroway",
+            "aeroway",
+            "leisure",
+            "amenity"
+        ],
+        "value": [
+            "bus_station",
+            "station",
+            "aerodrome",
+            "helipad",
+            "marina",
+            "ferry_terminal"
+        ],
+        "sec_id": 13
+    },
+    "Official and Governmental Institutions": {
+        "key": [
+            "amenity",
+            "amenity",
+            "government",
+            "office",
+            "amenity"
+        ],
+        "value": [
+            "prison",
+            "courthouse",
+            "ministry",
+            "government",
+            "townhall"
+        ],
+        "sec_id": 14
+    },
+    "Hazardous Materials": {
+        "key": [
+            "amenity"
+        ],
+        "value": [
+            "fuel"
+        ],
+        "sec_id": 15
+    },
+    "Industry and Production sites": {
+        "key": [
+            "industrial",
+            "industrial",
+            "industrial",
+            "industrial",
+            "landuse"
+        ],
+        "value": [
+            "oil",
+            "factory",
+            "warehouse",
+            "mine",
+            "quarry"
+        ],
+        "sec_id": 16
+    },
+    "Cultural or Religious sites": {
+        "key": [
+            "amenity"
+        ],
+        "value": [
+            "place_of_worship"
+        ],
+        "sec_id": 17
+    },
+    "Education": {
+        "key": [
+            "amenity",
+            "amenity",
+            "amenity",
+            "amenity"
+        ],
+        "value": [
+            "school",
+            "kindergarten",
+            "college",
+            "university"
+        ],
+        "sec_id": 18
+    }
+}

@@ -1,0 +1,39 @@
+########################################################################
+# This file was manually generated for ProMaIDes 
+# Comments are marked with #
+# Number of instationary boundary curves in file: 1 
+#
+# Explanation of data:
+#  Start each curve with !BEGIN and end it with !END per line; in between are: 
+#  Index_(starts by 0) NumberOfPoints type[Length [m²/s] lateral to 1d-river, Area [m/s] 2d-rainfall, waterlevel [m] 1d-outflow river, point [m³/s] pump, inflow river]
+#  hour [h] discharge [unit according to type]
+#
+# Use in .ilm-file (just copy, delete the leading "#", set file(s)):
+# Set per FloodPlain-model between !$BEGINFPMODEL and !$ENDFPMODEL
+#!INSTATBOUNDFILE = <SET>						#Define here an instationary boundary file if required
+#	$FILENAME= "./PATH2FILE/FILE_NAME.txt" 			#File name and path
+#	$NUMBER_CURVE= 2								#Number of curves in the file
+#</SET>	
+########################################################################
+
+!BEGIN # a comment
+26	36525	point
+0	0.077
+24	0.077
+48	0.077
+72	0.077
+96	0.077
+120	0.077
+144	0.077
+168	0.077
+192	0.077
+216	0.077
+240	0.077
+264	0.077
+288	0.077
+312	0.077
+336	0.077
+360	0.077
+384	0.077
+408	0.077
+!END
