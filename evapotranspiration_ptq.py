@@ -1,4 +1,4 @@
-#Tool for the quick creation of:
+﻿#Tool for the quick creation of:
 #-Voronoi layer from a Point layer
 #-Aggregation from a Subcatchment layer with area as a weight
 #-Application of a formula for evapotranspiration
@@ -24,7 +24,7 @@ import pandas
 
 from promaides_gis_tools.environment import get_ui_path
 from qgis.core import *
-from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtCore import Qt, QVariant
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtWidgets import QDialog, QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog, QAction
 from qgis.PyQt import uic
@@ -333,7 +333,8 @@ def calculate_wg_averages(df_paths : pandas.DataFrame, subcatchment_id : str, pa
         Calculates the averages using area inside subcatchment as weight.
 
     """
-    paths = df_paths[paths_column].unique()
+    paths : List[Union[QVariant, str]] = df_paths[paths_column].unique()
+    paths = [p if isinstance(p, str) else str(p.value()) for p in paths ]
     
     dfs : List[pandas.DataFrame] =  []
     for col in ["TEMP", "LUFEU", "GLOST", "WIND", "NISCH"]:
