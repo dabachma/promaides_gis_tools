@@ -120,16 +120,25 @@ def generate_intersection(stations : QgsVectorLayer, stations_id : str, subcatch
                                                                'OUTPUT': QgsProcessingUtils.generateTempFilename('bbox.gpkg')}
                                                                )["OUTPUT"]
         vVoronoi = QgsVectorLayer(bounding_box)
-        
-        vVoronoi.dataProvider().addAttributes([field for field in vstations.fields() if field.name() not in ["fid"]])
+
+        bb_attributes = [field for field in vVoronoi.fields()]                
+        fieldnames = [field for field in vstations.fields()]
+        fieldnames_names = [f.name() for f in fieldnames]
+
+        remove_field = [i for i,f in enumerate(bb_attributes) if f.name() not in fieldnames_names ]
+        vVoronoi.dataProvider().deleteAttributes(remove_field) #First delete extra extenttolayer fields
+        vVoronoi.updateFields()
+
+        vVoronoi.dataProvider().addAttributes([f for f in fieldnames if f.name() not in ["fid"]]) #Then add missing ones
         vVoronoi.updateFields()
 
         single_station : QgsFeature = list(vstations.getFeatures())[0]
-        attr_d = {i : v for i, v in enumerate(single_station.attributes())}
+        attr_d = {i : v for i, v in enumerate(single_station.attributes()) if fieldnames[i].name() not in ["fid"]}
+        
         
         single_bb : QgsFeature = list(vVoronoi.getFeatures())[0] #Only one
         vVoronoi.dataProvider().changeAttributeValues({single_bb.id() : attr_d})
-    
+        
     else:
         
         #Voronoi stations
@@ -148,6 +157,7 @@ def generate_intersection(stations : QgsVectorLayer, stations_id : str, subcatch
                                                       )
         
         vVoronoi = QgsVectorLayer(output, "voronoi")
+    
         
     #Intersection with subcatchment. Keep columns    
     intersection = processing.run("qgis:intersection", {'INPUT':vVoronoi,
@@ -170,8 +180,6 @@ def generate_intersection(stations : QgsVectorLayer, stations_id : str, subcatch
                                                                     'OUTPUT': QgsProcessingUtils.generateTempFilename('StationsVoronoiComplete.gpkg')}
                                                                     )["OUTPUT"]
     result = QgsVectorLayer(result_area, "StationsVoronoi")
-
-
     return result, sc_new_fieldname
     
 def calculate_fractions(voronoi_stations : pandas.DataFrame, stations_id : str, subcatchment_id : str, data : pandas.DataFrame, area_id : str = AREA_FIELD) -> pandas.DataFrame:
@@ -335,7 +343,7 @@ def calculate_wg_averages(df_paths : pandas.DataFrame, subcatchment_id : str, pa
     """
     paths : List[Union[QVariant, str]] = df_paths[paths_column].unique()
     paths = [p if isinstance(p, str) else str(p.value()) for p in paths ]
-    
+
     dfs : List[pandas.DataFrame] =  []
     for col in ["TEMP", "LUFEU", "GLOST", "WIND", "NISCH"]:
         sub_dfs = {p:load_WG_file(p, col) for p in paths}
@@ -421,7 +429,6 @@ def calculate_weather_generator_voronoi_avg(stations : QgsVectorLayer, path_fiel
     result_voronoi_df = pandas.DataFrame([feat.attributes() for feat in result_voronoi.getFeatures()],
                                                 columns = [field.name() for field in result_voronoi.fields()] )
     # QgsProject.instance().addMapLayer(result_voronoi)
-
     result_averages = calculate_wg_averages(df_paths = result_voronoi_df, subcatchment_id = new_sub_id,
                                             paths_column = path_field, area_id = AREA_FIELD)
     
