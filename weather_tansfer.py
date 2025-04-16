@@ -139,19 +139,29 @@ class WeatherTransfer(object):
             factor = 6
         df_name = df_name.loc[starttime: endtime]
         df_name = df_name.reset_index()
+        df_output = df_name
         if type == 'wind':
             df_output = df_name['   F']
         elif type == 'radiation':
             df_output = df_name['GS_10'] * (2.78 * factor)
         elif type == 'air temperature':
-            df_output = df_name['TT_STD'] +273.15
+            prim_col = 'TT_STD'
+            alt_col = 'TT_TU'
+            oth_col = ' TMK'
+            if prim_col in df_name.columns:
+                df_output = df_name['TT_STD'] +273.15
+            elif alt_col in df_name.columns:
+                df_output = df_name['TT_TU'] + 273.15
+            elif oth_col in df_name.columns:
+                df_output = df_name[' TMK'] + 273.15
         elif type == 'humidity':
             df_output = df_name['RF_STD'] /100
+
         df_output = df_output.interpolate()
         df_output.to_csv(outputpath, sep=' ')
 
     def transfer_wg(self, importpath, resolution, type, outputpath):
-        df_name = pd.read_csv(importpath, sep=',', header=0, index_col=0)
+        df_name = pd.read_csv(importpath, sep=',', header=0) #index_col=0)
         if resolution == 'hourly':
             df_name['date'] = df_name['date'].astype(str)
             df_name['date'] = df_name['date'].apply(lambda x: datetime.strptime(x, '%Y%m%d'))
@@ -167,7 +177,7 @@ class WeatherTransfer(object):
                 hour: int = sub_series["hour"]
                 hours = [hour + index for index in range(24)]
                 if type == 'radiation':
-                    value = sub_series["GLOST"]*2.78
+                    value = sub_series["GLOST"]
                     values = [value * p for p in perc_list_radiation]
                 elif type == 'air temperature':
                     value = sub_series["TEMP"]
@@ -182,23 +192,38 @@ class WeatherTransfer(object):
                 dfs.append(sub_df)
             df_name = pd.concat(dfs)
             if type == 'air temperature' and resolution == 'hourly':
-                perc_temp = pd.read_csv('C:/Users/uhalbrit/DryRivers/07_Code/promaides_gis_tools/perc_air_temp.csv', sep=',', index_col=0)
+                perc_temp = pd.read_csv('C:/Users/uhalbrit/DryRivers/07_Code/promaides_gis_tools/perc_air_temp.csv',
+                                        sep=',', index_col=0)
+
+                # Berechne die Anzahl der vollständigen Blöcke, die auf die Länge des DataFrames passen
                 iterations = len(df_name) // len(perc_temp)
+
+                # Iteriere über jeden Block und multipliziere mit den Prozentwerten
+                df_result_blocks = []
                 for i in range(iterations):
                     start_idx = i * len(perc_temp)
                     end_idx = start_idx + len(perc_temp)
                     df_name_block = df_name.iloc[start_idx:end_idx]
-                    df_result_block = df_name_block * perc_temp.values
-                    df_result = pd.concat([df_result,df_result_block])
-                if len(df_name) % len(perc_temp) !=0:
+                    df_result_block = df_name_block.mul(perc_temp.values, axis=0)
+                    df_result_blocks.append(df_result_block)
+
+                # Verarbeite den Rest, falls die Länge von df_name nicht genau durch perc_temp teilbar ist
+                if len(df_name) % len(perc_temp) != 0:
                     start_idx = iterations * len(perc_temp)
                     df_name_block = df_name.iloc[start_idx:]
                     df_perc_block = perc_temp.iloc[:len(df_name_block)]
-                    df_result_block = df_name_block * df_perc_block.values
-                    df_result = pd.concat([df_result,df_result_block])
-                df_result = df_result + 273.15
+                    df_result_block = df_name_block.mul(df_perc_block.values, axis=0)
+                    df_result_blocks.append(df_result_block)
+
+                # Füge alle Blöcke zusammen
+                df_result = pd.concat(df_result_blocks).reset_index(drop=True)
+
+                # Temperaturumrechnung und Begrenzung
+                df_result = df_result + 273.15 #ueberfaellig da ab WG V4 Kelvij-Werte ausgegeben werden
                 df_result = df_result.clip(upper=313)
-                df_name = df_result.reset_index(drop=True)
+                df_result = df_result.clip(lower=243)
+
+                df_name = df_result
             df_output = df_name['sub_value'].reset_index(drop=True)
 
         elif resolution == 'daily':
@@ -210,7 +235,8 @@ class WeatherTransfer(object):
             elif type == 'air temperature':
                 df_output = df_name['TEMP']+273.15
             elif type == 'humidity':
-                df_output = df_name['LUFEU'] /100
+                df_output = df_name['LUFEU']
+        df_output.index = df_output.index
         df_output.to_csv(outputpath, sep=' ')
         return df_output
     #Execution of the tool by "ok" button

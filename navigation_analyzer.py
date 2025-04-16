@@ -4,6 +4,7 @@ from __future__ import absolute_import
 # system modules
 import math
 import webbrowser
+import pandas as pd
 
 # QGIS modules 
 from qgis.core import *
@@ -27,16 +28,22 @@ class PluginDialog(QDialog):
         QDialog.__init__(self, parent, flags)
         #load the ui
         uic.loadUi(UI_PATH, self)
-
         self.iface = iface
+        self.browse_button_glob2wl_import.clicked.connect(self.onBrowseButtonImportGlob2WLClicked)
         self.HelpButton.clicked.connect(self.Help)
 
 
+    def onBrowseButtonImportGlob2WLClicked(self):
+        current_filename_import = self.glob2wl_import.text()
+        new_filename_import, __ = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Navigation Analyzer Import',current_filename_import, "*.txt")
+        if new_filename_import != '':
+            self.import_filename.setText(new_filename_import)
+            self.import_filename.editingFinished.emit()
 
 
 
     def Help(self):
-        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-52/Hello-World")
+        webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/LFDH-A-14/Navigationanalyzer")
 
 
 class Navigation_Analyzer(object):
@@ -47,6 +54,7 @@ class Navigation_Analyzer(object):
         self.cancel = False
         self.act = QAction('Navigation Analyzer', iface.mainWindow())
         self.act.triggered.connect(self.execDialog)
+
 
     def initGui(self, menu=None):
         if menu is not None:
@@ -64,10 +72,14 @@ class Navigation_Analyzer(object):
     def execDialog(self):
         """
         """
+
         self.dialog = PluginDialog(self.iface, self.iface.mainWindow())
         self.dialog.accepted.connect(self.execTool)
         self.dialog.rejected.connect(self.quitDialog)
         self.dialog.show()
+
+
+
 
     def scheduleAbort(self):
         self.cancel = True
@@ -78,10 +90,22 @@ class Navigation_Analyzer(object):
         self.act.setEnabled(True)
         self.cancel = False
 
+    def df_from_vlayer(input: QgsVectorLayer) -> pd.DataFrame:
+        return pd.DataFrame([feat.attributes() for feat in input.getFeatures()],
+                                columns=[field.name() for field in input.fields()])
+    #here is the import function for glob_id to water_level
+    def glob_id2wl(import_path_glob_id, data_layer : QgsMapLayer):
+        df_glob_id = pd.read_csv(import_path_glob_id, sep=',', header=0)
+        hyd_results = df_from_vlayer(data_layer)
+        merged_df = pd.merge(df_glob_id, hyd_results, on='glob_id', how='inner')
+        print(merged_df)
+
+
+
     #Execution of the tool by "ok" button
     def execTool(self):
-
-        #Print text of the lineEdit to the QGIs python console
-        print(self.dialog.lineEdit_1.text())
+        importpath = self.dialog.import_filename.text()
+        data_layer = self.mMapLayerComboBox_hyd_result.currentLayer()
+        self.glob_id2wl(import_path_glob_id=importpath,data_layer=data_layer)
 
         self.quitDialog()
