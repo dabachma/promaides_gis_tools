@@ -1413,7 +1413,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>Solar Radiation [J/cm2]:</string>
+             <string>Solar Radiation [Wh/m2]:</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>

@@ -377,11 +377,11 @@ def evapotranspiration(tmax : float, tmin : float, tavg : float,
     height: m, altitude above sea level
     tmax, tmin, tavg : Temperatures in °C
     wind : m/s wind speed
-    solar_rad : solar radiation J/cm2
+    solar_rad : solar radiation Wh/m2
     hum : fraction air humidity
     day: day of the year 0-365
     """
-    mean_solar_rad = (solar_rad) * 0.01 # GLOST
+    mean_solar_rad = (solar_rad / 2.777778) * 0.01 # GLOST
     i_vapor = 4098 * (0.6108 * numpy.exp((17.27 * tavg) / (tavg + 237.3))) / ((tavg + 237.3)**2) #slope saturation vapor pressure curve
     a_pressure = 101.3 * ((293 - 0.0065 * height) / 293)**5.26    #atmospheric pressure [kPa].
     psy = 0.000665 * a_pressure
@@ -455,7 +455,7 @@ def calculate_evap_timeseries(weather_generator_avgvalues : QgsVectorLayer,
     These parameters in the DF are related to a single subcatchment 
     TEMP: Average temperature [°C]
     LUFEU: Average humidity [percentage 0-100]
-    GLOST: Average solar radiation [J/cm2]
+    GLOST: Average solar radiation [Wh/m2]
     WIND: Average wind speed [m/s]
     NISCH: Precipitation [mm]
 
