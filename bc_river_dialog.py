@@ -28,7 +28,7 @@ class BCRiverDialog(QDialog):
             groupBox = self.__groupBox(name)
             self.verticalLayout.addWidget(groupBox)
         
-        # self.btn = QPushButton("Get Values", clicked=self.getValues)
+        # self.btn = QPushButton("Get Values", clicked=self.getValues) 
         # self.verticalLayout.addWidget(self.btn)
 
     def closeEvent(self, a0) -> None:
