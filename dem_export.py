@@ -286,11 +286,13 @@ class PluginDialog(QDialog):
 
         self.xllBox.setValue(item.data(PluginDialog.xllRole))
         self.yllBox.setValue(item.data(PluginDialog.yllRole))
-        self.nrBox.setValue(item.data(PluginDialog.nrRole))
-        self.ncBox.setValue(item.data(PluginDialog.ncRole))
         self.drBox.setValue(item.data(PluginDialog.drRole))
         self.dcBox.setValue(item.data(PluginDialog.dcRole))
         self.angleBox.setValue(item.data(PluginDialog.angleRole))
+
+        self.nrBox.setValue(item.data(PluginDialog.nrRole))
+        self.ncBox.setValue(item.data(PluginDialog.ncRole))
+
 
 
 
@@ -409,8 +411,10 @@ class DEMExport(object):
                     item = QListWidgetItem('raster_{:d}'.format(num))
                     item.setData(PluginDialog.xllRole, f.attribute("xll"))
                     item.setData(PluginDialog.yllRole, f.attribute("yll"))
-                    item.setData(PluginDialog.nrRole, f.attribute("nr"))
-                    item.setData(PluginDialog.ncRole, f.attribute("nc"))
+
+                    item.setData(PluginDialog.nrRole, int(f.attribute("nr")))
+                    item.setData(PluginDialog.ncRole, int(f.attribute("nc")))
+
                     item.setData(PluginDialog.drRole, f.attribute("dy"))
                     item.setData(PluginDialog.dcRole, f.attribute("dx"))
                     item.setData(PluginDialog.angleRole, f.attribute("angle"))

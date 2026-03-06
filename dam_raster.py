@@ -380,8 +380,8 @@ class DAMRasterExport(object):
                     item = QListWidgetItem('raster_{:d}'.format(num))
                     item.setData(PluginDialog.xllRole, f.attribute("xll"))
                     item.setData(PluginDialog.yllRole, f.attribute("yll"))
-                    item.setData(PluginDialog.nrRole, f.attribute("nr"))
-                    item.setData(PluginDialog.ncRole, f.attribute("nc"))
+                    item.setData(PluginDialog.nrRole, int(f.attribute("nr")))
+                    item.setData(PluginDialog.ncRole, int(f.attribute("nc")))
                     item.setData(PluginDialog.drcRole, f.attribute("dy"))
 
                     item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled)
@@ -666,8 +666,11 @@ class DAMRasterExport(object):
 
                         values = {data_name: interpol[data_name](trans[data_name](QgsPointXY(point)))}
 
-                        if(values[rastertype_0] != self.dialog.ecnNaNBox.value()):
+                        #if(values[rastertype_0] != self.dialog.ecnNaNBox.value()):
+                        if values[rastertype_0] > 0:
                             mob_values[rastertype_0] = values[rastertype_0] + input_layers[rastertype_0]['deltaecn']  # adding the user chosen value to initial immob value
+                        else:
+                            mob_values[rastertype_0] = values[rastertype_0]
 
                         out_raster.write_cell(mob_values, rastertype_0)
                         counter = counter + 1
