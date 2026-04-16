@@ -1708,6 +1708,7 @@ class RainGenerator(object):
     StormStatisticsTexttobeWritten = "Storm_ID Storm_StartingTimestep Storm_Duration Storm_Volume Storm_PeakIntensity Storm_TotalArea\n"
 
     def Generation(self):
+        DomainSize=self.nx*self.ny
 
         # putting storms of a season in an array
         WinterStormIDs = []
@@ -1822,7 +1823,7 @@ class RainGenerator(object):
 
         # csv file
         TexttobeWritten = "Timestep/CellID "
-        for i in range(self.nx * self.ny):
+        for i in range(DomainSize):
             TexttobeWritten += str(i) + " "
         with open(filepath3, 'a') as CSVGeneratedRainfall:
             CSVGeneratedRainfall.write(TexttobeWritten + "\n")
@@ -1908,18 +1909,7 @@ class RainGenerator(object):
                             StormSeason = "SUMMER"
                         elif 273 <= timestep:
                             StormSeason = "FALL"
-                    # generating storm values form copola
-                    while (1 < 2):
-                        if StormSeason == "WINTER":
-                            GeneratedValues = copWinter.gendata(1)  # volume peak area
-                        elif StormSeason == "SPRING":
-                            GeneratedValues = copSpring.gendata(1)  # volume peak area
-                        elif StormSeason == "SUMMER":
-                            GeneratedValues = copSummer.gendata(1)  # volume peak area
-                        elif StormSeason == "FALL":
-                            GeneratedValues = copFall.gendata(1)  # volume peak area
-                        if GeneratedValues[0][1] <= GeneratedValues[0][0]:
-                            break
+
 
                     # print(GeneratedValues, "generated values")
                     ################################################################
@@ -1951,10 +1941,22 @@ class RainGenerator(object):
                             for i in FallStormIDs:
                                 FallStormIDsTemp.append(i)
                     ##################################################################
-
+                    GeneratedStormDuration = self.StormDuration[GeneratedStormID]  # duration
+                    # generating storm values form copola
+                    while (1 < 2):
+                        if StormSeason == "WINTER":
+                            GeneratedValues = copWinter.gendata(1)  # volume peak area
+                        elif StormSeason == "SPRING":
+                            GeneratedValues = copSpring.gendata(1)  # volume peak area
+                        elif StormSeason == "SUMMER":
+                            GeneratedValues = copSummer.gendata(1)  # volume peak area
+                        elif StormSeason == "FALL":
+                            GeneratedValues = copFall.gendata(1)  # volume peak area
+                        if GeneratedValues[0][1] <= GeneratedValues[0][0] and DomainSize*GeneratedStormDuration >= GeneratedValues[0][2]:
+                            break
                     #################################################################
                     # generated properties
-                    GeneratedStormDuration = self.StormDuration[GeneratedStormID]  # duration
+
                     GeneratedStormPeakIntensity = GeneratedValues[0][1]  # peak
                     GeneratedVolume = GeneratedValues[0][0]  # volume
                     GeneratedStormArea = GeneratedValues[0][2]  # area
@@ -1975,7 +1977,7 @@ class RainGenerator(object):
                     if self.dialog.SaveStormStatisticsBox2.isChecked():
                         self.StormStatisticsTexttobeWritten += str(stormcounter) + " " + str(timestep) + " " + str(
                             GeneratedStormDuration) + " " + str(GeneratedVolume) + " " + str(
-                            GeneratedStormPeakIntensity) + " " + str(GeneratedStormArea) + "\n"
+                            GeneratedStormPeakIntensity) + " " + str(int(GeneratedStormArea)) + "\n"
                     ########################################################################
 
                     ##########################################################################
@@ -1984,7 +1986,7 @@ class RainGenerator(object):
                         # getting the storm values in timestep from original storm
 
                         StorminTimestep = []
-                        for i in range(self.nx * self.ny):
+                        for i in range(DomainSize):
                             StorminTimestep.append(0)
                         for i, value in enumerate(self.Storms[GeneratedStormID][step]):
                             StorminTimestep[i] = float(value)
@@ -2034,7 +2036,7 @@ class RainGenerator(object):
                                     currentnumberofneighboringcells = len(neighboringcellids)
                                     cellsaddedtemp = 0
 
-                                if cellsadded + len(self.StormLocations[GeneratedStormID][step]) >= (self.nx * self.ny):
+                                if cellsadded + len(self.StormLocations[GeneratedStormID][step]) >= (DomainSize):
                                     # print("more cells to be added than domain")
                                     break
 
@@ -2090,15 +2092,15 @@ class RainGenerator(object):
                                         except:
                                             pass
 
-                                    if len(self.StormLocations[GeneratedStormID][step]) == self.nx * self.ny and len(
+                                    if len(self.StormLocations[GeneratedStormID][step]) == DomainSize and len(
                                             boundarycellids) == 0:
                                         for n in range(self.nx):
                                             boundarycellids.append(n)
-                                        for n in range(self.nx * (self.ny - 1), self.nx * self.ny):
+                                        for n in range(self.nx * (self.ny - 1), DomainSize):
                                             boundarycellids.append(n)
                                         for n in range(0, self.nx * (self.ny - 1), self.nx):
                                             boundarycellids.append(n)
-                                        for n in range(self.nx - 1, (self.nx * self.ny) - 1, self.nx):
+                                        for n in range(self.nx - 1, (DomainSize) - 1, self.nx):
                                             boundarycellids.append(n)
 
                                     currentnumberofboundarycells = len(boundarycellids)
@@ -2148,7 +2150,8 @@ class RainGenerator(object):
                             if self.dialog.SaveStormStatisticsBox2.isChecked():
                                 self.dialog.StatusIndicator.setText("Writing Storm Statistics...")
                                 QTimer.singleShot(50, self.WriteStormStatistics2)
-                            QTimer.singleShot(50, self.GenerationFinished)
+                            else:
+                                QTimer.singleShot(50, self.GenerationFinished)
                             break
 
                         if timestep % 500000 == 0 and timestep > 0:
@@ -2177,7 +2180,8 @@ class RainGenerator(object):
                         if self.dialog.SaveStormStatisticsBox2.isChecked():
                             self.dialog.StatusIndicator.setText("Writing Storm Statistics...")
                             QTimer.singleShot(50, self.WriteStormStatistics2)
-                        QTimer.singleShot(50, self.GenerationFinished)
+                        else:
+                            QTimer.singleShot(50, self.GenerationFinished)
                         break
                 # print("end of whole while loop")
 
@@ -2201,6 +2205,7 @@ class RainGenerator(object):
         QTimer.singleShot(50, self.ReturnPeriodCalculation)
 
     def ReturnPeriodCalculation(self):
+        self.dialog.StatusIndicator.setText("Calculating return periods...")
         filepath2 = os.path.join(self.dialog.folderEdit.text(), "GeneratedRainfall_Statistics" + '.txt')
         df = pd.read_csv(filepath2.strip("\u202a"), delimiter=" ")
         Durations = df["Storm_Duration"].tolist()
@@ -2228,6 +2233,7 @@ class RainGenerator(object):
         df['Return_Period_Area'] = areas_returnperiods
 
         df.to_csv(filepath2.strip("\u202a"), sep=' ', index=False)
+        QTimer.singleShot(50, self.GenerationFinished)
 
     def GenerationFinished(self):
         self.iface.messageBar().pushSuccess(
