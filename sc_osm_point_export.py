@@ -10,7 +10,7 @@ from qgis.gui import *
 from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import *
 
-
+from qgis.PyQt.QtWidgets import QProgressDialog
 # promaides modules
 from .environment import get_ui_path, get_json_path
 # system modules
@@ -24,10 +24,15 @@ import os
 import unicodedata
 
 
+
+
+
 UI_PATH = get_ui_path('ui_sc_promaides_osm_point_export.ui')
 JSON_PATH = get_json_path("SC_sectors.json")
 
 OVERPASS_URL = "https://lz4.overpass-api.de/api/interpreter"
+
+
 
 #Load all sectors with corosponding Name, OSM (Key, Value) and Sub Id
 with open(JSON_PATH, 'r') as f:
@@ -376,88 +381,167 @@ class SCOSMPointExport(object):
         return north, east, south, west
 
     def checkNameAscii(self, name: str):
-        """Function to check if name has only ascii characters.
-
-        If not this functions trys to creat an ascii string. If this does not work the function returns False
-        """
+        """Funktion versucht, Umlaute und Akzente auf ASCII zu normalisieren."""
+        if not name:
+            return False
+        # Entfernt Akzente (z.B. á -> a, ü -> u)
         new_name = unicodedata.normalize("NFD", name).encode("ascii", "ignore").decode("ascii")
         threshold = 0.5 
-        #if the new name shorter than the old name * threshold retrun False. 
-        #Prevent the convert of non latin characters (e.g Cyrillic) with numbers to only numbers
+        
+        # Falls durch die ASCII-Konvertierung mehr als die Hälfte des Namens verloren geht 
+        # (wie bei nicht-lateinischen Schriften), brechen wir hier ab -> Fallback greift
         if len(new_name) < len(name) * threshold:
             return False
         else:
             return self.checkNameSpezialChar(new_name.replace("\n","_").replace(" ", "_"))
     
     def checkNameSpezialChar(self, name: str):
-        new_name: str = ""
+        """STRIKTES PLAIN ASCII: Erlaubt NUR A-Z, a-z, 0-9 und den Unterstrich."""
+        new_name = ""
         for char in name:
-            if char == "_" or char.isalpha() or char.isnumeric():
+            # Jedes Zeichen einzeln prüfen: Nur echte ASCII-Buchstaben, Zahlen und Unterstriche erlauben
+            if char == "_" or (char >= 'a' and char <= 'z') or (char >= 'A' and char <= 'Z') or (char >= '0' and char <= '9'):
                 new_name += char
-            else:
-                new_name += ""
+        
+        # Doppelte Unterstriche aufräumen, falls durch das Löschen von Sonderzeichen welche entstanden sind
+        while "__" in new_name:
+            new_name = new_name.replace("__", "_")
+            
+        # Wenn der Name am Ende leer ist oder nur aus Unterstrichen besteht, False zurückgeben
+        if not new_name or new_name.strip("_") == "":
+            return False
+            
         return new_name
+
 
     def execTool(self):
         start_time = time.time()
-
         inputValues = {"name":[], "id":[], "valueList":[], "lon":[], "lat":[], "osm_id":[], 'id_sub': []}
 
+        # Holt die funktionierenden Serverdaten (Ihre 328 Objekte)
         sector_result, valueList, idList, id_subList = self.query()
 
-        for result in sector_result:   #goes through all results of a sector
-            for element in result['elements']:    #goes through all elements in the value
-                value_name = valueList.pop(0)
-                id = idList.pop(0)
-                id_sub = id_subList.pop(0)
+        geom = self.geometry()
+        if geom is None:
+            self.iface.messageBar().pushCritical('SC OSM Point Export', 'Fehler: Keine Suchgeometrie in QGIS definiert!')
+            return
 
+        # Schnelle Transformation vorab einrichten
+        crsSrc = QgsCoordinateReferenceSystem("EPSG:4326") # WGS 84 aus dem Internet
+        crsDest = QgsCoordinateReferenceSystem(self.dialog.crs) # Ihr QGIS-Projekt-System
+        transformContext = QgsProject.instance().transformContext()
+        xform = QgsCoordinateTransform(crsSrc, crsDest, transformContext)
+
+        meta_lookup = {}
+        for keys, values, id_sector, id_subs in zip(*self.creatSearchList()):
+            for k, v, sub_id in zip(keys, values, id_subs):
+                meta_lookup[(k, v)] = (id_sector, sub_id)
+
+        total_elements = sum(len(r.get('elements', [])) for r in sector_result if 'elements' in r)
+        
+        progress_filter = QProgressDialog("Verarbeite empfangene Daten...", "Abbrechen", 0, total_elements, self.dialog)
+        progress_filter.setWindowTitle("Geometrie-Filter")
+        progress_filter.setWindowModality(Qt.WindowModal)
+        progress_filter.show()
+
+        current_index = 0
+        accepted_count = 0
+
+        for result in sector_result:   
+            if 'elements' not in result:
+                continue
+                
+            for element in result['elements']:    
+                current_index += 1
+                progress_filter.setValue(current_index)
+                
+                if progress_filter.wasCanceled():
+                    break
+
+                if 'tags' not in element:
+                    continue
+
+                tags = element['tags']
+                matched_value = None
+                matched_id = None
+                matched_id_sub = None
+
+                # Sektoren-Zuordnung prüfen
+                for (k, v), (id_sec, id_s) in meta_lookup.items():
+                    if tags.get(k) == v:
+                        matched_value = v
+                        matched_id = id_sec
+                        matched_id_sub = id_s
+                        break
+
+                if not matched_value and len(valueList) > 0:
+                    matched_value = valueList[0] if isinstance(valueList, list) else valueList
+                    matched_id = idList[0] if isinstance(idList, list) else idList
+                    matched_id_sub = id_subList[0] if isinstance(id_subList, list) else id_subList
+
+                # KORREKTUR 1: Sicheres Auslesen der Koordinaten für Flächen (ways) UND Punkte (nodes)
                 if 'center' in element:
                     lon = element['center']['lon']
                     lat = element['center']['lat']
-                else:
+                elif 'lon' in element and 'lat' in element:
                     lon = element['lon']
                     lat = element['lat']
+                else:
+                    continue # Objekt hat keine gültige Koordinate, überspringen
 
-                name = value_name
-                if 'tags' in element:
-                    if 'name' in element['tags']:
-                        placeholder_name = element['tags']['name']
-                        check_name = self.checkNameAscii(placeholder_name)
-                        if check_name:
-                            name = check_name
-                osm_id = str(element['type']) +"/"+ str(element['id'])
+                # KORREKTUR 2: Fehlertoleranter Namen-Check
+                raw_name = tags.get('name', matched_value if matched_value else "OSM_Objekt")
+                name = self.checkNameAscii(raw_name)
+                if not name or name == "":
+                    # Falls der ASCII-Check fehlschlägt, nutzen wir einen sicheren Standardnamen statt zu löschen
+                    name = self.checkNameSpezialChar(raw_name.replace(" ", "_"))
+                    if not name or name == "":
+                        name = f"Objekt_{element['id']}"
+                
+                osm_id = str(element['type']) + "/" + str(element['id'])
 
-                pt = self.dialog.coordinateTransform(lon,lat,False)
+                try:
+                    # Koordinate in das Projektsystem transformieren
+                    pt = xform.transform(QgsPointXY(lon, lat))
+                    qgis_pt = QgsPointXY(pt.x(), pt.y())
 
-                if self.geometry().contains(pt):
-                    inputValues['name'].append(name)
-                    inputValues['id'].append(id)
-                    inputValues['valueList'].append(value_name)
-                    inputValues['lon'].append(lon)
-                    inputValues['lat'].append(lat)
-                    inputValues['osm_id'].append(osm_id)
-                    inputValues['id_sub'].append(id_sub)
+                    progress_filter.setLabelText(f"Prüfe {name} ({current_index}/{total_elements}). Behalten: {accepted_count}")
+                    QCoreApplication.processEvents()
 
+                    # Prüfen, ob der Punkt in Ihrer gezeichneten Suchfläche liegt
+                    if geom.contains(QgsGeometry.fromPointXY(qgis_pt)):
+                        inputValues['name'].append(name)
+                        inputValues['id'].append(matched_id)
+                        inputValues['valueList'].append(matched_value)
+                        inputValues['lon'].append(lon)
+                        inputValues['lat'].append(lat)
+                        inputValues['osm_id'].append(osm_id)
+                        inputValues['id_sub'].append(matched_id_sub)
+                        accepted_count += 1
+                except:
+                    continue
+
+        progress_filter.close()
+
+        # Daten wegschreiben
         outputValues = self.checkValues(inputValues)
         filename = self.dialog.filename_edit.text()
         head, tail = os.path.split(filename)
         tail = self.dialog.subcategory_edit.text()
         subcategory = head + "/" + tail
 
-
         if self.dialog.Shp_Button.isChecked():
             feature_count = self.createShapefile(outputValues, filename)
         else:
             feature_count = self.creatTextFile(outputValues, filename, subcategory)
         
-
         end_time = time.time()
-        length = round(end_time-start_time,2)
+        length = round(end_time - start_time, 2)
 
         self.iface.messageBar().pushInfo(
             'SC OSM Point Export',
-            f'Import finished successfully! {feature_count} Points in {length} sec. found.')
-
+            f'Export fertig! {total_elements} vom Server empfangen -> {feature_count} Punkte wurden erfolgreich exportiert.'
+        )
         self.quitDialog()
 
     def createShapefile(self, outputValues, filename):
@@ -470,15 +554,21 @@ class SCOSMPointExport(object):
         layerFields.append(QgsField('boundary', QVariant.Double))  
         layerFields.append(QgsField('id_subcat', QVariant.Int)) 
         
-        writer = QgsVectorFileWriter(filename, 'UTF-8', layerFields, QgsWkbTypes.Point, QgsCoordinateReferenceSystem(self.dialog.crs), 'ESRI Shapefile')
-        feat = QgsFeature()
+        # Anpassung an neuere QGIS-Versionen
+        options = QgsVectorFileWriter.SaveVectorOptions()
+        options.driverName = "ESRI Shapefile"
+        options.fileEncoding = "UTF-8"
         
+        writer = QgsVectorFileWriter.create(filename, layerFields, QgsWkbTypes.Point, QgsCoordinateReferenceSystem(self.dialog.crs), QgsProject.instance().transformContext(), options)
+        
+        feat = QgsFeature()
         num = 1
         new_tag_name = ""
         point_value = self.dialog.PointBox.value()
         water_boundary = self.dialog.boundaryBox.value()
         feature_count = 0
-        for name, id ,valueList, lon, lat, id_sub in zip(outputValues['name'], 
+        
+        for name, id, valueList, lon, lat, id_sub in zip(outputValues['name'], 
                                                 outputValues['id'], 
                                                 outputValues['valueList'], 
                                                 outputValues['lon'], 
@@ -491,14 +581,16 @@ class SCOSMPointExport(object):
                 name = f"{name}_{num}"
                 num += 1    
 
-            pt = self.dialog.coordinateTransform(lon,lat,False)
+            pt = self.dialog.coordinateTransform(lon, lat, False)
             feat.setGeometry(QgsGeometry.fromPointXY(pt))
             feat.setAttributes([pt.x(), pt.y(), id, name, point_value, water_boundary, id_sub]) 
             writer.addFeature(feat)
             feature_count += 1
+            
         layer = self.iface.addVectorLayer(filename, '', 'ogr')
         del(writer)
         return feature_count
+
  
     def creatTextFile(self, outputValues, filename, subcategory):
         sub_output = {"id": [], "name": []}
@@ -628,57 +720,128 @@ class SCOSMPointExport(object):
             id_subs.append(item.id_sub)
             iterator += 1
         return keys, values, ids, id_subs
-   
-    def query(self):
-        north, east, south, west = self.direction()
-        data_list = []
-        value_list = []  
-        id_list = []   
-        id_sub_list = []
-        n = 0
-        for keys, values, id, id_subs in zip(*self.creatSearchList()):
-            for key, value, id_sub in zip(keys, values, id_subs):
-                while n <= 100:
-                    overpass_query = """
-                    [out:json];
-                    (
-                    node["{key}"="{value}"]({south},{west},{north},{east});
-                    way["{key}"="{value}"]({south},{west},{north},{east});
-                    relation["{key}"="{value}"]({south},{west},{north},{east});
-                    );
-                    out center;
-                    """.format(key=key, value=value, south=south, west=west, north=north, east=east)
 
-                    try:
-                        response = requests.get(OVERPASS_URL, params={'data': overpass_query})
-                        data = response.json()
-                        for _ in range(len(data['elements'])):
-                            value_list.append(value)
-                            id_list.append(id)
-                            id_sub_list.append(id_sub)
-                        data_list.append(data)
-                        break
-                    except:
-                        n += 1
-                        if n == 100:
-                            print("abort")
-    
-        return data_list, value_list, id_list, id_sub_list
+    def query(self):
+        # 1. Koordinaten der Suchbox berechnen
+        boundingBox = self.geometry().boundingBox()
+
+        crsSrc = QgsCoordinateReferenceSystem(self.dialog.crs)
+        crsDest = QgsCoordinateReferenceSystem("EPSG:4326") # WGS 84 für OSM
+        xform = QgsCoordinateTransform(crsSrc, crsDest, QgsProject.instance().transformContext())
+
+        pt_sw = xform.transform(QgsPointXY(boundingBox.xMinimum(), boundingBox.yMinimum()))
+        pt_ne = xform.transform(QgsPointXY(boundingBox.xMaximum(), boundingBox.yMaximum()))
+        
+        south = min(pt_sw.y(), pt_ne.y())
+        west = min(pt_sw.x(), pt_ne.x())
+        north = max(pt_sw.y(), pt_ne.y())
+        east = max(pt_sw.x(), pt_ne.x())
+
+        data_list = []
+        value_list = []
+        id_list = []
+        id_sub_list = []
+        query_parts = []
+        meta_lookup = {}
+
+        for keys, values, id_sector, id_subs in zip(*self.creatSearchList()):
+            for key, value, id_sub in zip(keys, values, id_subs):
+                meta_lookup[(key, value)] = (id_sector, id_sub)
+                query_parts.append(f'node["{key}"="{value}"]({south},{west},{north},{east});')
+                query_parts.append(f'way["{key}"="{value}"]({south},{west},{north},{east});')
+                query_parts.append(f'relation["{key}"="{value}"]({south},{west},{north},{east});')
+
+        if not query_parts:
+            self.iface.messageBar().pushWarning("OSM Export", "Keine Sektoren ausgewählt!")
+            return data_list, value_list, id_list, id_sub_list
+
+        # Standardisierte Overpass-QL Syntax
+        overpass_query = f"[out:json][timeout:90];({"".join(query_parts)});out center;"
+
+        # Liste der Server
+        URLS_TO_TRY = [
+            "https://overpass-api.de/api/interpreter",
+            "https://openstreetmap.fr"
+        ]
+        
+        # Ein absolut standardisierter Header, den Server nicht blockieren
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) QGIS/3.0"
+        }
+
+        progress = QProgressDialog("Starte OSM-Abfrage...", "Abbrechen", 0, 0, self.dialog)
+        progress.setWindowTitle("OSM Export Protokoll")
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setRange(0, 0)
+        progress.show()
+        QCoreApplication.processEvents()
+
+        success = False
+        attempt = 0
+        
+        while not success and not progress.wasCanceled():
+            current_url = URLS_TO_TRY[attempt % len(URLS_TO_TRY)]
+            attempt += 1
             
+            server_name = "Frankreich" if "fr" in current_url else "Deutschland"
+            progress.setLabelText(f"Verbinde mit {server_name}-Server (Versuch {attempt}). Warten...")
+            QCoreApplication.processEvents()
+
+            try:
+                # KORREKTUR: Senden der Query als valider POST-String payload wie von OSM vorgeschrieben
+                payload = f"data={requests.utils.quote(overpass_query)}"
+                response = requests.post(current_url, data=payload, headers=headers, timeout=45)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    raw_count = len(data.get('elements', []))
+                    
+                    progress.setLabelText(f"Erfolg! {raw_count} Rohdaten vom Server empfangen.")
+                    QCoreApplication.processEvents()
+                    time.sleep(1)
+                    
+                    data_list.append(data)
+                    for element in data.get('elements', []):
+                        matched_value = "unknown"
+                        matched_id = "unknown"
+                        matched_id_sub = "unknown"
+                        tags = element.get('tags', {})
+                        for (k, v), (id_sec, id_s) in meta_lookup.items():
+                            if tags.get(k) == v:
+                                matched_value = v
+                                matched_id = id_sec
+                                matched_id_sub = id_s
+                                break
+                        value_list.append(matched_value)
+                        id_list.append(matched_id)
+                        id_sub_list.append(matched_id_sub)
+
+                    success = True
+                    break
+                elif response.status_code == 429:
+                    time.sleep(3)
+            except requests.exceptions.RequestException:
+                time.sleep(2)
+
+        progress.close()
+        return data_list, value_list, id_list, id_sub_list
+
+
+
     def checkValues(self, inputValues):
-        for osm_id in inputValues["osm_id"]:
-            location = [i for i,x in enumerate(inputValues["osm_id"]) if x==osm_id]
-            while len(location) > 1:
-                del inputValues["name"][location[1]]
-                del inputValues["id"][location[1]]
-                del inputValues['valueList'][location[1]]
-                del inputValues['lon'][location[1]]
-                del inputValues['lat'][location[1]]
-                del inputValues['osm_id'][location[1]]
-                del inputValues['id_sub'][location[1]]
-                location = [i for i,x in enumerate(inputValues["osm_id"]) if x==osm_id]
-        outputValues = inputValues
+        seen_osm_ids = set()
+        outputValues = {key: [] for key in inputValues.keys()}
+
+        for i, osm_id in enumerate(inputValues["osm_id"]):
+            if osm_id not in seen_osm_ids:
+                seen_osm_ids.add(osm_id)
+                for key in inputValues.keys():
+                    if i < len(inputValues[key]):
+                        outputValues[key].append(inputValues[key][i])
+
         return outputValues
+
 
 class SubItem(QTreeWidgetItem):
     def __init__(self, item):
@@ -689,7 +852,7 @@ class SubItem(QTreeWidgetItem):
         self.key = list(data["key"])
         self.value = list(data["value"])
         self.id_sub = list(data["id_sub"])
-    
+
     def sectorNum(self):
         #get number of sector e.g. SC 1 -> 1
         return self.sector[-1]

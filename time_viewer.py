@@ -100,6 +100,26 @@ class PluginDialog(QDockWidget):
         webbrowser.open("https://promaides.myjetbrains.com/youtrack/articles/PMDP-A-3/TimeViewer")
 
     def closeEvent(self, event):
+         # SAUBERES ENTFERNEN BEIM SCHLIEẞEN
+        try:
+            from qgis.PyQt.QtWidgets import QLabel
+            canvas = self.iface.mapCanvas()
+            
+            # 1. Den alten Größen-Filter vom Kartenfenster entfernen
+            if hasattr(self, '_resize_filter') and self._resize_filter is not None:
+                canvas.removeEventFilter(self._resize_filter)
+                self._resize_filter = None
+            
+            # 2. Die Textbox endgültig löschen
+            old_textbox = canvas.findChild(QLabel, "ProMaidesTimeBoxWindow")
+            if old_textbox is not None:
+                old_textbox.deleteLater()
+        except:
+            pass
+        
+        
+        
+        
         if type(self.InputLayerBox.currentLayer()) != type(None):
             for n, layer in enumerate(self.layers):
                 if len(self.InitialFilters) > 0:
@@ -188,12 +208,14 @@ class PluginDialog(QDockWidget):
                 if len(self.FrameIDs) > 0:
                     self.value = self.FrameIDs[self.count]
                     self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
+                    self.updateQgisTitleDecoration(f"{field} = {self.value}")
                     if str(self.InitialFilters[n]) == "":
                         layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
                     else:
                         layer.setSubsetString(
                             "\"{a}\"=\'{b}\' AND {c}".format(a=field, b=self.value, c=self.InitialFilters[n]))
                 self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
+                self.updateQgisTitleDecoration(f"{field} = {self.value}")
 
             self.ProcessButton.setEnabled(True)
             self.PlayButton.setEnabled(True)
@@ -380,6 +402,7 @@ class PluginDialog(QDockWidget):
                     if len(self.FrameIDs) > 0:
                         self.value = self.FrameIDs[self.count]
                         self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
+                        self.updateQgisTitleDecoration(f"{field} = {self.value}")
                         if str(self.InitialFilters[n]) == "":
                             layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
                         else:
@@ -415,6 +438,7 @@ class PluginDialog(QDockWidget):
             field = self.FieldIDBox.currentText()
             self.value = self.FrameIDs[self.count]
             self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
+            self.updateQgisTitleDecoration(f"{field} = {self.value}")
             if str(self.InitialFilters[n]) == "":
                 layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
             else:
@@ -434,6 +458,7 @@ class PluginDialog(QDockWidget):
             field = self.FieldIDBox.currentText()
             self.value = self.FrameIDs[self.count]
             self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
+            self.updateQgisTitleDecoration(f"{field} = {self.value}")
             if str(self.InitialFilters[n]) == "":
                 layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
             else:
@@ -517,6 +542,7 @@ class PluginDialog(QDockWidget):
             field = self.FieldIDBox.currentText()
             self.value = self.FrameIDs[self.count]
             self.Displayer.setText("{a}={b}".format(a=field, b=self.value))
+            self.updateQgisTitleDecoration(f"{field} = {self.value}")
             if str(self.InitialFilters[n]) == "":
                 layer.setSubsetString("\"{a}\"=\'{b}\'".format(a=field, b=self.value))
             else:
@@ -525,8 +551,13 @@ class PluginDialog(QDockWidget):
         FPS = 1000 / self.FPSBox.value()
         canvas = iface.mapCanvas()
         canvas.waitWhileRendering()
-        self.iface.mapCanvas().renderComplete.connect(self.renderLabel)
+        #self.iface.mapCanvas().renderComplete.connect(self.renderLabel)
         QTimer.singleShot(int(FPS), self.play2)
+        
+       
+
+        
+        
 
     def play2(self):
         global count
@@ -535,8 +566,19 @@ class PluginDialog(QDockWidget):
                 'Time Viewer',
                 'Exporting Video, Please Wait !'
             )
-            iface.mapCanvas().saveAsImage(str(self.VideoTempFolder) + "/" + "TimeViewer" + str(self.count + 1) + ".png")
-            os.remove(str(self.VideoTempFolder) + "/" + "TimeViewer" + str(self.count + 1) + ".pgw")
+            #iface.mapCanvas().saveAsImage(str(self.VideoTempFolder) + "/" + "TimeViewer" + str(self.count + 1) + ".png")
+            
+            
+            image_path = str(self.VideoTempFolder) + "/" + "TimeViewer" + str(self.count + 1) + ".png"
+            iface.mapCanvas().grab(iface.mapCanvas().rect()).save(image_path, "PNG")
+            
+            
+            
+            #os.remove(str(self.VideoTempFolder) + "/" + "TimeViewer" + str(self.count + 1) + ".pgw")
+            pgw_path = str(self.VideoTempFolder) + "/" + "TimeViewer" + str(self.count + 1) + ".pgw"
+            if os.path.exists(pgw_path): os.remove(pgw_path)
+            
+            
         if self.SaveFrameBox.isChecked():
             if self.SaveBox.currentText() == "PNG":
                 if str(self.outFolder()) != "":
@@ -746,6 +788,95 @@ class PluginDialog(QDockWidget):
         self.Displayer.setText("Exporting Video... Please Wait")
         self.scrollArea.setEnabled(False)
         self.play1()
+        
+    def updateQgisTitleDecoration(self, text_value):
+        try:
+            from qgis.PyQt.QtWidgets import QLabel
+            from qgis.PyQt.QtCore import QPoint, QEvent, QObject
+            import os
+            import sip # Modul zur Prüfung gelöschter C++ Objekte
+            
+            clean_value = text_value.replace("date_time=", "").replace("date_time =", "")
+            
+            canvas = self.iface.mapCanvas()
+            textbox = canvas.findChild(QLabel, "ProMaidesTimeBoxWindow")
+            
+            if textbox is None:
+                textbox = QLabel(canvas)
+                textbox.setObjectName("ProMaidesTimeBoxWindow")
+                textbox.resize(200, 32)
+                textbox.setStyleSheet("background-color: white; color: black; border: 1px solid #999999; border-radius: 2px;")
+                textbox.show()
+                
+                class ResizeFilter(QObject):
+                    def __init__(self, widget, canvas_obj):
+                        super(ResizeFilter, self).__init__(canvas_obj)
+                        self.widget = widget
+                        self.canvas = canvas_obj
+                    def eventFilter(self, obj, event):
+                        if event.type() == QEvent.Resize:
+                            # SICHERHEITS-PRÜFUNG: Wenn das Widget gelöscht wurde, brich sofort ab!
+                            if self.widget is None or sip.isdeleted(self.widget):
+                                return False
+                            
+                            x = self.canvas.width() - self.widget.width() - 15
+                            y = self.canvas.height() - self.widget.height() - 15
+                            self.widget.move(QPoint(int(x), int(y)))
+                        return super(ResizeFilter, self).eventFilter(obj, event)
+                
+                self._resize_filter = ResizeFilter(textbox, canvas)
+                canvas.installEventFilter(self._resize_filter)
+            
+            html_text = f"""
+            <div style="font-family: Arial; font-size: 13px; font-weight: bold; text-align: center; padding-top: 3px;">
+                {clean_value}
+            </div>
+            """
+            textbox.setText(html_text)
+            
+            x_pos = canvas.width() - textbox.width() - 15
+            y_pos = canvas.height() - textbox.height() - 15
+            textbox.move(QPoint(int(x_pos), int(y_pos)))
+            textbox.raise_()
+            
+            # 3. FILMEXPORT-RETTUNG
+            if hasattr(self, 'ExportVideoState') and self.ExportVideoState == True:
+                image_path = os.path.normpath(os.path.join(self.VideoTempFolder, f"TimeViewer{self.count + 1}.png"))
+                
+                if os.path.exists(image_path):
+                    from qgis.PyQt.QtGui import QImage, QPainter, QFont, QBrush, QPen
+                    from qgis.PyQt.QtCore import Qt
+                    
+                    qimg = QImage(image_path)
+                    if not qimg.isNull():
+                        painter = QPainter(qimg)
+                        font = QFont("Arial", 24, QFont.Bold)
+                        painter.setFont(font)
+                        
+                        label_str = f" {clean_value} "
+                        metrics = painter.fontMetrics()
+                        w = metrics.horizontalAdvance(label_str)
+                        h = metrics.height()
+                        
+                        x = qimg.width() - w - 30
+                        y = qimg.height() - h - 30
+                        
+                        painter.setBrush(QBrush(Qt.white))
+                        painter.setPen(Qt.NoPen)
+                        painter.drawRect(int(x), int(y), int(w), int(h))
+                        
+                        painter.setPen(QPen(Qt.black))
+                        painter.drawText(int(x), int(y + metrics.ascent()), label_str)
+                        
+                        painter.end()
+                        qimg.save(image_path, "PNG")
+                        
+        except Exception as e:
+            pass
+
+
+
+
 
 
 class TimeViewer(object):
@@ -796,3 +927,4 @@ class TimeViewer(object):
         self.act.setEnabled(True)
         self.cancel = False
         self.dialog.hide()
+
